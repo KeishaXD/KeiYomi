@@ -188,6 +188,22 @@
             width: 16px;
             height: 16px;
         }
+
+        /* Modal Styles */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background-color: #fff; padding: 24px; border-radius: 12px; width: 500px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out; max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark); }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; outline: none; transition: border 0.2s; background: #fff; color: var(--text-dark); }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+        .btn-cancel { background: #e2e8f0; color: #475569; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-save { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .genre-checkboxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; max-height: 150px; overflow-y: auto; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; }
+        .genre-option { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; }
+        .genre-option input { width: auto; }
     </style>
     <!-- Integrasi PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -303,6 +319,48 @@
         </button>
     </div>
 
+    <!-- Add Book Modal -->
+    <div id="add-book-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;">Tambah Buku Baru</h2>
+            <div class="form-group">
+                <label>Judul</label>
+                <input type="text" id="input-title">
+            </div>
+            <div class="form-group">
+                <label>Penulis</label>
+                <input type="text" id="input-author">
+            </div>
+            <div class="form-group">
+                <label>Jenis Buku</label>
+                <select id="input-type">
+                    <option value="Artikel">Artikel</option>
+                    <option value="Journal">Journal</option>
+                    <option value="Manga">Manga</option>
+                    <option value="Manhua">Manhua</option>
+                    <option value="Manhwa">Manhwa</option>
+                </select>
+            </div>
+            <div class="form-group" id="group-date" style="display:none;">
+                <label>Tanggal Publikasi</label>
+                <input type="date" id="input-date">
+            </div>
+            <div class="form-group">
+                <label>Genre</label>
+                <div class="genre-checkboxes" id="genre-container">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Sinopsis</label>
+                <textarea id="input-synopsis"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="btn-cancel-add">Batal</button>
+                <button class="btn-save" id="btn-save-add">Simpan</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const { ipcRenderer } = require('electron');
         const path = require('path');
@@ -319,6 +377,19 @@
         const radioPages = document.getElementById('mode-pages');
         const pageTitle = document.getElementById('page-title');
         const reader = document.getElementById('reader');
+        
+        // Modal Elements
+        const modalAddBook = document.getElementById('add-book-modal');
+        const inputTitle = document.getElementById('input-title');
+        const inputAuthor = document.getElementById('input-author');
+        const inputType = document.getElementById('input-type');
+        const inputDate = document.getElementById('input-date');
+        const groupDate = document.getElementById('group-date');
+        const genreContainer = document.getElementById('genre-container');
+        const inputSynopsis = document.getElementById('input-synopsis');
+        const btnCancelAdd = document.getElementById('btn-cancel-add');
+        const btnSaveAdd = document.getElementById('btn-save-add');
+        
         let currentBookPath = null;
         let saveTimeout;
         
@@ -498,14 +569,17 @@
             const isFav = book.isFavorite;
             const favBtnText = isFav ? '★ Hapus Favorit' : '☆ Tambah Favorit';
 
+            const dateHtml = book.publishDate ? `<div style="font-size:0.85rem;color:#64748b;margin-bottom:8px;">📅 Terbit: ${book.publishDate}</div>` : '';
+
             const container = document.getElementById('detail-content');
             container.innerHTML = `
                 <div class="comic-info">
                     <div class="detail-cover" style="${coverStyle}">📖</div>
                     <div class="detail-content">
-                        <div class="detail-tags">${book.genre || 'General'}</div>
+                        <div class="detail-tags">${book.type || 'Book'} • ${book.genre || 'General'}</div>
                         <h1 class="detail-title">${book.title}</h1>
                         <div class="detail-alt">${book.author || 'Unknown Author'}</div>
+                        ${dateHtml}
                         <div class="action-buttons">
                             <button class="btn-primary" onclick="alert('Pilih chapter di bawah')">▶ LIHAT CHAPTER</button>
                             <button class="btn-secondary" onclick="toggleFavorite(${book.id})">${favBtnText}</button>
@@ -530,28 +604,102 @@
             }
         };
 
+        // --- MODAL LOGIC ---
+        let pendingBookPath = null;
+
+        const genreLists = {
+            commonComic: ['Action', 'Romance', 'Fantasy', 'Sci-fi', 'Slice of Life', 'Horror', 'Mystery', 'Comedy', 'Drama', 'Psychological', 'Supernatural', 'Sports', 'Historical'],
+            manga: ['Shounen', 'Shoujo', 'Seinen', 'Josei', 'Isekai', 'Mecha', 'Iyashikei', 'Mahou Shoujo'],
+            manhwa: ['Hunter/System', 'Regression', 'Murim', 'Villainess', 'School Bullying'],
+            manhua: ['Wuxia', 'Xianxia', 'Xuanhuan', 'Kultivasi'],
+            artikel: ['Berita', 'Feature', 'Opini', 'Tajuk Rencana', 'Panduan', 'Ulasan', 'Esai'],
+            journal: ['Penelitian Asli', 'Tinjauan Pustaka', 'Studi Kasus', 'Metodologi', 'Komunikasi Singkat']
+        };
+
+        function updateGenreOptions() {
+            const type = inputType.value;
+            const genreGroup = genreContainer.parentElement;
+            let genres = [];
+
+            if (type === 'Artikel') {
+                genres = genreLists.artikel;
+                groupDate.style.display = 'block';
+                genreGroup.style.display = 'none';
+            } else if (type === 'Journal') {
+                genres = genreLists.journal;
+                groupDate.style.display = 'block';
+                genreGroup.style.display = 'none';
+            } else {
+                groupDate.style.display = 'none';
+                genreGroup.style.display = 'block';
+                genres = [...genreLists.commonComic];
+                if (type === 'Manga') genres.push(...genreLists.manga);
+                if (type === 'Manhwa') genres.push(...genreLists.manhwa);
+                if (type === 'Manhua') genres.push(...genreLists.manhua);
+            }
+            
+            // Remove duplicates and sort
+            genres = [...new Set(genres)].sort();
+
+            genreContainer.innerHTML = '';
+            genres.forEach(g => {
+                const label = document.createElement('label');
+                label.className = 'genre-option';
+                label.innerHTML = `<input type="checkbox" value="${g}"> ${g}`;
+                genreContainer.appendChild(label);
+            });
+        }
+
+        inputType.addEventListener('change', updateGenreOptions);
+        btnCancelAdd.addEventListener('click', () => modalAddBook.classList.remove('show'));
+
+        btnSaveAdd.addEventListener('click', () => {
+            if (!inputTitle.value) {
+                alert('Judul harus diisi!');
+                return;
+            }
+
+            // Get selected genres
+            const selectedGenres = Array.from(genreContainer.querySelectorAll('input:checked')).map(cb => cb.value).join(', ');
+
+            const newBook = { 
+                id: Date.now(), 
+                title: inputTitle.value, 
+                author: inputAuthor.value || 'Unknown',
+                path: pendingBookPath, 
+                type: inputType.value,
+                genre: selectedGenres, 
+                synopsis: inputSynopsis.value,
+                publishDate: (inputType.value === 'Artikel' || inputType.value === 'Journal') ? inputDate.value : null,
+                cover: null // Bisa dikembangkan untuk upload cover custom
+            };
+
+            libraryData.unshift(newBook);
+            saveData();
+            modalAddBook.classList.remove('show');
+            showBookDetail(newBook);
+        });
+
         // Tombol Pilih File
         btnPilihFile.addEventListener('click', async () => {
             const filePath = await ipcRenderer.invoke('dialog:openFile');
             if (filePath) {
-                const fileName = path.basename(filePath);
-                
                 // Cek duplikasi
                 let book = libraryData.find(b => b.path === filePath);
                 
-                if (!book) {
-                    book = { 
-                        id: Date.now(), 
-                        title: fileName, 
-                        path: filePath, 
-                        genre: "Imported", 
-                        synopsis: "File diimpor dari lokal komputer." 
-                    };
-                    libraryData.unshift(book);
-                    saveData(); // Simpan ke localStorage
+                if (book) {
+                    showBookDetail(book);
+                } else {
+                    // Buka Modal
+                    pendingBookPath = filePath;
+                    inputTitle.value = path.basename(filePath, path.extname(filePath)); // Nama file tanpa ekstensi
+                    inputAuthor.value = '';
+                    inputSynopsis.value = '';
+                    inputType.value = 'Artikel'; // Default
+                    inputDate.value = '';
+                    updateGenreOptions();
+                    modalAddBook.classList.add('show');
                 }
-                
-                showBookDetail(book);
             }
         });
 
