@@ -1,14 +1,14 @@
 const { app, BrowserWindow, ipcMain, dialog, nativeTheme } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { exec, execSync } = require('child_process');
+const { execSync } = require('child_process');
 
 function createWindow() {
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
         title: "KeiYomi",
-        icon: path.join(__dirname, 'assets', 'logo.svg'),
+        icon: path.join(__dirname, 'assets/icon.svg'),
         backgroundColor: '#1e1e1e', // Mencegah flash putih saat loading (Dark Mode)
         webPreferences: {
             nodeIntegration: true,
@@ -125,36 +125,56 @@ ipcMain.handle('library:scanLocal', async () => {
     }
 
     // --- FITUR BARU: Buat Contoh Folder Schema (Agar user paham formatnya) ---
-    const examplePath = path.join(baseDir, 'Contoh Custom Folder');
-    if (!fs.existsSync(examplePath)) {
-        try {
+    const examplePath = path.join(baseDir, 'Custom Folder');
+    
+    try {
+        if (!fs.existsSync(examplePath)) {
             fs.mkdirSync(examplePath, { recursive: true });
-            
-            // 1. Siapkan Cover (Cari di assets: cover.jpg -> logo.svg -> dummy)
-            const assetCover = path.join(__dirname, 'assets', 'cover.jpg');
+        }
+        
+            // 1. Siapkan Cover (Cari di assets: cover.svg -> logo.svg)
+            const assetCover = path.join(__dirname, 'assets', 'cover.svg');
             const assetLogo = path.join(__dirname, 'assets', 'logo.svg');
-            let usedCoverName = 'cover.jpg';
+            let usedCoverName = 'cover.svg';
 
             if (fs.existsSync(assetCover)) {
-                fs.copyFileSync(assetCover, path.join(examplePath, 'cover.jpg'));
+                fs.copyFileSync(assetCover, path.join(examplePath, 'cover.svg'));
             } else if (fs.existsSync(assetLogo)) {
-                usedCoverName = 'cover.svg';
                 fs.copyFileSync(assetLogo, path.join(examplePath, 'cover.svg'));
-            } else {
-                fs.writeFileSync(path.join(examplePath, 'cover.jpg'), ''); // Fallback dummy
             }
 
-            const infoContent = {
+        // 2. Cek/Update info.json
+        const infoPath = path.join(examplePath, 'info.json');
+        let shouldWriteInfo = !fs.existsSync(infoPath);
+        let infoContent = {
                 title: "Guide Book",
                 author: "Developer (KeishaXD)",
                 cover: usedCoverName,
                 genre: "Guide",
-                synopsis: "(English) This is an example of a folder format. Place the info.json, cover.jpg, and book files (PDF/ZIP) in one folder to be detected automatically.\n\n (Indonesia) Ini adalah contoh format folder. Letakkan file info.json, cover.jpg, dan file buku (PDF/ZIP) di dalam satu folder agar terdeteksi otomatis.",
+                synopsis: "(English) This is an example of a folder format. Place the info.json, cover.svg, and book files (PDF/ZIP) in one folder to be detected automatically.\n\n (Indonesia) Ini adalah contoh format folder. Letakkan file info.json, cover.svg, dan file buku (PDF/ZIP) di dalam satu folder agar terdeteksi otomatis.",
                 type: "Artikel",
                 date: "2024-06-01"
-            };
-            fs.writeFileSync(path.join(examplePath, 'info.json'), JSON.stringify(infoContent, null, 2));
-            
+        };
+
+        if (fs.existsSync(infoPath)) {
+            try {
+                const currentInfo = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+                // Jika ini adalah Guide Book default, pastikan cover-nya benar
+                if (currentInfo.title === "Guide Book") {
+                    currentInfo.cover = "cover.svg";
+                    infoContent = currentInfo;
+                    shouldWriteInfo = true;
+                }
+            } catch (e) { shouldWriteInfo = true; }
+        }
+
+        if (shouldWriteInfo) {
+            fs.writeFileSync(infoPath, JSON.stringify(infoContent, null, 2));
+        }
+        
+        // 3. Buat panduan.txt jika belum ada
+        const panduanPath = path.join(examplePath, 'panduan.txt');
+        if (!fs.existsSync(panduanPath)) {
             const panduanText = `CUSTOM FOLDER STRUCTURE GUIDE (ENGLISH)
 =======================================
 
@@ -163,7 +183,7 @@ To allow the app to automatically detect books/comics, create a new folder insid
 KeiYomi/
 └── Your Book Title/           <-- Any Folder Name
     ├── info.json              <-- REQUIRED: Book identity file
-    ├── cover.jpg              <-- OPTIONAL: Cover image (can be .png/.jpeg)
+    ├── cover.svg              <-- OPTIONAL: Cover image (can be .png/.jpeg)
     ├── Chapter 1.pdf          <-- Book content file (Chapter 1)
     ├── Chapter 2.cbz          <-- Book content file (Chapter 2)
     └── Vol 3.zip              <-- Book content file (Chapter 3)
@@ -174,7 +194,7 @@ EXAMPLE CONTENT OF info.json:
 {
   "title": "Cool Book Title",
   "author": "Author Name",
-  "cover": "cover.jpg",
+  "cover": "cover.svg",
   "genre": "Action, Fantasy",
   "synopsis": "Write synopsis or story summary here...",
   "type": "Manga",
@@ -196,7 +216,7 @@ Agar aplikasi dapat mendeteksi buku/komik secara otomatis, buat folder baru di d
 KeiYomi/
 └── Judul Buku Anda/           <-- Nama Folder Bebas
     ├── info.json              <-- WAJIB: File identitas buku
-    ├── cover.jpg              <-- OPSIONAL: Gambar sampul (bisa .png/.jpeg)
+    ├── cover.svg              <-- OPSIONAL: Gambar sampul (bisa .png/.jpeg)
     ├── Chapter 1.pdf          <-- File isi buku (Chapter 1)
     ├── Chapter 2.cbz          <-- File isi buku (Chapter 2)
     └── Vol 3.zip              <-- File isi buku (Chapter 3)
@@ -207,7 +227,7 @@ CONTOH ISI FILE info.json:
 {
   "title": "Judul Buku Keren",
   "author": "Nama Penulis",
-  "cover": "cover.jpg",
+  "cover": "cover.svg",
   "genre": "Action, Fantasy",
   "synopsis": "Tulis sinopsis atau ringkasan cerita di sini...",
   "type": "Manga",
@@ -218,10 +238,10 @@ Catatan:
 - File chapter akan diurutkan otomatis berdasarkan nama file.
 - Disarankan menggunakan penomoran (01, 02, dst) pada nama file chapter.`;
 
-            fs.writeFileSync(path.join(examplePath, 'panduan.txt'), panduanText); // Panduan txt
-        } catch (e) {
-            console.error("Gagal membuat contoh folder:", e);
+            fs.writeFileSync(panduanPath, panduanText);
         }
+    } catch (e) {
+        console.error("Gagal update contoh folder:", e);
     }
 
     const results = [];
@@ -257,11 +277,15 @@ Catatan:
                         
                         // --- LOGIKA BARU: Auto-detect Cover ---
                         let detectedCover = infoData.cover;
+                        
+                        // FIX: Cek apakah file cover yang tertulis di info.json benar-benar ada
+                        if (detectedCover && !fs.existsSync(path.join(fullPath, detectedCover))) {
+                            detectedCover = null; // Jika tidak ada, paksa auto-detect ulang
+                        }
+
                         if (!detectedCover) {
                             const possibleCovers = [
-                                'cover.jpg', 'cover.jpeg', 'cover.png', 'cover.webp', 'cover.gif', 'cover.avif',
-                                'folder.jpg', 'folder.jpeg', 'folder.png', 'folder.webp',
-                                'poster.jpg', 'poster.jpeg', 'poster.png', 'poster.webp'
+                                'cover.svg', 'cover.jpeg', 'cover.png', 'cover.webp', 'cover.gif', 'cover.avif',
                             ];
                             for (const img of possibleCovers) {
                                 if (fs.existsSync(path.join(fullPath, img))) {

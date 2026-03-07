@@ -46,6 +46,11 @@
         [data-theme="dark"] .btn-secondary { background-color: #334155; color: #e2e8f0; border: 1px solid #475569; }
         [data-theme="dark"] .form-group textarea { background: #334155; border-color: #475569; color: white; }
         [data-theme="dark"] .genre-checkboxes { border-color: #475569; }
+        [data-theme="dark"] .sort-select { background: #334155; border-color: #475569; color: white; }
+
+        /* Library Toolbar */
+        .library-toolbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+        .sort-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: var(--text-dark); font-size: 0.9rem; cursor: pointer; outline: none; }
         
         /* Settings Page Styles */
         .settings-container {
@@ -75,6 +80,9 @@
         .btn-import { background-color: var(--sidebar-hover); color: var(--text-light); border: 1px solid #475569; padding: 12px; border-radius: 8px; cursor: pointer; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
         .btn-import:hover { background-color: #475569; border-color: #64748b; }
 
+        .btn-exit { background-color: #ef4444; color: white; border: 1px solid #dc2626; padding: 12px; border-radius: 8px; cursor: pointer; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn-exit:hover { background-color: #dc2626; border-color: #b91c1c; }
+
         /* Main Content */
         .main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         .header { padding: 16px 32px; background: white; border-bottom: 1px solid #e2e8f0; z-index: 10; display: flex; justify-content: space-between; align-items: center; height: 64px; flex-shrink: 0; }
@@ -84,14 +92,20 @@
         .btn-back { border: none; background: transparent; cursor: pointer; display: none; padding: 4px; border-radius: 50%; transition: background 0.2s; }
         .btn-back:hover { background-color: #f1f5f9; }
         
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
         /* Reader Area (Webtoon Style) */
-        .reader-container { flex-grow: 1; overflow-y: auto; display: none; flex-direction: column; align-items: center; padding: 40px; background-color: #cbd5e1; scroll-behavior: smooth; }
+        .reader-container { flex-grow: 1; overflow-y: auto; display: none; flex-direction: column; align-items: center; padding: 40px; background-color: #cbd5e1; scroll-behavior: smooth; animation: fadeIn 0.3s ease-out; }
         .reader-container::-webkit-scrollbar { width: 10px; }
         .reader-container::-webkit-scrollbar-track { background: #cbd5e1; }
         .reader-container::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 5px; border: 2px solid #cbd5e1; }
 
         /* Views Container */
-        .view-section { flex-grow: 1; overflow-y: auto; padding: 32px; display: none; }
+        .view-section { flex-grow: 1; overflow-y: auto; padding: 32px; display: none; animation: fadeIn 0.3s ease-out; }
         .view-section.active { display: block; }
 
         /* Grid Layout for Library & Explore */
@@ -197,10 +211,10 @@
 
         @media (max-width: 768px) {
             .sidebar { width: 70px; padding: 16px 12px; }
-            .brand h2, .nav-item span, .btn-import span, .history-section h3 { display: none; }
+            .brand h2, .nav-item span, .btn-import span, .btn-exit span, .history-section h3 { display: none; }
             .nav-item { justify-content: center; padding: 12px; }
             .brand { justify-content: center; }
-            .btn-import { justify-content: center; }
+            .btn-import, .btn-exit { justify-content: center; }
             .view-section { padding: 16px; }
         }
 
@@ -329,6 +343,31 @@
         .btn-paypal:hover { background-color: #005ea6; }
         .btn-update { background-color: #059669; }
         .btn-update:hover { background-color: #047857; }
+
+        /* Splash Screen */
+        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #0f172a; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: opacity 0.8s ease-out, visibility 0.8s; }
+        #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .splash-content { width: 400px; height: 400px; }
+        
+        /* Advanced Splash Animation */
+        .splash-content path { stroke-dasharray: 1000; stroke-dashoffset: 1000; }
+        .splash-content path:nth-child(1) { animation: drawLine 2.5s cubic-bezier(0.19, 1, 0.22, 1) forwards 0.8s; }
+        .splash-content path:nth-child(2) { animation: drawLine 2.5s cubic-bezier(0.19, 1, 0.22, 1) forwards 1.0s; }
+        
+        .splash-content path:nth-child(3) { opacity: 0; stroke-dasharray: 0; stroke-dashoffset: 0; animation: fadeInOp1 1.5s ease-out forwards 1.8s; }
+        .splash-content path:nth-child(4) { opacity: 0; stroke-dasharray: 0; stroke-dashoffset: 0; animation: fadeInOp2 1.5s ease-out forwards 2.0s; }
+        
+        .splash-content text { opacity: 0; transform-origin: center; }
+        .splash-content text:nth-of-type(1) { animation: slideUpText 1.5s ease-out forwards 1.0s; }
+        .splash-content text:nth-of-type(2) { animation: slideUpText 1.5s ease-out forwards 1.3s; }
+
+        @keyframes drawLine { to { stroke-dashoffset: 0; } }
+        @keyframes fadeInOp1 { from { opacity: 0; } to { opacity: 0.6; } }
+        @keyframes fadeInOp2 { from { opacity: 0; } to { opacity: 0.2; } }
+        @keyframes slideUpText { 
+            from { opacity: 0; transform: translateY(30px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
     </style>
     <!-- Integrasi PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -339,6 +378,36 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <div class="splash-content">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="150 100 500 480" width="100%" height="100%">
+              <defs>
+                <linearGradient id="gradK" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#818CF8"/>
+                  <stop offset="100%" stop-color="#F43F5E"/>
+                </linearGradient>
+                <linearGradient id="gradY" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#06B6D4"/>
+                  <stop offset="100%" stop-color="#3B82F6"/>
+                </linearGradient>
+              </defs>
+              <g transform="translate(400, 240)">
+                <path d="M -100 -80 L -100 80 M -100 0 L -10 -70 M -100 0 L -10 70" fill="none" stroke="url(#gradK)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 100 -30 L 100 80 M 60 -70 L 100 -30 M 140 -70 L 100 -30" fill="none" stroke="url(#gradY)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M -150 130 C -80 130, -30 150, 0 170 C 30 150, 80 130, 150 130" fill="none" stroke="#94A3B8" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
+                <path d="M -150 150 C -80 150, -30 170, 0 190 C 30 170, 80 150, 150 150" fill="none" stroke="#94A3B8" stroke-width="8" stroke-linecap="round" opacity="0.2"/>
+              </g>
+              <text x="400" y="490" font-family="'Segoe UI', Roboto, Helvetica, sans-serif" font-weight="800" font-size="64" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">
+                Kei<tspan fill="#06B6D4">Yomi</tspan>
+              </text>
+              <text x="400" y="530" font-family="'Segoe UI', Roboto, Helvetica, sans-serif" font-weight="600" font-size="16" fill="#94A3B8" text-anchor="middle" letter-spacing="8">
+                DOCUMENT READER
+              </text>
+            </svg>
+        </div>
+    </div>
 
     <div class="sidebar">
         <div class="brand" id="btn-home">
@@ -373,6 +442,11 @@
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
             <span data-i18n="btn_import">Impor Buku</span>
         </button>
+
+        <button class="btn-exit" id="btn-exit-app">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+            <span data-i18n="nav_exit">Keluar</span>
+        </button>
     </div>
 
     <div class="main-content">
@@ -389,6 +463,15 @@
 
         <!-- VIEW: LIBRARY (Semua File) -->
         <div id="view-library" class="view-section active">
+            <div class="library-toolbar">
+                <select id="sort-select" class="sort-select">
+                    <option value="name_asc" data-i18n="sort_name_asc">Nama (A-Z)</option>
+                    <option value="name_desc" data-i18n="sort_name_desc">Nama (Z-A)</option>
+                    <option value="date_new" data-i18n="sort_date_new">Tanggal (Terbaru)</option>
+                    <option value="date_old" data-i18n="sort_date_old">Tanggal (Terlama)</option>
+                    <option value="recent" data-i18n="sort_recent">Terakhir Dibaca</option>
+                </select>
+            </div>
             <div class="book-grid" id="library-grid">
                 <!-- Item buku akan di-render di sini oleh JS -->
             </div>
@@ -675,6 +758,7 @@
         const { promises: fs } = require('fs'); // Menggunakan fs.promises untuk operasi file asinkron
 
         const btnPilihFile = document.getElementById('btn-pilih-file');
+        const btnExitApp = document.getElementById('btn-exit-app');
         const btnBack = document.getElementById('btn-back');
         const btnRefresh = document.getElementById('btn-refresh');
         const searchInput = document.getElementById('search-input');
@@ -683,6 +767,7 @@
         const settingsPopup = document.getElementById('settings-popup');
         const radioWebtoon = document.getElementById('mode-webtoon');
         const radioPages = document.getElementById('mode-pages');
+        const sortSelect = document.getElementById('sort-select');
         const pageTitle = document.getElementById('page-title');
         const reader = document.getElementById('reader');
         
@@ -727,7 +812,7 @@
         // Context Menu Elements
         const contextMenu = document.getElementById('context-menu');
         const ctxDelete = document.getElementById('ctx-delete');
-        let contextMenuBookId = null;
+        let contextMenuBook = null;
 
         let currentBookPath = null;
         let saveTimeout;
@@ -787,6 +872,7 @@
                 nav_favorites: "Favorit",
                 nav_explore: "Jelajah",
                 nav_settings: "Pengaturan",
+                nav_exit: "Keluar",
                 btn_import: "Impor Buku",
                 page_library: "Pustaka Saya",
                 page_history: "Riwayat Bacaan",
@@ -852,6 +938,8 @@
                 modal_qris_desc: "Dukung pengembangan aplikasi ini dengan donasi seikhlasnya.",
                 btn_close: "Tutup",
                 ctx_delete: "🗑 Hapus Buku",
+                ctx_delete_history: "🗑 Hapus Riwayat",
+                ctx_remove_favorite: "★ Hapus dari Favorit",
                 reader_settings_title: "Pengaturan Baca",
                 reader_mode_webtoon: "Mode Webtoon (Scroll)",
                 reader_mode_pages: "Mode Halaman (Split)",
@@ -875,7 +963,12 @@
                 msg_update_latest: "Anda menggunakan versi terbaru ({0}).",
                 msg_update_available: "Update Tersedia! ({0})\n\nKlik OK untuk mengunduh update.",
                 filter_all: "Semua",
-                about_version: "Versi 1.0.0"
+                about_version: "Versi 1.0.0",
+                sort_name_asc: "Nama (A-Z)",
+                sort_name_desc: "Nama (Z-A)",
+                sort_date_new: "Tanggal (Terbaru)",
+                sort_date_old: "Tanggal (Terlama)",
+                sort_recent: "Terakhir Dibaca"
             },
             en: {
                 nav_library: "All Files",
@@ -883,6 +976,7 @@
                 nav_favorites: "Favorites",
                 nav_explore: "Explore",
                 nav_settings: "Settings",
+                nav_exit: "Exit",
                 btn_import: "Import Book",
                 page_library: "My Library",
                 page_history: "Reading History",
@@ -948,6 +1042,8 @@
                 modal_qris_desc: "Support the development of this app with a donation.",
                 btn_close: "Close",
                 ctx_delete: "🗑 Delete Book",
+                ctx_delete_history: "🗑 Remove from History",
+                ctx_remove_favorite: "★ Remove from Favorites",
                 reader_settings_title: "Reader Settings",
                 reader_mode_webtoon: "Webtoon Mode (Scroll)",
                 reader_mode_pages: "Page Mode (Split)",
@@ -971,7 +1067,12 @@
                 msg_update_latest: "You are using the latest version ({0}).",
                 msg_update_available: "Update Available! ({0})\n\nClick OK to download update.",
                 filter_all: "All",
-                about_version: "Version 1.0.0"
+                about_version: "Version 1.0.0",
+                sort_name_asc: "Name (A-Z)",
+                sort_name_desc: "Name (Z-A)",
+                sort_date_new: "Date (Newest)",
+                sort_date_old: "Date (Oldest)",
+                sort_recent: "Last Read"
             }
         };
 
@@ -1018,7 +1119,7 @@
                 document.getElementById('view-library').style.display = 'block';
                 document.querySelector('.nav-item:nth-child(1)').classList.add('active');
                 pageTitle.innerText = t('page_library');
-                renderGrid(libraryData, 'library-grid');
+                renderLibrarySorted();
             } else if (tabName === 'history') {
                 document.getElementById('view-history').style.display = 'block';
                 document.querySelector('.nav-item:nth-child(2)').classList.add('active');
@@ -1050,12 +1151,49 @@
             }
         }
 
+        // --- SORTING LOGIC ---
+        sortSelect.addEventListener('change', () => {
+            renderLibrarySorted();
+        });
+
+        function renderLibrarySorted() {
+            const criteria = sortSelect.value;
+            let sortedData = [...libraryData];
+
+            sortedData.sort((a, b) => {
+                switch (criteria) {
+                    case 'name_asc':
+                        return a.title.localeCompare(b.title);
+                    case 'name_desc':
+                        return b.title.localeCompare(a.title);
+                    case 'date_new':
+                        return new Date(b.date || 0) - new Date(a.date || 0);
+                    case 'date_old':
+                        return new Date(a.date || 0) - new Date(b.date || 0);
+                    case 'recent':
+                        const indexA = riwayatBacaan.findIndex(r => r.path === a.path);
+                        const indexB = riwayatBacaan.findIndex(r => r.path === b.path);
+                        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                        if (indexA !== -1) return -1;
+                        if (indexB !== -1) return 1;
+                        return a.title.localeCompare(b.title);
+                    default:
+                        return 0;
+                }
+            });
+
+            const keyword = searchInput.value.toLowerCase();
+            if (keyword) {
+                sortedData = sortedData.filter(b => b.title.toLowerCase().includes(keyword));
+            }
+            renderGrid(sortedData, 'library-grid');
+        }
+
         // --- SEARCH LOGIC ---
         searchInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase();
             if (currentView === 'library') {
-                const filtered = libraryData.filter(b => b.title.toLowerCase().includes(keyword));
-                renderGrid(filtered, 'library-grid');
+                renderLibrarySorted();
             } else if (currentView === 'history') {
                 const filtered = riwayatBacaan.filter(b => b.title.toLowerCase().includes(keyword));
                 renderGrid(filtered, 'history-grid');
@@ -1102,7 +1240,7 @@
         // --- REFRESH / SCAN LOGIC ---
         btnRefresh.addEventListener('click', async () => {
             await scanLocalFolder();
-            renderGrid(libraryData, 'library-grid');
+            renderLibrarySorted();
         });
 
         // --- RENDER FUNCTIONS ---
@@ -1150,7 +1288,7 @@
             div.addEventListener('click', () => showBookDetail(book));
             div.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
-                showContextMenu(e.pageX, e.pageY, book.id);
+                showContextMenu(e.pageX, e.pageY, book);
             });
             return div;
         }
@@ -1521,10 +1659,20 @@
         };
 
         // --- CONTEXT MENU LOGIC ---
-        function showContextMenu(x, y, bookId) {
-            contextMenuBookId = bookId;
+        function showContextMenu(x, y, book) {
+            contextMenuBook = book;
             contextMenu.style.left = `${x}px`;
             contextMenu.style.top = `${y}px`;
+            
+            // Update text based on view
+            if (currentView === 'history') {
+                ctxDelete.innerText = t('ctx_delete_history');
+            } else if (currentView === 'favorites') {
+                ctxDelete.innerText = t('ctx_remove_favorite');
+            } else {
+                ctxDelete.innerText = t('ctx_delete');
+            }
+
             contextMenu.style.display = 'block';
         }
 
@@ -1532,7 +1680,24 @@
             contextMenu.style.display = 'none';
         });
 
-        ctxDelete.addEventListener('click', () => deleteBook(contextMenuBookId));
+        ctxDelete.addEventListener('click', () => {
+            if (!contextMenuBook) return;
+
+            if (currentView === 'history') {
+                // Hapus dari Riwayat
+                riwayatBacaan = riwayatBacaan.filter(r => r.path !== contextMenuBook.path);
+                saveData();
+                renderGrid(riwayatBacaan, 'history-grid');
+            } else if (currentView === 'favorites') {
+                // Hapus dari Favorit (tanpa hapus file)
+                const book = libraryData.find(b => b.id === contextMenuBook.id);
+                if (book) book.isFavorite = false;
+                saveData();
+                renderGrid(libraryData.filter(b => b.isFavorite), 'favorites-grid');
+            } else {
+                deleteBook(contextMenuBook.id);
+            }
+        });
 
         // --- MODAL LOGIC ---
         let pendingBookPath = null;
@@ -1639,6 +1804,14 @@
                     updateGenreOptions();
                     modalAddBook.classList.add('show');
                 }
+            }
+        });
+
+        // Tombol Keluar Aplikasi
+        btnExitApp.addEventListener('click', () => {
+            if (confirm(t('msg_exit_confirm'))) {
+                console.log("Mengirim sinyal keluar..."); // Cek di Console (Ctrl+Shift+I)
+                ipcRenderer.send('app:quit');
             }
         });
 
@@ -2252,6 +2425,11 @@
             await scanLocalFolder(true); // Lalu scan folder lokal (hasil scan akan otomatis tersimpan ke file)
             switchTab('library');
             updateReaderModeUI();
+
+            // Hilangkan Splash Screen setelah loading selesai
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+            }, 4000); // Tampil minimal 4 detik agar animasi selesai
         })();
     </script>
 </body>
