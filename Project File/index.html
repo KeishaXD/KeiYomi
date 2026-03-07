@@ -20,7 +20,7 @@
         body { display: flex; height: 100vh; background-color: var(--bg-color); color: var(--text-dark); overflow: hidden; font-size: 14px; }
         
         /* Sidebar */
-        .sidebar { width: 280px; background-color: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; padding: 24px; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 20; }
+        .sidebar { width: 280px; background-color: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; padding: 24px; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 20; flex-shrink: 0; transition: width 0.3s; }
         .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid #334155; cursor: pointer; }
         .brand h2 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; margin: 0; }
         .brand svg { width: 24px; height: 24px; fill: var(--accent); }
@@ -64,41 +64,101 @@
         .book-meta { font-size: 0.8rem; color: #64748b; }
 
         /* Detail Page Styles (Adapted from ui/book.html) */
-        .detail-container { max-width: 1000px; margin: 0 auto; }
-        .comic-info { display: flex; gap: 32px; margin-bottom: 40px; }
-        .detail-cover { width: 220px; height: 320px; background: #cbd5e1; border-radius: 8px; object-fit: cover; box-shadow: var(--shadow); flex-shrink: 0; }
-        .detail-content { flex: 1; }
-        .detail-tags { font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
-        .detail-title { font-size: 2rem; font-weight: 800; margin-bottom: 8px; color: #1e293b; }
-        .detail-alt { font-size: 1rem; color: #64748b; margin-bottom: 20px; }
-        .detail-desc { font-size: 0.95rem; line-height: 1.6; color: #334155; margin-bottom: 24px; }
-        
-        .action-buttons { display: flex; gap: 12px; margin-bottom: 24px; }
-        .btn-primary { background-color: var(--accent); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-primary:hover { background-color: var(--accent-hover); }
-        .btn-secondary { background-color: white; border: 1px solid #cbd5e1; color: #334155; padding: 10px 16px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
-        .btn-secondary:hover { background-color: #f1f5f9; }
+        .detail-container { max-width: 100%; margin: 0 auto; padding-bottom: 40px; }
+        .comic-header { 
+            display: flex; 
+            gap: 40px; 
+            margin-bottom: 32px; 
+            background: white; 
+            padding: 32px; 
+            border-radius: 16px; 
+            box-shadow: var(--shadow);
+            align-items: flex-start;
+        }
+        .detail-cover { 
+            width: 240px; 
+            height: 360px; 
+            background: #e2e8f0; 
+            border-radius: 12px; 
+            object-fit: cover; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); 
+            flex-shrink: 0; 
+        }
+        .detail-content { flex: 1; display: flex; flex-direction: column; }
+        .detail-meta-top { margin-bottom: 16px; }
+        .detail-type { 
+            display: inline-block; 
+            padding: 4px 12px; 
+            background: var(--accent); 
+            color: white; 
+            border-radius: 20px; 
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            margin-right: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .detail-title { font-size: 2.5rem; font-weight: 800; line-height: 1.2; color: #1e293b; margin: 12px 0 8px 0; word-break: break-word; }
+        .detail-author { font-size: 1.1rem; color: #64748b; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+        .detail-date { font-size: 0.9rem; color: #94a3b8; margin-top: 4px; }
 
-        .chapter-list { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; }
-        .chapter-header { padding: 16px; background: #f8f9fa; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #334155; }
-        .chapter-item { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; cursor: pointer; transition: 0.2s; }
-        .chapter-item:last-child { border-bottom: none; }
-        .chapter-item:hover { background-color: #f8f9fa; color: var(--accent); }
-        .chapter-date { font-size: 0.8rem; color: #94a3b8; }
+        .detail-tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+        .tag-pill { padding: 6px 14px; background: #f1f5f9; color: #475569; border-radius: 20px; font-size: 0.85rem; font-weight: 500; transition: 0.2s; }
+        .tag-pill:hover { background: #e2e8f0; color: #1e293b; }
+
+        .action-buttons { display: flex; gap: 12px; margin-top: auto; flex-wrap: wrap; }
+        .btn-action { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; font-size: 0.9rem; }
+        .btn-action svg { width: 18px; height: 18px; fill: currentColor; }
+        
+        .btn-primary-action { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); border: 1px solid var(--accent); }
+        .btn-primary-action:hover { background: var(--accent-hover); transform: translateY(-2px); border-color: var(--accent-hover); }
+        
+        .btn-secondary-action { background: white; border-color: #e2e8f0; color: #475569; }
+        .btn-secondary-action:hover { background: #f8f9fa; border-color: #cbd5e1; color: #1e293b; }
+        
+        .btn-favorite-action { background: white; border-color: #e2e8f0; color: #475569; }
+        .btn-favorite-action:hover, .btn-favorite-action.active { background: #fdf2f8; border-color: #fbcfe8; color: #db2777; }
+        
+        .btn-danger-action { background: white; border-color: #fee2e2; color: #ef4444; }
+        .btn-danger-action:hover { background: #fef2f2; border-color: #fecaca; }
+
+        .detail-synopsis { background: white; padding: 32px; border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 32px; }
+        .section-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .synopsis-text { font-size: 1rem; line-height: 1.7; color: #334155; white-space: pre-line; }
+
+        .chapter-list-container { background: white; border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+        .chapter-list-header { padding: 20px 32px; background: #fff; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .chapter-count { font-size: 0.9rem; color: #94a3b8; font-weight: 500; }
+        .chapter-grid { display: flex; flex-direction: column; }
+        .chapter-row { padding: 16px 32px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .chapter-row:last-child { border-bottom: none; }
+        .chapter-row:hover { background-color: #f8fafc; padding-left: 36px; }
+        .chapter-name { font-weight: 600; color: #334155; font-size: 0.95rem; }
+        .chapter-row:hover .chapter-name { color: var(--accent); }
+        .chapter-meta { font-size: 0.85rem; color: #94a3b8; }
         
         /* Mockup for pages */
         .page-placeholder { width: 100%; max-width: 800px; height: 1000px; background: white; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; justify-content: center; align-items: center; font-size: 1.5rem; color: #cbd5e1; border-radius: 4px; position: relative; }
         .page-placeholder::after { content: attr(data-page); position: absolute; bottom: 20px; right: 20px; font-size: 0.9rem; color: #94a3b8; }
 
         /* Responsive */
-        @media (max-width: 768px) {
-            .comic-info { flex-direction: column; align-items: center; text-align: center; }
+        @media (max-width: 1024px) {
+            .comic-header { flex-direction: column; align-items: center; text-align: center; padding: 24px; gap: 24px; }
+            .detail-content { align-items: center; }
+            .detail-author { justify-content: center; }
+            .detail-tags-container { justify-content: center; }
             .action-buttons { justify-content: center; }
+            .detail-cover { width: 180px; height: 270px; }
+            .detail-title { font-size: 2rem; }
+        }
+
+        @media (max-width: 768px) {
             .sidebar { width: 70px; padding: 16px 12px; }
             .brand h2, .nav-item span, .btn-import span, .history-section h3 { display: none; }
             .nav-item { justify-content: center; padding: 12px; }
             .brand { justify-content: center; }
             .btn-import { justify-content: center; }
+            .view-section { padding: 16px; }
         }
 
         /* Explore Filters */
@@ -371,6 +431,70 @@
         </div>
     </div>
 
+    <!-- Add Chapter Modal -->
+    <div id="add-chapter-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;">Tambah Chapter</h2>
+            <div class="form-group">
+                <label>Nama Chapter / Info</label>
+                <input type="text" id="input-chapter-name" placeholder="Misal: Chapter 1">
+            </div>
+            <div class="form-group">
+                <label>File</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-chapter-path" readonly placeholder="Belum ada file dipilih">
+                    <button class="btn-secondary" id="btn-browse-chapter">Pilih File</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="btn-cancel-chapter">Batal</button>
+                <button class="btn-save" id="btn-save-chapter">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Book Modal -->
+    <div id="edit-book-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;">Edit Info Buku</h2>
+            <div class="form-group">
+                <label>Judul</label>
+                <input type="text" id="input-edit-title">
+            </div>
+            <div class="form-group">
+                <label>Penulis</label>
+                <input type="text" id="input-edit-author">
+            </div>
+            <div class="form-group">
+                <label>Jenis Buku</label>
+                <select id="input-edit-type">
+                    <option value="Artikel">Artikel</option>
+                    <option value="Journal">Journal</option>
+                    <option value="Manga">Manga</option>
+                    <option value="Manhua">Manhua</option>
+                    <option value="Manhwa">Manhwa</option>
+                </select>
+            </div>
+            <div class="form-group" id="group-edit-date" style="display:none;">
+                <label>Tanggal Publikasi</label>
+                <input type="date" id="input-edit-date">
+            </div>
+            <div class="form-group">
+                <label>Genre</label>
+                <div class="genre-checkboxes" id="genre-edit-container">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Sinopsis</label>
+                <textarea id="input-edit-synopsis"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="btn-cancel-edit">Batal</button>
+                <button class="btn-save" id="btn-save-edit">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const { ipcRenderer } = require('electron');
         const path = require('path');
@@ -400,6 +524,28 @@
         const btnCancelAdd = document.getElementById('btn-cancel-add');
         const btnSaveAdd = document.getElementById('btn-save-add');
         
+        // Add Chapter Modal Elements
+        const modalAddChapter = document.getElementById('add-chapter-modal');
+        const inputChapterName = document.getElementById('input-chapter-name');
+        const inputChapterPath = document.getElementById('input-chapter-path');
+        const btnBrowseChapter = document.getElementById('btn-browse-chapter');
+        const btnCancelChapter = document.getElementById('btn-cancel-chapter');
+        const btnSaveChapter = document.getElementById('btn-save-chapter');
+        let currentAddingBookId = null;
+
+        // Edit Book Modal Elements
+        const modalEditBook = document.getElementById('edit-book-modal');
+        const inputEditTitle = document.getElementById('input-edit-title');
+        const inputEditAuthor = document.getElementById('input-edit-author');
+        const inputEditType = document.getElementById('input-edit-type');
+        const inputEditDate = document.getElementById('input-edit-date');
+        const groupEditDate = document.getElementById('group-edit-date');
+        const genreEditContainer = document.getElementById('genre-edit-container');
+        const inputEditSynopsis = document.getElementById('input-edit-synopsis');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit');
+        const btnSaveEdit = document.getElementById('btn-save-edit');
+        let currentEditingBookId = null;
+
         // Context Menu Elements
         const contextMenu = document.getElementById('context-menu');
         const ctxDelete = document.getElementById('ctx-delete');
@@ -567,52 +713,239 @@
 
             // Generate Chapter List
             let chapterListHtml = '';
+            let chapterCount = 0;
             if (book.chapters && book.chapters.length > 0) {
+                chapterCount = book.chapters.length;
                 // Jika tipe Series/Folder
                 book.chapters.forEach(chap => {
+                    const safePath = chap.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                    const safeTitle = `${book.title} - ${chap.name}`.replace(/'/g, "\\'");
                     chapterListHtml += `
-                    <div class="chapter-item" onclick="bacaFile('${chap.path.replace(/\\/g, '\\\\')}', '${book.title} - ${chap.name}')">
-                        <span>${chap.name}</span>
-                        <span class="chapter-date">Lokal</span>
+                    <div class="chapter-row" onclick="bacaFile('${safePath}', '${safeTitle}')">
+                        <span class="chapter-name">${chap.name}</span>
+                        <span class="chapter-meta">Lokal</span>
                     </div>`;
                 });
             } else {
+                chapterCount = 1;
                 // Jika tipe Simple File
+                const safePath = book.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const safeTitle = book.title.replace(/'/g, "\\'");
                 chapterListHtml = `
-                <div class="chapter-item" onclick="bacaFile('${book.path.replace(/\\/g, '\\\\')}', '${book.title}')">
-                    <span>Baca File Utama</span>
-                    <span class="chapter-date">Full</span>
+                <div class="chapter-row" onclick="bacaFile('${safePath}', '${safeTitle}')">
+                    <span class="chapter-name">Baca File Utama</span>
+                    <span class="chapter-meta">Full</span>
                 </div>`;
             }
 
             const isFav = book.isFavorite;
-            const favBtnText = isFav ? '★ Hapus Favorit' : '☆ Tambah Favorit';
-
-            const dateHtml = book.publishDate ? `<div style="font-size:0.85rem;color:#64748b;margin-bottom:8px;">📅 Terbit: ${book.publishDate}</div>` : '';
+            
+            // Icons
+            const iconPlay = `<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+            const iconHeart = isFav ? `<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>` : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>`;
+            const iconPlus = `<svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>`;
+            const iconEdit = `<svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>`;
+            const iconTrash = `<svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
+            
+            const favBtnClass = isFav ? 'btn-action btn-favorite-action active' : 'btn-action btn-favorite-action';
+            
+            const dateHtml = book.publishDate ? `<div class="detail-date">📅 Terbit: ${book.publishDate}</div>` : '';
+            
+            // Generate Tags
+            let tagsHtml = '';
+            if (book.genre) {
+                tagsHtml = book.genre.split(',').map(g => `<span class="tag-pill">${g.trim()}</span>`).join('');
+            }
 
             const container = document.getElementById('detail-content');
             container.innerHTML = `
-                <div class="comic-info">
+                <div class="comic-header">
                     <div class="detail-cover" style="${coverStyle}">📖</div>
                     <div class="detail-content">
-                        <div class="detail-tags">${book.type || 'Book'} • ${book.genre || 'General'}</div>
-                        <h1 class="detail-title">${book.title}</h1>
-                        <div class="detail-alt">${book.author || 'Unknown Author'}</div>
-                        ${dateHtml}
-                        <div class="action-buttons">
-                            <button class="btn-primary" onclick="alert('Pilih chapter di bawah')">▶ LIHAT CHAPTER</button>
-                            <button class="btn-secondary" onclick="toggleFavorite(${book.id})">${favBtnText}</button>
-                            <button class="btn-secondary" style="color: #ef4444; border-color: #ef4444;" onclick="deleteBook(${book.id})">🗑 Hapus</button>
+                        <div class="detail-meta-top">
+                            <span class="detail-type">${book.type || 'Book'}</span>
                         </div>
-                        <p class="detail-desc">${book.synopsis || 'Tidak ada sinopsis tersedia.'}</p>
+                        <h1 class="detail-title">${book.title}</h1>
+                        <div class="detail-author">
+                            <span>✍️</span> ${book.author || 'Unknown Author'}
+                        </div>
+                        ${dateHtml}
+                        
+                        <div class="detail-tags-container">
+                            ${tagsHtml}
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="btn-action btn-primary-action" onclick="document.querySelector('.chapter-list-container').scrollIntoView({behavior: 'smooth'})">${iconPlay} Mulai Baca</button>
+                            <button class="${favBtnClass}" onclick="toggleFavorite(${book.id})">${iconHeart} Favorit</button>
+                            <button class="btn-action btn-secondary-action" onclick="openAddChapterModal(${book.id})">${iconPlus} Chapter</button>
+                            <button class="btn-action btn-secondary-action" onclick="openEditBookModal(${book.id})">${iconEdit} Edit</button>
+                            <button class="btn-action btn-danger-action" onclick="deleteBook(${book.id})">${iconTrash} Hapus</button>
+                        </div>
                     </div>
                 </div>
-                <div class="chapter-list">
-                    <div class="chapter-header">Daftar Chapter</div>
-                    ${chapterListHtml}
+                
+                <div class="detail-synopsis">
+                    <div class="section-title">📝 Sinopsis</div>
+                    <p class="synopsis-text">${book.synopsis || 'Tidak ada sinopsis tersedia.'}</p>
+                </div>
+
+                <div class="chapter-list-container">
+                    <div class="chapter-list-header">
+                        <div class="section-title" style="margin-bottom:0">📑 Daftar Chapter</div>
+                        <div class="chapter-count">${chapterCount} Chapter</div>
+                    </div>
+                    <div class="chapter-grid">
+                        ${chapterListHtml}
+                    </div>
                 </div>
             `;
         }
+
+        // --- ADD CHAPTER LOGIC ---
+        window.openAddChapterModal = function(bookId) {
+            currentAddingBookId = bookId;
+            // Auto-suggest nama chapter berdasarkan jumlah chapter yang ada
+            const book = libraryData.find(b => b.id === bookId);
+            const nextNum = (book && book.chapters) ? book.chapters.length + 1 : 1;
+            inputChapterName.value = `Chapter ${nextNum}`;
+            inputChapterPath.value = '';
+            modalAddChapter.classList.add('show');
+        };
+
+        btnCancelChapter.addEventListener('click', () => {
+            modalAddChapter.classList.remove('show');
+            currentAddingBookId = null;
+        });
+
+        btnBrowseChapter.addEventListener('click', async () => {
+            const filePath = await ipcRenderer.invoke('dialog:openFile');
+            if (filePath) {
+                inputChapterPath.value = filePath;
+                // Jika nama kosong, isi dengan nama file
+                if (!inputChapterName.value) {
+                    inputChapterName.value = path.basename(filePath, path.extname(filePath));
+                }
+            }
+        });
+
+        btnSaveChapter.addEventListener('click', () => {
+            if (!inputChapterName.value || !inputChapterPath.value) {
+                alert('Mohon isi nama chapter dan pilih file.');
+                return;
+            }
+
+            const book = libraryData.find(b => b.id === currentAddingBookId);
+            if (book) {
+                if (!book.chapters) {
+                    book.chapters = [];
+                    // Jika sebelumnya single file, simpan file lama sebagai chapter pertama agar tidak hilang
+                    if (book.path && !book.path.endsWith('info.json')) {
+                        book.chapters.push({ name: 'Chapter Awal', path: book.path });
+                    }
+                }
+                book.chapters.push({ name: inputChapterName.value, path: inputChapterPath.value });
+                saveData();
+                showBookDetail(book);
+                modalAddChapter.classList.remove('show');
+            }
+        });
+
+        // --- EDIT BOOK LOGIC ---
+        function updateEditGenreOptions() {
+            const type = inputEditType.value;
+            const genreGroup = genreEditContainer.parentElement;
+            let genres = [];
+
+            if (type === 'Artikel') {
+                genres = genreLists.artikel;
+                groupEditDate.style.display = 'block';
+                genreGroup.style.display = 'none';
+            } else if (type === 'Journal') {
+                genres = genreLists.journal;
+                groupEditDate.style.display = 'block';
+                genreGroup.style.display = 'none';
+            } else {
+                groupEditDate.style.display = 'none';
+                genreGroup.style.display = 'block';
+                genres = [...genreLists.commonComic];
+                if (type === 'Manga') genres.push(...genreLists.manga);
+                if (type === 'Manhwa') genres.push(...genreLists.manhwa);
+                if (type === 'Manhua') genres.push(...genreLists.manhua);
+            }
+            
+            genres = [...new Set(genres)].sort();
+
+            genreEditContainer.innerHTML = '';
+            genres.forEach(g => {
+                const label = document.createElement('label');
+                label.className = 'genre-option';
+                label.innerHTML = `<input type="checkbox" value="${g}"> ${g}`;
+                genreEditContainer.appendChild(label);
+            });
+        }
+
+        inputEditType.addEventListener('change', updateEditGenreOptions);
+
+        window.openEditBookModal = function(bookId) {
+            const book = libraryData.find(b => b.id === bookId);
+            if (!book) return;
+
+            currentEditingBookId = bookId;
+            inputEditTitle.value = book.title;
+            inputEditAuthor.value = book.author || '';
+            inputEditType.value = book.type || 'Manga'; // Default fallback
+            inputEditDate.value = book.publishDate || '';
+            inputEditSynopsis.value = book.synopsis || '';
+
+            updateEditGenreOptions();
+
+            // Check genres yang sudah ada
+            if (book.genre) {
+                const bookGenres = book.genre.split(',').map(g => g.trim());
+                const checkboxes = genreEditContainer.querySelectorAll('input[type="checkbox"]');
+                checkboxes.forEach(cb => {
+                    if (bookGenres.includes(cb.value)) {
+                        cb.checked = true;
+                    }
+                });
+            }
+
+            modalEditBook.classList.add('show');
+        };
+
+        btnCancelEdit.addEventListener('click', () => {
+            modalEditBook.classList.remove('show');
+            currentEditingBookId = null;
+        });
+
+        btnSaveEdit.addEventListener('click', () => {
+            if (!inputEditTitle.value) {
+                alert('Judul harus diisi!');
+                return;
+            }
+
+            const book = libraryData.find(b => b.id === currentEditingBookId);
+            if (book) {
+                book.title = inputEditTitle.value;
+                book.author = inputEditAuthor.value;
+                book.type = inputEditType.value;
+                book.synopsis = inputEditSynopsis.value;
+                
+                if (book.type === 'Artikel' || book.type === 'Journal') {
+                    book.publishDate = inputEditDate.value;
+                    book.genre = '';
+                } else {
+                    book.publishDate = null;
+                    const selectedGenres = Array.from(genreEditContainer.querySelectorAll('input:checked')).map(cb => cb.value).join(', ');
+                    book.genre = selectedGenres;
+                }
+
+                saveData();
+                showBookDetail(book);
+                modalEditBook.classList.remove('show');
+            }
+        });
 
         // Fungsi Toggle Favorit
         window.toggleFavorite = function(bookId) {
