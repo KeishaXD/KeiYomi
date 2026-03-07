@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { exec } = require('child_process');
+const { exec, execSync } = require('child_process');
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -38,7 +38,7 @@ ipcMain.handle('dialog:openFile', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
         properties: ['openFile'],
         filters: [
-            { name: 'Documents', extensions: ['pdf', 'epub', 'cbz', 'zip'] }
+            { name: 'Documents', extensions: ['pdf', 'epub', 'cbz', 'zip', 'txt'] }
         ]
     });
     if (canceled) {
@@ -73,12 +73,21 @@ ipcMain.handle('data:save', async (event, data) => {
             fs.mkdirSync(baseDir, { recursive: true });
         }
         
+        // Windows: Hapus atribut hidden dulu jika file sudah ada agar bisa ditimpa
+        if (process.platform === 'win32' && fs.existsSync(filePath)) {
+            try {
+                execSync(`attrib -h "${filePath}"`);
+            } catch (e) { /* Abaikan error jika gagal unhide */ }
+        }
+
         // Simpan data ke file
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
 
-        // Set atribut hidden pada file (Windows)
+        // Windows: Set atribut hidden kembali
         if (process.platform === 'win32') {
-            exec(`attrib +h "${filePath}"`);
+            try {
+                execSync(`attrib +h "${filePath}"`);
+            } catch (e) { /* Abaikan error */ }
         }
         return true;
     } catch (error) {
@@ -113,27 +122,60 @@ ipcMain.handle('library:scanLocal', async () => {
     }
 
     // --- FITUR BARU: Buat Contoh Folder Schema (Agar user paham formatnya) ---
-    const examplePath = path.join(baseDir, 'Contoh Folder Schema');
+    const examplePath = path.join(baseDir, 'Contoh Custom Folder');
     if (!fs.existsSync(examplePath)) {
         try {
             fs.mkdirSync(examplePath, { recursive: true });
             const infoContent = {
                 title: "Contoh Buku Folder",
-                author: "Admin",
+                author: "Developer (KeishaXD)",
+                cover: "cover.jpg",
                 genre: "Panduan",
                 synopsis: "Ini adalah contoh format folder. Letakkan file info.json, cover.jpg, dan file buku (PDF/ZIP) di dalam satu folder agar terdeteksi otomatis.",
-                type: "Artikel"
+                type: "Artikel",
+                date: "2024-06-01"
             };
             fs.writeFileSync(path.join(examplePath, 'info.json'), JSON.stringify(infoContent, null, 2));
             fs.writeFileSync(path.join(examplePath, 'cover.jpg'), ''); // Dummy cover
-            fs.writeFileSync(path.join(examplePath, 'buku_dummy.pdf'), ''); // Dummy content
+            
+            const panduanText = `PANDUAN STRUKTUR FOLDER CUSTOM
+==============================
+
+Agar aplikasi dapat mendeteksi buku/komik secara otomatis, buat folder baru di dalam "MyPembacaDokumen" dengan struktur berikut:
+
+MyPembacaDokumen/
+└── Judul Buku Anda/           <-- Nama Folder Bebas
+    ├── info.json              <-- WAJIB: File identitas buku
+    ├── cover.jpg              <-- OPSIONAL: Gambar sampul (bisa .png/.jpeg)
+    ├── Chapter 1.pdf          <-- File isi buku (Chapter 1)
+    ├── Chapter 2.cbz          <-- File isi buku (Chapter 2)
+    └── Vol 3.zip              <-- File isi buku (Chapter 3)
+
+-------------------------------------------------------
+CONTOH ISI FILE info.json:
+-------------------------------------------------------
+{
+  "title": "Judul Buku Keren",
+  "author": "Nama Penulis",
+  "cover": "cover.jpg",
+  "genre": "Action, Fantasy",
+  "synopsis": "Tulis sinopsis atau ringkasan cerita di sini...",
+  "type": "Manga",
+  "date": "2024-01-01"
+}
+
+Catatan:
+- File chapter akan diurutkan otomatis berdasarkan nama file.
+- Disarankan menggunakan penomoran (01, 02, dst) pada nama file chapter.`;
+
+            fs.writeFileSync(path.join(examplePath, 'panduan.txt'), panduanText); // Panduan txt
         } catch (e) {
             console.error("Gagal membuat contoh folder:", e);
         }
     }
 
     const results = [];
-    const supportedExts = ['.pdf', '.epub', '.cbz', '.zip'];
+    const supportedExts = ['.pdf', '.epub', '.cbz', '.zip', '.txt'];
 
     try {
         const items = fs.readdirSync(baseDir, { withFileTypes: true });
@@ -176,12 +218,16 @@ ipcMain.handle('library:scanLocal', async () => {
                         }
 
                         // Cari file chapter di dalam folder ini
-                        const chapterFiles = fs.readdirSync(fullPath)
-                            .filter(f => supportedExts.includes(path.extname(f).toLowerCase()))
-                            .map(f => ({
-                                name: f,
-                                path: path.join(fullPath, f)
-                            }));
+                        const files = fs.readdirSync(fullPath)
+                            .filter(f => supportedExts.includes(path.extname(f).toLowerCase()));
+                        
+                        // Sortir file agar urutan benar (1, 2, 10)
+                        files.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+                        const chapterFiles = files.map((f, index) => ({
+                            name: `Chapter ${index + 1}`,
+                            path: path.join(fullPath, f)
+                        }));
 
                         results.push({
                             type: 'series',

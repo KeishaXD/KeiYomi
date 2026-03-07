@@ -16,6 +16,41 @@
             --accent-hover: #2563eb;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
+        /* --- TEMA GELAP (DARK MODE) --- */
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --text-dark: #f8fafc;
+            --text-muted: #94a3b8;
+            --sidebar-bg: #020617;
+            --sidebar-hover: #1e293b;
+        }
+        [data-theme="dark"] .header { background: #1e293b; border-bottom-color: #334155; }
+        [data-theme="dark"] .header h1 { color: #f8fafc; }
+        [data-theme="dark"] .search-bar { background: #334155; border-color: #475569; color: #fff; }
+        [data-theme="dark"] .book-card { background: #1e293b; }
+        [data-theme="dark"] .book-title { color: #f8fafc; }
+        [data-theme="dark"] .comic-header, [data-theme="dark"] .detail-synopsis, [data-theme="dark"] .chapter-list-container { background: #1e293b; }
+        [data-theme="dark"] .detail-title, [data-theme="dark"] .section-title { color: #f8fafc; }
+        [data-theme="dark"] .synopsis-text { color: #cbd5e1; }
+        [data-theme="dark"] .chapter-list-header, [data-theme="dark"] .chapter-row { border-bottom-color: #334155; }
+        [data-theme="dark"] .chapter-list-header { background: #1e293b; }
+        [data-theme="dark"] .chapter-row:hover { background: #334155; }
+        [data-theme="dark"] .chapter-name { color: #e2e8f0; }
+        [data-theme="dark"] .settings-container { background: #1e293b; }
+        [data-theme="dark"] .form-group label { color: #e2e8f0; }
+        [data-theme="dark"] .form-group input, [data-theme="dark"] .form-group select { background: #334155; border-color: #475569; color: white; }
+        [data-theme="dark"] .btn-secondary-action { background: #334155; border-color: #475569; color: #e2e8f0; }
+        [data-theme="dark"] .btn-secondary-action:hover { background: #475569; }
+        
+        /* Settings Page Styles */
+        .settings-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
         body { display: flex; height: 100vh; background-color: var(--bg-color); color: var(--text-dark); overflow: hidden; font-size: 14px; }
         
@@ -272,6 +307,17 @@
         .genre-checkboxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; max-height: 150px; overflow-y: auto; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; }
         .genre-option { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; }
         .genre-option input { width: auto; }
+
+        /* Social Buttons */
+        .btn-social { display: inline-flex; align-items: center; gap: 10px; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border: none; color: white; font-size: 0.95rem; }
+        .btn-social:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-social svg { width: 20px; height: 20px; fill: currentColor; }
+        .btn-github { background-color: #24292e; }
+        .btn-github:hover { background-color: #1b1f23; }
+        .btn-website { background-color: var(--accent); }
+        .btn-website:hover { background-color: var(--accent-hover); }
+        [data-theme="dark"] .btn-github { background-color: #334155; }
+        [data-theme="dark"] .btn-github:hover { background-color: #475569; }
     </style>
     <!-- Integrasi PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -305,6 +351,10 @@
             <li class="nav-item" onclick="switchTab('explore')">
                 <svg viewBox="0 0 24 24"><path d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z"/></svg>
                 <span>Jelajah</span>
+            </li>
+            <li class="nav-item" onclick="switchTab('settings')">
+                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.04.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.08-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                <span>Pengaturan</span>
             </li>
         </ul>
 
@@ -354,6 +404,60 @@
             </div>
             <div class="book-grid" id="explore-grid">
                 <!-- Hasil pencarian -->
+            </div>
+        </div>
+
+        <!-- VIEW: SETTINGS (Pengaturan Full UI) -->
+        <div id="view-settings" class="view-section">
+            <div class="settings-container">
+                <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">Pengaturan Aplikasi</h2>
+                
+                <div class="form-group">
+                    <label>Nama Pengguna</label>
+                    <input type="text" id="setting-username" placeholder="Masukkan nama Anda">
+                </div>
+
+                <div class="form-group">
+                    <label>Tema Aplikasi</label>
+                    <select id="setting-theme">
+                        <option value="light">Terang (Light)</option>
+                        <option value="dark">Gelap (Dark)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Mode Baca Default</label>
+                    <select id="setting-mode">
+                        <option value="webtoon">Webtoon (Scroll)</option>
+                        <option value="normal">Normal (Per Halaman)</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 32px; text-align: right;">
+                    <button class="btn-save" id="btn-save-settings-page">Simpan Perubahan</button>
+                </div>
+            </div>
+
+            <div class="settings-container" style="margin-top: 24px;">
+                <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">Tentang</h2>
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 16px; color: var(--accent);">📖</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 8px; color: var(--text-dark);">KeishaYomi</h3>
+                    <p style="color: #64748b; margin-bottom: 24px;">Versi 1.0.0</p>
+                    
+                    <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 24px;">
+                        <button class="btn-social btn-github" onclick="openLink('https://github.com/KeishaXD')">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+                            GitHub
+                        </button>
+                        <button class="btn-social btn-website" onclick="openLink('https://keishaxd.com')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            Website
+                        </button>
+                    </div>
+                    
+                    <button class="btn-primary-action" style="margin: 0 auto;" onclick="checkUpdate()">Periksa Pembaruan</button>
+                </div>
             </div>
         </div>
 
@@ -580,6 +684,7 @@
         let libraryData = [];
         let riwayatBacaan = [];
         let isWebtoonMode = true;
+        let userSettings = { username: '', theme: 'light' };
 
         async function loadData() {
             const data = await ipcRenderer.invoke('data:load');
@@ -587,22 +692,35 @@
                 libraryData = data.library || [];
                 riwayatBacaan = data.history || [];
                 isWebtoonMode = data.mode !== 'normal';
+                userSettings.username = data.username || '';
+                userSettings.theme = data.theme || 'light';
             } else {
                 // Fallback: Coba ambil dari localStorage jika file belum ada (migrasi data lama)
                 libraryData = JSON.parse(localStorage.getItem('my-library')) || [];
                 riwayatBacaan = JSON.parse(localStorage.getItem('my-history')) || [];
                 isWebtoonMode = localStorage.getItem('reader-mode') !== 'normal';
             }
+            applyTheme(userSettings.theme);
         }
 
-        function saveData() {
+        async function saveData() {
             const data = {
                 library: libraryData,
                 history: riwayatBacaan,
-                mode: isWebtoonMode ? 'webtoon' : 'normal'
+                mode: isWebtoonMode ? 'webtoon' : 'normal',
+                username: userSettings.username,
+                theme: userSettings.theme
             };
             // Kirim ke main process untuk disimpan ke file
-            ipcRenderer.invoke('data:save', data);
+            await ipcRenderer.invoke('data:save', data);
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.body.setAttribute('data-theme', 'dark');
+            } else {
+                document.body.removeAttribute('data-theme');
+            }
         }
 
         // --- NAVIGATION LOGIC ---
@@ -645,6 +763,16 @@
                 pageTitle.innerText = "Jelajah Pustaka";
                 searchInput.style.display = 'block';
                 renderExplore();
+            } else if (tabName === 'settings') {
+                document.getElementById('view-settings').style.display = 'block';
+                document.querySelector('.nav-item:nth-child(5)').classList.add('active');
+                pageTitle.innerText = "Pengaturan";
+                searchInput.style.display = 'none';
+                
+                // Load nilai ke form
+                document.getElementById('setting-username').value = userSettings.username;
+                document.getElementById('setting-theme').value = userSettings.theme;
+                document.getElementById('setting-mode').value = isWebtoonMode ? 'webtoon' : 'normal';
             }
         }
 
@@ -957,7 +1085,7 @@
                     book.chapters = [];
                     // Jika sebelumnya single file, simpan file lama sebagai chapter pertama agar tidak hilang
                     if (book.path && !book.path.endsWith('info.json')) {
-                        book.chapters.push({ name: 'Chapter Awal', path: book.path });
+                        book.chapters.push({ name: 'Chapter 1', path: book.path });
                     }
                 }
                 book.chapters.push({ name: inputChapterName.value, path: inputChapterPath.value });
@@ -1179,7 +1307,7 @@
             }
         });
 
-        btnSaveAdd.addEventListener('click', () => {
+        btnSaveAdd.addEventListener('click', async () => {
             if (!inputTitle.value) {
                 alert('Judul harus diisi!');
                 return;
@@ -1201,7 +1329,7 @@
             };
 
             libraryData.unshift(newBook);
-            saveData();
+            await saveData(); // Tunggu sampai benar-benar tersimpan
             modalAddBook.classList.remove('show');
             showBookDetail(newBook);
         });
@@ -1234,8 +1362,8 @@
         async function scanLocalFolder(silent = false) {
             const scannedBooks = await ipcRenderer.invoke('library:scanLocal');
             
-            if (scannedBooks && scannedBooks.length > 0) {
-                // Gabungkan dengan data lama, hindari duplikat berdasarkan Path
+            if (scannedBooks) { // Hapus check length > 0 agar bisa handle penghapusan semua file
+                // 1. UPDATE / TAMBAH BUKU BARU
                 scannedBooks.forEach(newBook => {
                     // Normalisasi path buku baru untuk pencarian (Regex replace lebih aman untuk cross-platform string matching)
                     const normNewBookPath = newBook.path.replace(/[\\/]+/g, '/').toLowerCase();
@@ -1295,10 +1423,27 @@
                         exists.isFavorite = userFav;
                     }
                 });
+
+                // 2. HAPUS BUKU YANG SUDAH TIDAK ADA DI FOLDER (SYNC DELETION)
+                const scannedPaths = new Set(scannedBooks.map(b => b.path.replace(/[\\/]+/g, '/').toLowerCase()));
+
+                libraryData = libraryData.filter(book => {
+                    if (!book.path) return true;
+
+                    const normPath = book.path.replace(/[\\/]+/g, '/').toLowerCase();
+                    
+                    // Jika buku berada di dalam folder MyPembacaDokumen, pastikan dia ada di hasil scan
+                    if (normPath.includes('mypembacadokumen')) {
+                        return scannedPaths.has(normPath);
+                    }
+                    
+                    return true;
+                });
+
                 saveData();
-                if (!silent) alert(`Berhasil memindai! Ditemukan ${scannedBooks.length} item.`);
+                if (!silent) alert(`Berhasil memindai! Total ${libraryData.length} item di pustaka.`);
             } else if (!silent) {
-                alert('Tidak ada item baru ditemukan di folder MyPembacaDokumen.');
+                alert('Gagal memindai folder.');
             }
         }
 
@@ -1342,6 +1487,8 @@
                 await renderPDF(filePath);
             } else if (ext === '.cbz' || ext === '.zip') {
                 await renderCBZ(filePath);
+            } else if (ext === '.txt') {
+                await renderTXT(filePath);
             } else {
                 renderSimulasiWebtoon(ext);
             }
@@ -1556,6 +1703,26 @@
             }
         }
 
+        async function renderTXT(filePath) {
+            try {
+                const data = fs.readFileSync(filePath, 'utf8');
+                const div = document.createElement('div');
+                div.className = 'page-placeholder';
+                div.style.height = 'auto';
+                div.style.background = 'white';
+                div.style.padding = '40px';
+                div.style.whiteSpace = 'pre-wrap'; // Agar enter/baris baru terbaca
+                div.style.fontFamily = "'Segoe UI', sans-serif";
+                div.style.fontSize = '1.1rem';
+                div.style.lineHeight = '1.8';
+                div.style.color = '#333';
+                div.innerText = data;
+                reader.appendChild(div);
+            } catch (error) {
+                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat TXT: ${error.message}</div>`;
+            }
+        }
+
         function renderSimulasiWebtoon(ext) {
             for (let i = 1; i <= 5; i++) {
                 const page = document.createElement('div');
@@ -1616,6 +1783,29 @@
             const filtered = genre === 'all' ? libraryData : libraryData.filter(b => b.genre && b.genre.includes(genre));
             renderGrid(filtered, 'explore-grid');
         };
+
+        // Event Listener Tombol Simpan di Halaman Pengaturan
+        document.getElementById('btn-save-settings-page').addEventListener('click', async () => {
+            userSettings.username = document.getElementById('setting-username').value;
+            userSettings.theme = document.getElementById('setting-theme').value;
+            const selectedMode = document.getElementById('setting-mode').value;
+            
+            isWebtoonMode = (selectedMode === 'webtoon');
+            updateReaderModeUI();
+            
+            applyTheme(userSettings.theme);
+            await saveData();
+            alert('Pengaturan berhasil disimpan!');
+        });
+
+        // --- ABOUT FUNCTIONS ---
+        function openLink(url) {
+            require('electron').shell.openExternal(url);
+        }
+
+        function checkUpdate() {
+            alert('Sedang memeriksa pembaruan...\n\nAnda menggunakan versi terbaru (v1.0.0).');
+        }
 
         // Init
         (async () => {
