@@ -51,6 +51,7 @@
         /* Library Toolbar */
         .library-toolbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
         .sort-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: var(--text-dark); font-size: 0.9rem; cursor: pointer; outline: none; }
+        .chapter-read .chapter-name { color: #94a3b8; }
         
         /* Settings Page Styles */
         .settings-container {
@@ -1335,8 +1336,11 @@
                         const isChapFav = chap.isFavorite;
                         const starColor = isChapFav ? '#eab308' : 'currentColor';
                         const starFill = isChapFav ? '#eab308' : 'none';
+
+                        const isRead = riwayatBacaan.some(r => r.path === chap.path);
+                        const readClass = isRead ? 'chapter-read' : '';
                         chapterListHtml += `
-                        <div class="chapter-row" onclick="bacaFile('${safePath}', '${safeTitle}')" style="cursor: pointer;">
+                        <div class="chapter-row ${readClass}" onclick="bacaFile('${safePath}', '${safeTitle}')" style="cursor: pointer;">
                             <div style="flex-grow: 1;"><span class="chapter-name">${chap.name}</span></div>
                             <div style="display: flex; align-items: center; gap: 4px;">
                                 <button class="btn-icon" onclick="event.stopPropagation(); toggleChapterFavorite(${book.id}, ${index})" title="${isChapFav ? t('msg_unmark_fav') : t('msg_mark_fav')}">
@@ -1353,8 +1357,11 @@
                 chapterCount = 1;
                 const safePath = book.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 const safeTitle = book.title.replace(/'/g, "\\'");
+                
+                const isRead = riwayatBacaan.some(r => r.path === book.path);
+                const readClass = isRead ? 'chapter-read' : '';
                 chapterListHtml = `
-                <div class="chapter-row" onclick="bacaFile('${safePath}', '${safeTitle}')">
+                <div class="chapter-row ${readClass}" onclick="bacaFile('${safePath}', '${safeTitle}')">
                     <span class="chapter-name">${t('msg_read_main')}</span>
                     <span class="chapter-meta">${t('msg_full')}</span>
                 </div>`;
