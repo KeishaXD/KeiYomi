@@ -111,6 +111,8 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
+    <!-- Integrasi JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
@@ -433,7 +435,7 @@
         });
 
         // Fungsi Scan Folder Lokal
-        async function scanLocalFolder() {
+        async function scanLocalFolder(silent = false) {
             const scannedBooks = await ipcRenderer.invoke('library:scanLocal');
             
             if (scannedBooks && scannedBooks.length > 0) {
@@ -450,7 +452,9 @@
                     }
                 });
                 saveData();
-                alert(`Berhasil memindai! Ditemukan ${scannedBooks.length} item.`);
+                if (!silent) alert(`Berhasil memindai! Ditemukan ${scannedBooks.length} item.`);
+            } else if (!silent) {
+                alert('Tidak ada item baru ditemukan di folder MyPembacaDokumen.');
             }
         }
 
@@ -488,6 +492,8 @@
 
             if (ext === '.pdf') {
                 await renderPDF(filePath);
+            } else if (ext === '.cbz' || ext === '.zip') {
+                await renderCBZ(filePath);
             } else {
                 renderSimulasiWebtoon(ext);
             }
@@ -520,6 +526,7 @@
                     div.style.height = 'auto';
                     div.style.background = 'transparent';
                     div.style.boxShadow = 'none';
+                    div.style.marginBottom = '0'; // Webtoon Mode: Hapus jarak antar container
                     div.innerText = '';
 
                     const canvas = document.createElement('canvas');
@@ -528,7 +535,8 @@
                     canvas.width = viewport.width;
                     canvas.style.maxWidth = '100%';
                     canvas.style.height = 'auto';
-                    canvas.style.marginBottom = '10px';
+                    canvas.style.display = 'block'; // Pastikan block agar tidak ada celah baris
+                    canvas.style.marginBottom = '0'; // Hapus jarak bawah canvas
                     
                     div.appendChild(canvas);
                     reader.appendChild(div);
@@ -539,6 +547,55 @@
                 }
             } catch (error) {
                 reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat PDF: ${error.message}</div>`;
+                console.error(error);
+            }
+        }
+
+        async function renderCBZ(filePath) {
+            try {
+                const data = fs.readFileSync(filePath);
+                const zip = await JSZip.loadAsync(data);
+                
+                // Filter file gambar (jpg, png, gif, webp) dan abaikan folder
+                const imageFiles = Object.keys(zip.files).filter(filename => {
+                    return !zip.files[filename].dir && /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
+                });
+
+                // Sortir nama file agar urutan halaman benar (numeric sort: 1, 2, 10 bukan 1, 10, 2)
+                imageFiles.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+                if (imageFiles.length === 0) {
+                    reader.innerHTML = '<div style="padding:20px; color:red;">Tidak ada gambar ditemukan dalam file ini.</div>';
+                    return;
+                }
+
+                for (let i = 0; i < imageFiles.length; i++) {
+                    const filename = imageFiles[i];
+                    // Konversi file zip entry menjadi Blob
+                    const fileData = await zip.files[filename].async('blob');
+                    const imageUrl = URL.createObjectURL(fileData);
+
+                    const div = document.createElement('div');
+                    div.className = 'page-placeholder';
+                    div.setAttribute('data-page', i + 1);
+                    div.style.height = 'auto';
+                    div.style.background = 'transparent';
+                    div.style.boxShadow = 'none';
+                    div.style.marginBottom = '0'; // Webtoon Mode: Hapus jarak antar container
+                    div.innerText = '';
+
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    img.style.display = 'block';
+                    img.style.marginBottom = '0'; // Hapus jarak bawah gambar
+                    
+                    div.appendChild(img);
+                    reader.appendChild(div);
+                }
+            } catch (error) {
+                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat CBZ/ZIP: ${error.message}</div>`;
                 console.error(error);
             }
         }
@@ -605,7 +662,7 @@
         };
 
         // Init
-        scanLocalFolder(); // Auto scan saat aplikasi dibuka
+        scanLocalFolder(true); // Auto scan saat aplikasi dibuka (Silent Mode)
         switchTab('library');
     </script>
 </body>
