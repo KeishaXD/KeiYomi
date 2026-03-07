@@ -47,6 +47,20 @@ ipcMain.handle('dialog:openFile', async () => {
     }
 });
 
+ipcMain.handle('dialog:openCover', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [
+            { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif'] }
+        ]
+    });
+    if (canceled) {
+        return null;
+    } else {
+        return filePaths[0];
+    }
+});
+
 // --- FITUR BARU: SCAN LIBRARY OTOMATIS ---
 ipcMain.handle('library:scanLocal', async () => {
     const docPath = app.getPath('documents');

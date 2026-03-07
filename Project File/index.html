@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Pembaca Document</title>
+    <title>KeishaYomi</title>
     <style>
         :root {
             --bg-color: #f8f9fa;
@@ -136,6 +136,9 @@
         .chapter-name { font-weight: 600; color: #334155; font-size: 0.95rem; }
         .chapter-row:hover .chapter-name { color: var(--accent); }
         .chapter-meta { font-size: 0.85rem; color: #94a3b8; }
+        
+        .btn-icon { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s; color: #64748b; }
+        .btn-icon:hover { background-color: #e2e8f0; color: var(--text-dark); }
         
         /* Mockup for pages */
         .page-placeholder { width: 100%; max-width: 800px; height: 1000px; background: white; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; justify-content: center; align-items: center; font-size: 1.5rem; color: #cbd5e1; border-radius: 4px; position: relative; }
@@ -283,7 +286,7 @@
     <div class="sidebar">
         <div class="brand" id="btn-home">
             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-            <h2>My Reader</h2>
+            <h2>KeishaYomi</h2>
         </div>
         
         <ul class="nav-menu">
@@ -402,6 +405,13 @@
                 <input type="text" id="input-author">
             </div>
             <div class="form-group">
+                <label>Sampul Buku (Opsional)</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-cover" readonly placeholder="Default">
+                    <button class="btn-secondary" id="btn-browse-cover">Pilih Gambar</button>
+                </div>
+            </div>
+            <div class="form-group">
                 <label>Jenis Buku</label>
                 <select id="input-type">
                     <option value="Artikel">Artikel</option>
@@ -466,6 +476,13 @@
                 <input type="text" id="input-edit-author">
             </div>
             <div class="form-group">
+                <label>Sampul Buku</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-edit-cover" readonly placeholder="Default">
+                    <button class="btn-secondary" id="btn-browse-edit-cover">Ubah Gambar</button>
+                </div>
+            </div>
+            <div class="form-group">
                 <label>Jenis Buku</label>
                 <select id="input-edit-type">
                     <option value="Artikel">Artikel</option>
@@ -516,6 +533,8 @@
         const modalAddBook = document.getElementById('add-book-modal');
         const inputTitle = document.getElementById('input-title');
         const inputAuthor = document.getElementById('input-author');
+        const inputCover = document.getElementById('input-cover');
+        const btnBrowseCover = document.getElementById('btn-browse-cover');
         const inputType = document.getElementById('input-type');
         const inputDate = document.getElementById('input-date');
         const groupDate = document.getElementById('group-date');
@@ -537,6 +556,8 @@
         const modalEditBook = document.getElementById('edit-book-modal');
         const inputEditTitle = document.getElementById('input-edit-title');
         const inputEditAuthor = document.getElementById('input-edit-author');
+        const inputEditCover = document.getElementById('input-edit-cover');
+        const btnBrowseEditCover = document.getElementById('btn-browse-edit-cover');
         const inputEditType = document.getElementById('input-edit-type');
         const inputEditDate = document.getElementById('input-edit-date');
         const groupEditDate = document.getElementById('group-edit-date');
@@ -556,18 +577,22 @@
         
         // --- DATA MANAGEMENT ---
         // Load data dari localStorage atau gunakan default
-        let libraryData = JSON.parse(localStorage.getItem('my-library')) || [
-            { id: 1, title: "Omega Heroine Wants Her Alpha", author: "Author Name", cover: null, path: "dummy/path/1.pdf", genre: "Romance, Fantasy", synopsis: "Ji Xiao accidentally transmigrates into a novel and becomes the Alpha villain who shares the same name as her. To save her life, she treats the heroine with utmost care..." },
-            { id: 2, title: "Solo Leveling", author: "Chugong", cover: null, path: "dummy/path/2.cbz", genre: "Action, Adventure", synopsis: "In a world where hunters, humans who possess magical abilities, must battle deadly monsters to protect the human race from certain annihilation..." },
-        ];
+        let libraryData = JSON.parse(localStorage.getItem('my-library')) || [];
 
         let riwayatBacaan = JSON.parse(localStorage.getItem('my-history')) || [];
         let isWebtoonMode = localStorage.getItem('reader-mode') !== 'normal'; // Default Webtoon (true)
 
         function saveData() {
-            localStorage.setItem('my-library', JSON.stringify(libraryData));
-            localStorage.setItem('my-history', JSON.stringify(riwayatBacaan));
-            localStorage.setItem('reader-mode', isWebtoonMode ? 'webtoon' : 'normal');
+            try {
+                localStorage.setItem('my-library', JSON.stringify(libraryData));
+                localStorage.setItem('my-history', JSON.stringify(riwayatBacaan));
+                localStorage.setItem('reader-mode', isWebtoonMode ? 'webtoon' : 'normal');
+            } catch (e) {
+                console.error("Gagal menyimpan data:", e);
+                if (e.name === 'QuotaExceededError') {
+                    alert("Penyimpanan penuh! Perubahan nama chapter mungkin tidak tersimpan. Coba hapus beberapa buku dari riwayat atau pustaka.");
+                }
+            }
         }
 
         // --- NAVIGATION LOGIC ---
@@ -677,7 +702,19 @@
             div.className = 'book-card';
             
             // Handle Cover Image (Jika ada path cover dari info.json)
-            const coverHtml = book.cover ? `<img src="${path.join(book.path, book.cover)}" class="book-cover" style="object-fit:cover;">` : `<div class="book-cover">📖</div>`;
+            let coverSrc = '';
+            if (book.cover) {
+                if (path.isAbsolute(book.cover)) {
+                    coverSrc = book.cover;
+                } else {
+                    // Fallback untuk scanned folder (relative path)
+                    coverSrc = path.join(book.path, book.cover);
+                }
+                // Fix path separator untuk Windows agar gambar tampil
+                coverSrc = coverSrc.replace(/\\/g, '/');
+            }
+            
+            const coverHtml = coverSrc ? `<img src="${coverSrc}" class="book-cover" style="object-fit:cover;">` : `<div class="book-cover">📖</div>`;
 
             div.innerHTML = `
                 ${coverHtml}
@@ -707,8 +744,18 @@
             readerSettingsContainer.style.display = 'none';
 
             // Handle Cover Detail
-            const coverStyle = book.cover 
-                ? `background-image: url('${path.join(book.path, book.cover).replace(/\\/g, '\\\\')}'); background-size: cover; color: transparent;` 
+            let coverSrc = '';
+            if (book.cover) {
+                if (path.isAbsolute(book.cover)) {
+                    coverSrc = book.cover;
+                } else {
+                    coverSrc = path.join(book.path, book.cover);
+                }
+                // Fix path separator untuk Windows
+                coverSrc = coverSrc.replace(/\\/g, '/');
+            }
+            const coverStyle = coverSrc 
+                ? `background-image: url('${coverSrc}'); background-size: cover; color: transparent;` 
                 : `display:flex;align-items:center;justify-content:center;font-size:4rem;color:#fff;background:#64748b;`;
 
             // Generate Chapter List
@@ -717,13 +764,24 @@
             if (book.chapters && book.chapters.length > 0) {
                 chapterCount = book.chapters.length;
                 // Jika tipe Series/Folder
-                book.chapters.forEach(chap => {
+                book.chapters.forEach((chap, index) => {
                     const safePath = chap.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                     const safeTitle = `${book.title} - ${chap.name}`.replace(/'/g, "\\'");
+                    
+                    const isChapFav = chap.isFavorite;
+                    const starColor = isChapFav ? '#eab308' : 'currentColor';
+                    const starFill = isChapFav ? '#eab308' : 'none';
+
                     chapterListHtml += `
-                    <div class="chapter-row" onclick="bacaFile('${safePath}', '${safeTitle}')">
-                        <span class="chapter-name">${chap.name}</span>
-                        <span class="chapter-meta">Lokal</span>
+                    <div class="chapter-row" onclick="bacaFile('${safePath}', '${safeTitle}')" style="cursor: pointer;">
+                        <div style="flex-grow: 1;">
+                            <span class="chapter-name">${chap.name}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <button class="btn-icon" onclick="event.stopPropagation(); toggleChapterFavorite(${book.id}, ${index})" title="${isChapFav ? 'Hapus Favorit' : 'Tandai Favorit'}">
+                                <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:${starColor};fill:${starFill};stroke-width:2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                            </button>
+                        </div>
                     </div>`;
                 });
             } else {
@@ -894,6 +952,7 @@
             currentEditingBookId = bookId;
             inputEditTitle.value = book.title;
             inputEditAuthor.value = book.author || '';
+            inputEditCover.value = book.cover || '';
             inputEditType.value = book.type || 'Manga'; // Default fallback
             inputEditDate.value = book.publishDate || '';
             inputEditSynopsis.value = book.synopsis || '';
@@ -919,6 +978,14 @@
             currentEditingBookId = null;
         });
 
+        // Handler Tombol Pilih Cover (Edit)
+        btnBrowseEditCover.addEventListener('click', async () => {
+            const coverPath = await ipcRenderer.invoke('dialog:openCover');
+            if (coverPath) {
+                inputEditCover.value = coverPath;
+            }
+        });
+
         btnSaveEdit.addEventListener('click', () => {
             if (!inputEditTitle.value) {
                 alert('Judul harus diisi!');
@@ -929,6 +996,7 @@
             if (book) {
                 book.title = inputEditTitle.value;
                 book.author = inputEditAuthor.value;
+                book.cover = inputEditCover.value || null;
                 book.type = inputEditType.value;
                 book.synopsis = inputEditSynopsis.value;
                 
@@ -949,7 +1017,7 @@
 
         // Fungsi Toggle Favorit
         window.toggleFavorite = function(bookId) {
-            const book = libraryData.find(b => b.id === bookId);
+            const book = libraryData.find(b => b.id == bookId);
             if (book) {
                 book.isFavorite = !book.isFavorite;
                 saveData();
@@ -957,13 +1025,23 @@
             }
         };
 
+        // Fungsi Toggle Favorit Chapter
+        window.toggleChapterFavorite = function(bookId, chapterIndex) {
+            const book = libraryData.find(b => b.id == bookId);
+            if (book && book.chapters && book.chapters[chapterIndex]) {
+                book.chapters[chapterIndex].isFavorite = !book.chapters[chapterIndex].isFavorite;
+                saveData();
+                showBookDetail(book);
+            }
+        };
+
         // Fungsi Hapus Buku
         window.deleteBook = function(bookId) {
             if (confirm('Apakah Anda yakin ingin menghapus buku ini dari pustaka?')) {
-                const book = libraryData.find(b => b.id === bookId);
+                const book = libraryData.find(b => b.id == bookId);
                 if (book) {
                     // Hapus dari Library
-                    libraryData = libraryData.filter(b => b.id !== bookId);
+                    libraryData = libraryData.filter(b => b.id != bookId);
                     // Hapus dari Riwayat (berdasarkan path agar konsisten)
                     riwayatBacaan = riwayatBacaan.filter(r => r.path !== book.path);
                     saveData();
@@ -1035,6 +1113,14 @@
         inputType.addEventListener('change', updateGenreOptions);
         btnCancelAdd.addEventListener('click', () => modalAddBook.classList.remove('show'));
 
+        // Handler Tombol Pilih Cover (Tambah)
+        btnBrowseCover.addEventListener('click', async () => {
+            const coverPath = await ipcRenderer.invoke('dialog:openCover');
+            if (coverPath) {
+                inputCover.value = coverPath;
+            }
+        });
+
         btnSaveAdd.addEventListener('click', () => {
             if (!inputTitle.value) {
                 alert('Judul harus diisi!');
@@ -1053,7 +1139,7 @@
                 genre: selectedGenres, 
                 synopsis: inputSynopsis.value,
                 publishDate: (inputType.value === 'Artikel' || inputType.value === 'Journal') ? inputDate.value : null,
-                cover: null // Bisa dikembangkan untuk upload cover custom
+                cover: inputCover.value || null
             };
 
             libraryData.unshift(newBook);
@@ -1076,6 +1162,7 @@
                     pendingBookPath = filePath;
                     inputTitle.value = path.basename(filePath, path.extname(filePath)); // Nama file tanpa ekstensi
                     inputAuthor.value = '';
+                    inputCover.value = '';
                     inputSynopsis.value = '';
                     inputType.value = 'Artikel'; // Default
                     inputDate.value = '';
@@ -1092,14 +1179,62 @@
             if (scannedBooks && scannedBooks.length > 0) {
                 // Gabungkan dengan data lama, hindari duplikat berdasarkan Path
                 scannedBooks.forEach(newBook => {
-                    const exists = libraryData.find(b => b.path === newBook.path);
+                    // Normalisasi path buku baru untuk pencarian (Regex replace lebih aman untuk cross-platform string matching)
+                    const normNewBookPath = newBook.path.replace(/[\\/]+/g, '/').toLowerCase();
+                    
+                    const exists = libraryData.find(b => {
+                        const normExistPath = b.path.replace(/[\\/]+/g, '/').toLowerCase();
+                        return normExistPath === normNewBookPath;
+                    });
+
                     if (!exists) {
                         // Tambahkan ID unik
                         newBook.id = Date.now() + Math.random();
                         libraryData.push(newBook);
                     } else {
                         // Update info jika ada perubahan (misal chapter baru)
+                        
+                        // MERGE CHAPTERS: Pertahankan nama custom dan status favorit
+                        if (newBook.chapters) {
+                            const existingChapters = exists.chapters || [];
+                            const mergedChapters = newBook.chapters.map(newChap => {
+                                const newBasename = path.basename(newChap.path).toLowerCase();
+                                
+                                // Cari chapter lama berdasarkan NAMA FILE (basename) agar lebih robust
+                                const oldChap = existingChapters.find(c => {
+                                    if (!c.path) return false; // Safety check
+                                    return path.basename(c.path).toLowerCase() === newBasename;
+                                });
+
+                                if (oldChap) {
+                                    // Gunakan data lama (status favorit) tapi update path jika perlu
+                                    return {
+                                        ...newChap,
+                                        isFavorite: oldChap.isFavorite
+                                    };
+                                }
+                                return newChap; // Chapter baru
+                            });
+                            newBook.chapters = mergedChapters;
+                        }
+
+                        // Simpan data user sebelum ditimpa (Title, Author, Cover, dll)
+                        const userTitle = exists.title;
+                        const userAuthor = exists.author;
+                        const userCover = exists.cover;
+                        const userGenre = exists.genre;
+                        const userSynopsis = exists.synopsis;
+                        const userFav = exists.isFavorite;
+                        
                         Object.assign(exists, newBook);
+
+                        // Restore data user (Prioritaskan edit manual user daripada scan ulang)
+                        if (userTitle) exists.title = userTitle;
+                        if (userAuthor) exists.author = userAuthor;
+                        if (userCover) exists.cover = userCover;
+                        if (userGenre) exists.genre = userGenre;
+                        if (userSynopsis) exists.synopsis = userSynopsis;
+                        exists.isFavorite = userFav;
                     }
                 });
                 saveData();
@@ -1153,12 +1288,86 @@
                 renderSimulasiWebtoon(ext);
             }
 
+            // Render Tombol Navigasi Chapter (Next/Prev)
+            renderChapterNavigation(filePath);
+
             // Restore Last Read Position
             if (historyItem.lastPage && historyItem.lastPage > 1) {
                 setTimeout(() => {
                     const pageElement = document.querySelector(`.page-placeholder[data-page="${historyItem.lastPage}"]`);
                     if (pageElement) pageElement.scrollIntoView();
                 }, 100);
+            }
+        }
+
+        function renderChapterNavigation(currentPath) {
+            let foundBook = null;
+            let foundIndex = -1;
+
+            // Cari buku yang memiliki chapter dengan path ini di libraryData
+            for (let b of libraryData) {
+                if (b.chapters && Array.isArray(b.chapters)) {
+                    const idx = b.chapters.findIndex(c => c.path === currentPath);
+                    if (idx !== -1) {
+                        foundBook = b;
+                        foundIndex = idx;
+                        break;
+                    }
+                }
+            }
+
+            if (foundBook && foundIndex !== -1) {
+                const container = document.createElement('div');
+                container.style.width = '100%';
+                container.style.padding = '60px 20px';
+                container.style.display = 'flex';
+                container.style.justifyContent = 'center';
+                container.style.gap = '20px';
+                container.style.flexWrap = 'wrap';
+
+                // Tombol Sebelumnya
+                if (foundIndex > 0) {
+                    const prevChapter = foundBook.chapters[foundIndex - 1];
+                    const btnPrev = document.createElement('button');
+                    btnPrev.className = 'btn-action btn-secondary-action';
+                    btnPrev.style.padding = '14px 28px';
+                    btnPrev.style.fontSize = '1rem';
+                    btnPrev.style.flex = '1 1 auto';
+                    btnPrev.style.maxWidth = '300px';
+                    btnPrev.style.justifyContent = 'center';
+                    btnPrev.title = prevChapter.name;
+                    btnPrev.innerHTML = `<svg style="width:20px;height:20px;margin-right:8px;fill:currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> Chapter Sebelumnya`;
+                    btnPrev.onclick = () => {
+                        reader.scrollTop = 0;
+                        const prevTitle = `${foundBook.title} - ${prevChapter.name}`;
+                        bacaFile(prevChapter.path, prevTitle);
+                    };
+                    container.appendChild(btnPrev);
+                }
+
+                // Tombol Selanjutnya
+                if (foundIndex < foundBook.chapters.length - 1) {
+                    const nextChapter = foundBook.chapters[foundIndex + 1];
+                    const btnNext = document.createElement('button');
+                    btnNext.className = 'btn-action btn-primary-action';
+                    btnNext.style.padding = '14px 28px';
+                    btnNext.style.fontSize = '1rem';
+                    btnNext.style.flex = '1 1 auto';
+                    btnNext.style.maxWidth = '300px';
+                    btnNext.style.justifyContent = 'center';
+                    btnNext.title = nextChapter.name;
+                    btnNext.innerHTML = `Chapter Selanjutnya <svg style="width:20px;height:20px;margin-left:8px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>`;
+                    btnNext.onclick = () => {
+                        reader.scrollTop = 0;
+                        const nextTitle = `${foundBook.title} - ${nextChapter.name}`;
+                        bacaFile(nextChapter.path, nextTitle);
+                    };
+                    container.appendChild(btnNext);
+                }
+
+                if (container.children.length > 0) {
+                    reader.appendChild(container);
+                }
             }
         }
 
