@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KeishaYomi</title>
+    <title>KeiYomi</title>
     <style>
         :root {
             --bg-color: #f8f9fa;
@@ -58,7 +58,7 @@
         .sidebar { width: 280px; background-color: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; padding: 24px; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 20; flex-shrink: 0; transition: width 0.3s; }
         .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid #334155; cursor: pointer; }
         .brand h2 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; margin: 0; }
-        .brand svg { width: 24px; height: 24px; fill: var(--accent); }
+        .brand img { width: 50px; height: auto; border-radius: 8px; }
         
         /* Menu Navigation */
         .nav-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: auto; }
@@ -318,6 +318,12 @@
         .btn-website:hover { background-color: var(--accent-hover); }
         [data-theme="dark"] .btn-github { background-color: #334155; }
         [data-theme="dark"] .btn-github:hover { background-color: #475569; }
+        .btn-qris { background-color: #dc2626; }
+        .btn-qris:hover { background-color: #b91c1c; }
+        .btn-paypal { background-color: #0070ba; }
+        .btn-paypal:hover { background-color: #005ea6; }
+        .btn-update { background-color: #059669; }
+        .btn-update:hover { background-color: #047857; }
     </style>
     <!-- Integrasi PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -331,8 +337,8 @@
 
     <div class="sidebar">
         <div class="brand" id="btn-home">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
-            <h2>KeishaYomi</h2>
+            <img src="assets/logo.svg" alt="KeiYomi Logo">
+            <h2>KeiYomi</h2>
         </div>
         
         <ul class="nav-menu">
@@ -449,8 +455,10 @@
             <div class="settings-container" style="margin-top: 24px;">
                 <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;" data-i18n="about_title">Tentang</h2>
                 <div style="text-align: center;">
-                    <div style="font-size: 3rem; margin-bottom: 16px; color: var(--accent);">📖</div>
-                    <h3 style="font-size: 1.5rem; margin-bottom: 8px; color: var(--text-dark);">KeishaYomi</h3>
+                    <div style="width: 120px; margin: 0 auto 16px auto;">
+                        <img src="assets/logo.svg" alt="KeiYomi Logo" style="width: 100%; height: auto;">
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 8px; color: var(--text-dark);">KeiYomi</h3>
                     <p style="color: #64748b; margin-bottom: 24px;">Versi 1.0.0</p>
                     
                     <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 24px;">
@@ -464,7 +472,26 @@
                         </button>
                     </div>
                     
-                    <button class="btn-primary-action" style="margin: 0 auto;" onclick="checkUpdate()" data-i18n="about_check_update">Periksa Pembaruan</button>
+                    <button class="btn-social btn-update" style="margin: 0 auto;" onclick="checkUpdate()">
+                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        <span data-i18n="about_check_update">Cek Pembaruan</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-container" style="margin-top: 24px;">
+                <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;" data-i18n="about_donate">Dukungan Pengembangan</h2>
+                <div style="text-align: center;">
+                    <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 8px;">
+                        <button class="btn-social btn-qris" onclick="openLink('https://keishaxd.github.io/qris.html')">
+                            <svg viewBox="0 0 24 24"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm-3 4h3v2h-3v-2zm3 0h2v2h-2v-2zm-3-4h2v2h-2v-2zM3 21h18v-2H3v2zm18-8h-2v2h2v-2z"/></svg>
+                            QRIS
+                        </button>
+                        <button class="btn-social btn-paypal" onclick="openLink('https://paypal.me/KeishaXD')">
+                            <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                            PayPal
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -624,10 +651,23 @@
         </div>
     </div>
 
+    <!-- QRIS Modal -->
+    <div id="qris-modal" class="modal">
+        <div class="modal-content" style="text-align: center; max-width: 400px;">
+            <h2 style="margin-bottom: 16px;">Scan QRIS</h2>
+            <div style="background: #f1f5f9; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <!-- Placeholder QR Code - Ganti src dengan gambar QRIS asli Anda -->
+                <img src="https://via.placeholder.com/300?text=QRIS+Code+Here" alt="QRIS Code" style="width: 100%; max-width: 250px; border-radius: 8px;">
+                <p style="margin-top: 12px; color: #64748b; font-size: 0.9rem;">Dukung pengembangan aplikasi ini dengan donasi seikhlasnya.</p>
+            </div>
+            <button class="btn-cancel" onclick="document.getElementById('qris-modal').classList.remove('show')">Tutup</button>
+        </div>
+    </div>
+
     <script>
         const { ipcRenderer } = require('electron');
         const path = require('path');
-        const fs = require('fs');
+        const { promises: fs } = require('fs'); // Menggunakan fs.promises untuk operasi file asinkron
 
         const btnPilihFile = document.getElementById('btn-pilih-file');
         const btnBack = document.getElementById('btn-back');
@@ -762,7 +802,8 @@
                 settings_language: "Bahasa / Language",
                 settings_save: "Simpan Perubahan",
                 about_title: "Tentang",
-                about_check_update: "Periksa Pembaruan",
+                about_donate: "Dukungan Pengembangan",
+                about_check_update: "Cek Pembaruan",
                 detail_type: "Tipe",
                 detail_author: "Penulis",
                 detail_date: "Terbit",
@@ -805,6 +846,7 @@
                 settings_language: "Language",
                 settings_save: "Save Changes",
                 about_title: "About",
+                about_donate: "Support Development",
                 about_check_update: "Check for Updates",
                 detail_type: "Type",
                 detail_author: "Author",
@@ -1735,9 +1777,9 @@
 
         async function renderPDF(filePath) {
             try {
-                // Baca file lokal menggunakan fs agar tidak kena blokir browser security
-                const data = new Uint8Array(fs.readFileSync(filePath));
-                const loadingTask = pdfjsLib.getDocument(data);
+                // Baca file secara asinkron agar UI tidak freeze
+                const data = await fs.readFile(filePath);
+                const loadingTask = pdfjsLib.getDocument(new Uint8Array(data));
                 const pdf = await loadingTask.promise;
                 
                 for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
@@ -1779,8 +1821,8 @@
 
         async function renderCBZ(filePath) {
             try {
-                const data = fs.readFileSync(filePath);
-                const zip = await JSZip.loadAsync(data);
+                const fileContent = await fs.readFile(filePath);
+                const zip = await JSZip.loadAsync(fileContent);
                 
                 // Filter file gambar (jpg, png, gif, webp) dan abaikan folder
                 const imageFiles = Object.keys(zip.files).filter(filename => {
@@ -1828,7 +1870,7 @@
 
         async function renderTXT(filePath) {
             try {
-                const data = fs.readFileSync(filePath, 'utf8');
+                const data = await fs.readFile(filePath, 'utf8');
                 const div = document.createElement('div');
                 div.className = 'page-placeholder';
                 div.style.height = 'auto';
@@ -1932,6 +1974,10 @@
             alert(t('msg_update_check'));
         }
 
+        function showQrisModal() {
+            document.getElementById('qris-modal').classList.add('show');
+        }
+
         // Init
         (async () => {
             await loadData(); // Muat data dari file tersembunyi dulu
@@ -1940,5 +1986,7 @@
             updateReaderModeUI();
         })();
     </script>
+</body>
+</html>cript>
 </body>
 </html>
