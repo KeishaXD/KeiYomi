@@ -8,6 +8,7 @@ function createWindow() {
         width: 1200,
         height: 800,
         title: "KeiYomi",
+        icon: path.join(__dirname, 'assets', 'logo.svg'),
         backgroundColor: '#1e1e1e', // Mencegah flash putih saat loading (Dark Mode)
         webPreferences: {
             nodeIntegration: true,
@@ -148,7 +149,7 @@ ipcMain.handle('library:scanLocal', async () => {
                 author: "Developer (KeishaXD)",
                 cover: usedCoverName,
                 genre: "Guide",
-                synopsis: "(English)This is an example of a folder format. Place the info.json, cover.jpg, and book files (PDF/ZIP) in one folder to be detected automatically.\n\n (Indonesia)Ini adalah contoh format folder. Letakkan file info.json, cover.jpg, dan file buku (PDF/ZIP) di dalam satu folder agar terdeteksi otomatis.",
+                synopsis: "(English) This is an example of a folder format. Place the info.json, cover.jpg, and book files (PDF/ZIP) in one folder to be detected automatically.\n\n (Indonesia) Ini adalah contoh format folder. Letakkan file info.json, cover.jpg, dan file buku (PDF/ZIP) di dalam satu folder agar terdeteksi otomatis.",
                 type: "Artikel",
                 date: "2024-06-01"
             };
