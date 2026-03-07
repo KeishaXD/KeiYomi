@@ -577,22 +577,32 @@
         
         // --- DATA MANAGEMENT ---
         // Load data dari localStorage atau gunakan default
-        let libraryData = JSON.parse(localStorage.getItem('my-library')) || [];
+        let libraryData = [];
+        let riwayatBacaan = [];
+        let isWebtoonMode = true;
 
-        let riwayatBacaan = JSON.parse(localStorage.getItem('my-history')) || [];
-        let isWebtoonMode = localStorage.getItem('reader-mode') !== 'normal'; // Default Webtoon (true)
+        async function loadData() {
+            const data = await ipcRenderer.invoke('data:load');
+            if (data) {
+                libraryData = data.library || [];
+                riwayatBacaan = data.history || [];
+                isWebtoonMode = data.mode !== 'normal';
+            } else {
+                // Fallback: Coba ambil dari localStorage jika file belum ada (migrasi data lama)
+                libraryData = JSON.parse(localStorage.getItem('my-library')) || [];
+                riwayatBacaan = JSON.parse(localStorage.getItem('my-history')) || [];
+                isWebtoonMode = localStorage.getItem('reader-mode') !== 'normal';
+            }
+        }
 
         function saveData() {
-            try {
-                localStorage.setItem('my-library', JSON.stringify(libraryData));
-                localStorage.setItem('my-history', JSON.stringify(riwayatBacaan));
-                localStorage.setItem('reader-mode', isWebtoonMode ? 'webtoon' : 'normal');
-            } catch (e) {
-                console.error("Gagal menyimpan data:", e);
-                if (e.name === 'QuotaExceededError') {
-                    alert("Penyimpanan penuh! Perubahan nama chapter mungkin tidak tersimpan. Coba hapus beberapa buku dari riwayat atau pustaka.");
-                }
-            }
+            const data = {
+                library: libraryData,
+                history: riwayatBacaan,
+                mode: isWebtoonMode ? 'webtoon' : 'normal'
+            };
+            // Kirim ke main process untuk disimpan ke file
+            ipcRenderer.invoke('data:save', data);
         }
 
         // --- NAVIGATION LOGIC ---
@@ -663,7 +673,19 @@
         btnBack.addEventListener('click', () => {
             if (reader.style.display === 'flex') {
                 // Jika sedang di Reader, kembali ke Detail Buku
-                const book = libraryData.find(b => b.path === currentBookPath) || riwayatBacaan.find(b => b.path === currentBookPath);
+                
+                // Cari buku parent di libraryData (apakah ini chapter dari suatu buku?)
+                let book = libraryData.find(b => {
+                    if (b.path === currentBookPath) return true;
+                    if (b.chapters && b.chapters.some(c => c.path === currentBookPath)) return true;
+                    return false;
+                });
+
+                // Jika tidak ketemu di library (misal file lepasan), cari di riwayat
+                if (!book) {
+                    book = riwayatBacaan.find(b => b.path === currentBookPath);
+                }
+
                 if (book) {
                     showBookDetail(book);
                 } else {
@@ -815,6 +837,42 @@
                 tagsHtml = book.genre.split(',').map(g => `<span class="tag-pill">${g.trim()}</span>`).join('');
             }
 
+            // --- LOGIKA TOMBOL BACA (Lanjut / Mulai) ---
+            let targetPath = '';
+            let targetTitle = '';
+            let startButtonText = 'Mulai Baca';
+
+            if (book.chapters && book.chapters.length > 0) {
+                // Cari di riwayat: item pertama (paling baru) yang path-nya ada di daftar chapter buku ini
+                const lastReadHistory = riwayatBacaan.find(h => book.chapters.some(c => c.path === h.path));
+                
+                if (lastReadHistory) {
+                    const chapterInfo = book.chapters.find(c => c.path === lastReadHistory.path);
+                    if (chapterInfo) {
+                        targetPath = chapterInfo.path;
+                        targetTitle = `${book.title} - ${chapterInfo.name}`;
+                        startButtonText = `Lanjut: ${chapterInfo.name}`;
+                    }
+                }
+
+                // Jika tidak ada di riwayat, default ke chapter pertama
+                if (!targetPath) {
+                    const firstChapter = book.chapters[0];
+                    targetPath = firstChapter.path;
+                    targetTitle = `${book.title} - ${firstChapter.name}`;
+                    startButtonText = "Mulai Baca";
+                }
+            } else {
+                // Single File
+                targetPath = book.path;
+                targetTitle = book.title;
+                const isInHistory = riwayatBacaan.some(h => h.path === book.path);
+                startButtonText = isInHistory ? "Lanjut Baca" : "Mulai Baca";
+            }
+
+            const safeTargetPath = targetPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const safeTargetTitle = targetTitle.replace(/'/g, "\\'");
+
             const container = document.getElementById('detail-content');
             container.innerHTML = `
                 <div class="comic-header">
@@ -825,7 +883,7 @@
                         </div>
                         <h1 class="detail-title">${book.title}</h1>
                         <div class="detail-author">
-                            <span>✍️</span> ${book.author || 'Unknown Author'}
+                            <span>Author:</span> ${book.author || 'Unknown Author'}
                         </div>
                         ${dateHtml}
                         
@@ -834,7 +892,7 @@
                         </div>
 
                         <div class="action-buttons">
-                            <button class="btn-action btn-primary-action" onclick="document.querySelector('.chapter-list-container').scrollIntoView({behavior: 'smooth'})">${iconPlay} Mulai Baca</button>
+                            <button class="btn-action btn-primary-action" onclick="bacaFile('${safeTargetPath}', '${safeTargetTitle}')">${iconPlay} ${startButtonText}</button>
                             <button class="${favBtnClass}" onclick="toggleFavorite(${book.id})">${iconHeart} Favorit</button>
                             <button class="btn-action btn-secondary-action" onclick="openAddChapterModal(${book.id})">${iconPlus} Chapter</button>
                             <button class="btn-action btn-secondary-action" onclick="openEditBookModal(${book.id})">${iconEdit} Edit</button>
@@ -844,13 +902,13 @@
                 </div>
                 
                 <div class="detail-synopsis">
-                    <div class="section-title">📝 Sinopsis</div>
+                    <div class="section-title">Sinopsis:</div>
                     <p class="synopsis-text">${book.synopsis || 'Tidak ada sinopsis tersedia.'}</p>
                 </div>
 
                 <div class="chapter-list-container">
                     <div class="chapter-list-header">
-                        <div class="section-title" style="margin-bottom:0">📑 Daftar Chapter</div>
+                        <div class="section-title" style="margin-bottom:0">Daftar Chapter:</div>
                         <div class="chapter-count">${chapterCount} Chapter</div>
                     </div>
                     <div class="chapter-grid">
@@ -1560,8 +1618,12 @@
         };
 
         // Init
-        scanLocalFolder(true); // Auto scan saat aplikasi dibuka (Silent Mode)
-        switchTab('library');
+        (async () => {
+            await loadData(); // Muat data dari file tersembunyi dulu
+            await scanLocalFolder(true); // Lalu scan folder lokal (hasil scan akan otomatis tersimpan ke file)
+            switchTab('library');
+            updateReaderModeUI();
+        })();
     </script>
 </body>
 </html>

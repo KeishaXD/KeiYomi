@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { exec } = require('child_process');
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -61,6 +62,46 @@ ipcMain.handle('dialog:openCover', async () => {
     }
 });
 
+// --- FITUR BARU: SAVE/LOAD DATA KE FILE TERSEMBUNYI ---
+ipcMain.handle('data:save', async (event, data) => {
+    const docPath = app.getPath('documents');
+    const baseDir = path.join(docPath, 'MyPembacaDokumen');
+    const filePath = path.join(baseDir, '.user_config.json'); // Nama file dengan awalan titik
+
+    try {
+        if (!fs.existsSync(baseDir)) {
+            fs.mkdirSync(baseDir, { recursive: true });
+        }
+        
+        // Simpan data ke file
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+
+        // Set atribut hidden pada file (Windows)
+        if (process.platform === 'win32') {
+            exec(`attrib +h "${filePath}"`);
+        }
+        return true;
+    } catch (error) {
+        console.error("Gagal menyimpan data:", error);
+        return false;
+    }
+});
+
+ipcMain.handle('data:load', async () => {
+    const docPath = app.getPath('documents');
+    const filePath = path.join(docPath, 'MyPembacaDokumen', '.user_config.json');
+    
+    try {
+        if (fs.existsSync(filePath)) {
+            const raw = fs.readFileSync(filePath, 'utf8');
+            return JSON.parse(raw);
+        }
+    } catch (error) {
+        console.error("Gagal memuat data:", error);
+    }
+    return null;
+});
+
 // --- FITUR BARU: SCAN LIBRARY OTOMATIS ---
 ipcMain.handle('library:scanLocal', async () => {
     const docPath = app.getPath('documents');
@@ -69,6 +110,26 @@ ipcMain.handle('library:scanLocal', async () => {
     // 1. Buat folder jika belum ada
     if (!fs.existsSync(baseDir)) {
         fs.mkdirSync(baseDir, { recursive: true });
+    }
+
+    // --- FITUR BARU: Buat Contoh Folder Schema (Agar user paham formatnya) ---
+    const examplePath = path.join(baseDir, 'Contoh Folder Schema');
+    if (!fs.existsSync(examplePath)) {
+        try {
+            fs.mkdirSync(examplePath, { recursive: true });
+            const infoContent = {
+                title: "Contoh Buku Folder",
+                author: "Admin",
+                genre: "Panduan",
+                synopsis: "Ini adalah contoh format folder. Letakkan file info.json, cover.jpg, dan file buku (PDF/ZIP) di dalam satu folder agar terdeteksi otomatis.",
+                type: "Artikel"
+            };
+            fs.writeFileSync(path.join(examplePath, 'info.json'), JSON.stringify(infoContent, null, 2));
+            fs.writeFileSync(path.join(examplePath, 'cover.jpg'), ''); // Dummy cover
+            fs.writeFileSync(path.join(examplePath, 'buku_dummy.pdf'), ''); // Dummy content
+        } catch (e) {
+            console.error("Gagal membuat contoh folder:", e);
+        }
     }
 
     const results = [];
@@ -102,6 +163,18 @@ ipcMain.handle('library:scanLocal', async () => {
                         // Baca info.json
                         const infoData = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
                         
+                        // --- LOGIKA BARU: Auto-detect Cover ---
+                        let detectedCover = infoData.cover;
+                        if (!detectedCover) {
+                            const possibleCovers = ['cover.jpg', 'cover.jpeg', 'cover.png', 'cover.webp'];
+                            for (const img of possibleCovers) {
+                                if (fs.existsSync(path.join(fullPath, img))) {
+                                    detectedCover = img; // Gunakan nama file relatif
+                                    break;
+                                }
+                            }
+                        }
+
                         // Cari file chapter di dalam folder ini
                         const chapterFiles = fs.readdirSync(fullPath)
                             .filter(f => supportedExts.includes(path.extname(f).toLowerCase()))
@@ -112,7 +185,8 @@ ipcMain.handle('library:scanLocal', async () => {
 
                         results.push({
                             type: 'series',
-                            ...infoData, // Mengambil title, genre, synopsis, cover dari json
+                            ...infoData, // Mengambil title, genre, synopsis dari json
+                            cover: detectedCover, // Gunakan cover yang dideteksi
                             path: fullPath, // Path folder utama
                             chapters: chapterFiles // List file chapter
                         });
