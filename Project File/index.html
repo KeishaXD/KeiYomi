@@ -1,11 +1,523 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Pembaca Dokumen</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Pembaca Document</title>
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --sidebar-bg: #1e293b;
+            --sidebar-hover: #334155;
+            --text-light: #f1f5f9;
+            --text-muted: #94a3b8;
+            --text-dark: #1e293b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+        body { display: flex; height: 100vh; background-color: var(--bg-color); color: var(--text-dark); overflow: hidden; font-size: 14px; }
+        
+        /* Sidebar */
+        .sidebar { width: 280px; background-color: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; padding: 24px; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 20; }
+        .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid #334155; cursor: pointer; }
+        .brand h2 { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.5px; margin: 0; }
+        .brand svg { width: 24px; height: 24px; fill: var(--accent); }
+        
+        /* Menu Navigation */
+        .nav-menu { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: auto; }
+        .nav-item { padding: 12px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; color: var(--text-muted); transition: all 0.2s; font-weight: 500; }
+        .nav-item:hover { background-color: var(--sidebar-hover); color: var(--text-light); }
+        .nav-item.active { background-color: var(--accent); color: white; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3); }
+        .nav-item svg { width: 20px; height: 20px; fill: currentColor; }
+        
+        .btn-import { background-color: var(--sidebar-hover); color: var(--text-light); border: 1px solid #475569; padding: 12px; border-radius: 8px; cursor: pointer; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn-import:hover { background-color: #475569; border-color: #64748b; }
+
+        /* Main Content */
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        .header { padding: 16px 32px; background: white; border-bottom: 1px solid #e2e8f0; z-index: 10; display: flex; justify-content: space-between; align-items: center; height: 64px; flex-shrink: 0; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header h1 { font-size: 1.2rem; color: var(--text-dark); font-weight: 700; margin: 0; }
+        .search-bar { padding: 8px 16px; border-radius: 20px; border: 1px solid #e2e8f0; background: #f8f9fa; width: 300px; outline: none; color: var(--text-dark); }
+        .btn-back { border: none; background: transparent; cursor: pointer; display: none; padding: 4px; border-radius: 50%; transition: background 0.2s; }
+        .btn-back:hover { background-color: #f1f5f9; }
+        
+        /* Reader Area (Webtoon Style) */
+        .reader-container { flex-grow: 1; overflow-y: auto; display: none; flex-direction: column; align-items: center; padding: 40px; background-color: #cbd5e1; scroll-behavior: smooth; }
+        .reader-container::-webkit-scrollbar { width: 10px; }
+        .reader-container::-webkit-scrollbar-track { background: #cbd5e1; }
+        .reader-container::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 5px; border: 2px solid #cbd5e1; }
+
+        /* Views Container */
+        .view-section { flex-grow: 1; overflow-y: auto; padding: 32px; display: none; }
+        .view-section.active { display: block; }
+
+        /* Grid Layout for Library & Explore */
+        .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 24px; }
+        .book-card { background: white; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s; display: flex; flex-direction: column; }
+        .book-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .book-cover { height: 220px; background-color: #e2e8f0; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 3rem; object-fit: cover; }
+        .book-info { padding: 12px; }
+        .book-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .book-meta { font-size: 0.8rem; color: #64748b; }
+
+        /* Detail Page Styles (Adapted from ui/book.html) */
+        .detail-container { max-width: 1000px; margin: 0 auto; }
+        .comic-info { display: flex; gap: 32px; margin-bottom: 40px; }
+        .detail-cover { width: 220px; height: 320px; background: #cbd5e1; border-radius: 8px; object-fit: cover; box-shadow: var(--shadow); flex-shrink: 0; }
+        .detail-content { flex: 1; }
+        .detail-tags { font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+        .detail-title { font-size: 2rem; font-weight: 800; margin-bottom: 8px; color: #1e293b; }
+        .detail-alt { font-size: 1rem; color: #64748b; margin-bottom: 20px; }
+        .detail-desc { font-size: 0.95rem; line-height: 1.6; color: #334155; margin-bottom: 24px; }
+        
+        .action-buttons { display: flex; gap: 12px; margin-bottom: 24px; }
+        .btn-primary { background-color: var(--accent); color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-primary:hover { background-color: var(--accent-hover); }
+        .btn-secondary { background-color: white; border: 1px solid #cbd5e1; color: #334155; padding: 10px 16px; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .btn-secondary:hover { background-color: #f1f5f9; }
+
+        .chapter-list { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .chapter-header { padding: 16px; background: #f8f9fa; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #334155; }
+        .chapter-item { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; cursor: pointer; transition: 0.2s; }
+        .chapter-item:last-child { border-bottom: none; }
+        .chapter-item:hover { background-color: #f8f9fa; color: var(--accent); }
+        .chapter-date { font-size: 0.8rem; color: #94a3b8; }
+        
+        /* Mockup for pages */
+        .page-placeholder { width: 100%; max-width: 800px; height: 1000px; background: white; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; justify-content: center; align-items: center; font-size: 1.5rem; color: #cbd5e1; border-radius: 4px; position: relative; }
+        .page-placeholder::after { content: attr(data-page); position: absolute; bottom: 20px; right: 20px; font-size: 0.9rem; color: #94a3b8; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .comic-info { flex-direction: column; align-items: center; text-align: center; }
+            .action-buttons { justify-content: center; }
+            .sidebar { width: 70px; padding: 16px 12px; }
+            .brand h2, .nav-item span, .btn-import span, .history-section h3 { display: none; }
+            .nav-item { justify-content: center; padding: 12px; }
+            .brand { justify-content: center; }
+            .btn-import { justify-content: center; }
+        }
+
+        /* Explore Filters */
+        .filter-container { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+        .filter-tag { padding: 6px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 0.85rem; color: #64748b; cursor: pointer; transition: 0.2s; }
+        .filter-tag:hover, .filter-tag.active { background: var(--accent); color: white; border-color: var(--accent); }
+    </style>
 </head>
 <body>
-  <h1>Pembaca Novel & Dokumen</h1>
-  <p>Aplikasi Electron berhasil jalan 🎉</p>
+
+    <div class="sidebar">
+        <div class="brand" id="btn-home">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+            <h2>My Reader</h2>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item active" onclick="switchTab('library')">
+                <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+                <span>Semua File</span>
+            </li>
+            <li class="nav-item" onclick="switchTab('history')">
+                <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                <span>Riwayat</span>
+            </li>
+            <li class="nav-item" onclick="switchTab('favorites')">
+                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <span>Favorit</span>
+            </li>
+            <li class="nav-item" onclick="switchTab('explore')">
+                <svg viewBox="0 0 24 24"><path d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z"/></svg>
+                <span>Jelajah</span>
+            </li>
+        </ul>
+
+        <button class="btn-import" id="btn-pilih-file">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+            <span>Impor Buku</span>
+        </button>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div class="header-left">
+                <button class="btn-back" id="btn-back" title="Kembali"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+                <h1 id="page-title">Pustaka Saya</h1>
+                <button id="btn-refresh" title="Scan Folder Lokal" style="background:none; border:none; cursor:pointer; color:var(--text-muted);">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                </button>
+            </div>
+            <input type="text" class="search-bar" id="search-input" placeholder="Cari buku...">
+        </div>
+
+        <!-- VIEW: LIBRARY (Semua File) -->
+        <div id="view-library" class="view-section active">
+            <div class="book-grid" id="library-grid">
+                <!-- Item buku akan di-render di sini oleh JS -->
+            </div>
+        </div>
+
+        <!-- VIEW: HISTORY (Riwayat) -->
+        <div id="view-history" class="view-section">
+            <div class="book-grid" id="history-grid">
+                <!-- Item riwayat akan di-render di sini -->
+            </div>
+        </div>
+
+        <!-- VIEW: FAVORITES (Buku Favorit) -->
+        <div id="view-favorites" class="view-section">
+            <div class="book-grid" id="favorites-grid">
+                <!-- Item favorit akan di-render di sini -->
+            </div>
+        </div>
+
+        <!-- VIEW: EXPLORE (Jelajah) -->
+        <div id="view-explore" class="view-section">
+            <div class="filter-container" id="explore-filters">
+                <!-- Filter genre akan muncul di sini -->
+            </div>
+            <div class="book-grid" id="explore-grid">
+                <!-- Hasil pencarian -->
+            </div>
+        </div>
+
+        <!-- VIEW: BOOK DETAIL (Informasi Buku) -->
+        <div id="view-detail" class="view-section">
+            <div class="detail-container" id="detail-content">
+                <!-- Detail buku diisi oleh JS -->
+            </div>
+        </div>
+
+        <!-- VIEW: READER (Baca Buku) -->
+        <div class="reader-container" id="reader">
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const path = require('path');
+
+        const btnPilihFile = document.getElementById('btn-pilih-file');
+        const btnBack = document.getElementById('btn-back');
+        const btnRefresh = document.getElementById('btn-refresh');
+        const searchInput = document.getElementById('search-input');
+        const pageTitle = document.getElementById('page-title');
+        const reader = document.getElementById('reader');
+        
+        // --- DATA MANAGEMENT ---
+        // Load data dari localStorage atau gunakan default
+        let libraryData = JSON.parse(localStorage.getItem('my-library')) || [
+            { id: 1, title: "Omega Heroine Wants Her Alpha", author: "Author Name", cover: null, path: "dummy/path/1.pdf", genre: "Romance, Fantasy", synopsis: "Ji Xiao accidentally transmigrates into a novel and becomes the Alpha villain who shares the same name as her. To save her life, she treats the heroine with utmost care..." },
+            { id: 2, title: "Solo Leveling", author: "Chugong", cover: null, path: "dummy/path/2.cbz", genre: "Action, Adventure", synopsis: "In a world where hunters, humans who possess magical abilities, must battle deadly monsters to protect the human race from certain annihilation..." },
+        ];
+
+        let riwayatBacaan = JSON.parse(localStorage.getItem('my-history')) || [];
+
+        function saveData() {
+            localStorage.setItem('my-library', JSON.stringify(libraryData));
+            localStorage.setItem('my-history', JSON.stringify(riwayatBacaan));
+        }
+
+        // --- NAVIGATION LOGIC ---
+        let currentView = 'library'; // Track view aktif
+
+        function switchTab(tabName) {
+            currentView = tabName;
+            // Sembunyikan semua view
+            document.querySelectorAll('.view-section, .reader-container').forEach(el => el.style.display = 'none');
+            
+            // Reset active state menu
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // Reset Header UI
+            btnBack.style.display = 'none';
+            searchInput.style.display = 'block';
+            searchInput.value = ''; // Reset search
+
+            // Tampilkan view yang dipilih
+            if (tabName === 'library') {
+                document.getElementById('view-library').style.display = 'block';
+                document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+                pageTitle.innerText = "Pustaka Saya";
+                renderGrid(libraryData, 'library-grid');
+            } else if (tabName === 'history') {
+                document.getElementById('view-history').style.display = 'block';
+                document.querySelector('.nav-item:nth-child(2)').classList.add('active');
+                pageTitle.innerText = "Riwayat Bacaan";
+                renderGrid(riwayatBacaan, 'history-grid');
+            } else if (tabName === 'favorites') {
+                document.getElementById('view-favorites').style.display = 'block';
+                document.querySelector('.nav-item:nth-child(3)').classList.add('active');
+                pageTitle.innerText = "Buku Favorit";
+                const favorites = libraryData.filter(b => b.isFavorite);
+                renderGrid(favorites, 'favorites-grid');
+            } else if (tabName === 'explore') {
+                document.getElementById('view-explore').style.display = 'block';
+                document.querySelector('.nav-item:nth-child(4)').classList.add('active');
+                pageTitle.innerText = "Jelajah Pustaka";
+                searchInput.style.display = 'block';
+                renderExplore();
+            }
+        }
+
+        // --- SEARCH LOGIC ---
+        searchInput.addEventListener('input', (e) => {
+            const keyword = e.target.value.toLowerCase();
+            if (currentView === 'library') {
+                const filtered = libraryData.filter(b => b.title.toLowerCase().includes(keyword));
+                renderGrid(filtered, 'library-grid');
+            } else if (currentView === 'history') {
+                const filtered = riwayatBacaan.filter(b => b.title.toLowerCase().includes(keyword));
+                renderGrid(filtered, 'history-grid');
+            } else if (currentView === 'favorites') {
+                const filtered = libraryData.filter(b => b.isFavorite && b.title.toLowerCase().includes(keyword));
+                renderGrid(filtered, 'favorites-grid');
+            } else if (currentView === 'explore') {
+                const filtered = libraryData.filter(b => 
+                    b.title.toLowerCase().includes(keyword) || 
+                    (b.genre && b.genre.toLowerCase().includes(keyword))
+                );
+                renderGrid(filtered, 'explore-grid');
+            }
+        });
+
+        // --- BACK BUTTON LOGIC ---
+        btnBack.addEventListener('click', () => {
+            // Kembali ke view utama (Library/History)
+            switchTab(currentView === 'reader' ? 'library' : currentView);
+        });
+
+        // --- REFRESH / SCAN LOGIC ---
+        btnRefresh.addEventListener('click', async () => {
+            await scanLocalFolder();
+            renderGrid(libraryData, 'library-grid');
+        });
+
+        // --- RENDER FUNCTIONS ---
+        function renderGrid(data, elementId) {
+            const grid = document.getElementById(elementId);
+            grid.innerHTML = '';
+            
+            if(data.length === 0) {
+                grid.innerHTML = '<p style="color:#94a3b8; grid-column: 1/-1; text-align:center; padding-top: 20px;">Tidak ada item ditemukan.</p>';
+                return;
+            }
+
+            data.forEach(book => {
+                const card = createBookCard(book);
+                grid.appendChild(card);
+            });
+        }
+
+        function createBookCard(book) {
+            const div = document.createElement('div');
+            div.className = 'book-card';
+            
+            // Handle Cover Image (Jika ada path cover dari info.json)
+            const coverHtml = book.cover ? `<img src="${path.join(book.path, book.cover)}" class="book-cover" style="object-fit:cover;">` : `<div class="book-cover">📖</div>`;
+
+            div.innerHTML = `
+                ${coverHtml}
+                <div class="book-info">
+                    <div class="book-title">${book.title}</div>
+                    <div class="book-meta">${book.genre || 'Unknown Genre'}</div>
+                </div>
+            `;
+            div.addEventListener('click', () => showBookDetail(book));
+            return div;
+        }
+
+        function showBookDetail(book) {
+            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+            const detailView = document.getElementById('view-detail');
+            detailView.style.display = 'block';
+            pageTitle.innerText = "Informasi Buku";
+            
+            // UI Adjustments for Detail View
+            btnBack.style.display = 'block';
+            searchInput.style.display = 'none';
+
+            // Handle Cover Detail
+            const coverStyle = book.cover 
+                ? `background-image: url('${path.join(book.path, book.cover).replace(/\\/g, '\\\\')}'); background-size: cover; color: transparent;` 
+                : `display:flex;align-items:center;justify-content:center;font-size:4rem;color:#fff;background:#64748b;`;
+
+            // Generate Chapter List
+            let chapterListHtml = '';
+            if (book.chapters && book.chapters.length > 0) {
+                // Jika tipe Series/Folder
+                book.chapters.forEach(chap => {
+                    chapterListHtml += `
+                    <div class="chapter-item" onclick="bacaFile('${chap.path.replace(/\\/g, '\\\\')}', '${book.title} - ${chap.name}')">
+                        <span>${chap.name}</span>
+                        <span class="chapter-date">Lokal</span>
+                    </div>`;
+                });
+            } else {
+                // Jika tipe Simple File
+                chapterListHtml = `
+                <div class="chapter-item" onclick="bacaFile('${book.path.replace(/\\/g, '\\\\')}', '${book.title}')">
+                    <span>Baca File Utama</span>
+                    <span class="chapter-date">Full</span>
+                </div>`;
+            }
+
+            const isFav = book.isFavorite;
+            const favBtnText = isFav ? '★ Hapus Favorit' : '☆ Tambah Favorit';
+
+            const container = document.getElementById('detail-content');
+            container.innerHTML = `
+                <div class="comic-info">
+                    <div class="detail-cover" style="${coverStyle}">📖</div>
+                    <div class="detail-content">
+                        <div class="detail-tags">${book.genre || 'General'}</div>
+                        <h1 class="detail-title">${book.title}</h1>
+                        <div class="detail-alt">${book.author || 'Unknown Author'}</div>
+                        <div class="action-buttons">
+                            <button class="btn-primary" onclick="alert('Pilih chapter di bawah')">▶ LIHAT CHAPTER</button>
+                            <button class="btn-secondary" onclick="toggleFavorite(${book.id})">${favBtnText}</button>
+                        </div>
+                        <p class="detail-desc">${book.synopsis || 'Tidak ada sinopsis tersedia.'}</p>
+                    </div>
+                </div>
+                <div class="chapter-list">
+                    <div class="chapter-header">Daftar Chapter</div>
+                    ${chapterListHtml}
+                </div>
+            `;
+        }
+
+        // Fungsi Toggle Favorit
+        window.toggleFavorite = function(bookId) {
+            const book = libraryData.find(b => b.id === bookId);
+            if (book) {
+                book.isFavorite = !book.isFavorite;
+                saveData();
+                showBookDetail(book); // Refresh tampilan detail untuk update tombol
+            }
+        };
+
+        // Tombol Pilih File
+        btnPilihFile.addEventListener('click', async () => {
+            const filePath = await ipcRenderer.invoke('dialog:openFile');
+            if (filePath) {
+                const fileName = path.basename(filePath);
+                
+                // Cek duplikasi
+                let book = libraryData.find(b => b.path === filePath);
+                
+                if (!book) {
+                    book = { 
+                        id: Date.now(), 
+                        title: fileName, 
+                        path: filePath, 
+                        genre: "Imported", 
+                        synopsis: "File diimpor dari lokal komputer." 
+                    };
+                    libraryData.unshift(book);
+                    saveData(); // Simpan ke localStorage
+                }
+                
+                showBookDetail(book);
+            }
+        });
+
+        // Fungsi Scan Folder Lokal
+        async function scanLocalFolder() {
+            const scannedBooks = await ipcRenderer.invoke('library:scanLocal');
+            
+            if (scannedBooks && scannedBooks.length > 0) {
+                // Gabungkan dengan data lama, hindari duplikat berdasarkan Path
+                scannedBooks.forEach(newBook => {
+                    const exists = libraryData.find(b => b.path === newBook.path);
+                    if (!exists) {
+                        // Tambahkan ID unik
+                        newBook.id = Date.now() + Math.random();
+                        libraryData.push(newBook);
+                    } else {
+                        // Update info jika ada perubahan (misal chapter baru)
+                        Object.assign(exists, newBook);
+                    }
+                });
+                saveData();
+                alert(`Berhasil memindai! Ditemukan ${scannedBooks.length} item.`);
+            }
+        }
+
+        function bacaFile(filePath, title) {
+            const fileName = title || path.basename(filePath);
+            const ext = path.extname(filePath).toLowerCase();
+            
+            // Perbarui UI
+            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+            reader.style.display = 'flex';
+            pageTitle.innerText = fileName;
+            
+            // UI Adjustments for Reader
+            btnBack.style.display = 'block';
+            searchInput.style.display = 'none';
+            // currentView = 'reader'; // Optional: track reader state
+
+            // Tambahkan ke riwayat
+            const existingBook = libraryData.find(b => b.path === filePath) || { title: fileName, path: filePath };
+            // Hapus jika sudah ada (supaya naik ke paling atas)
+            riwayatBacaan = riwayatBacaan.filter(r => r.path !== filePath);
+            riwayatBacaan.unshift(existingBook);
+            saveData(); // Simpan history
+
+            // Bersihkan reader
+            reader.innerHTML = '';
+
+            // TODO: Integrasi pustaka (pdf.js / epub.js / jszip) dilakukan di sini.
+            // Sebagai simulasi gaya Webtoon, kita buat beberapa kotak panjang ke bawah.
+            renderSimulasiWebtoon(ext);
+        }
+
+        function renderSimulasiWebtoon(ext) {
+            for (let i = 1; i <= 5; i++) {
+                const page = document.createElement('div');
+                page.className = 'page-placeholder';
+                page.setAttribute('data-page', i);
+                page.innerText = `Simulasi Halaman ${i} - Area render untuk ${ext}`;
+                reader.appendChild(page);
+            }
+        }
+
+        // --- EXPLORE FUNCTIONS ---
+        function renderExplore() {
+            // 1. Render Filters (Ambil genre unik dari libraryData)
+            const genres = new Set();
+            libraryData.forEach(book => {
+                if(book.genre) {
+                    // Split koma jika ada multiple genre "Action, Fantasy"
+                    book.genre.split(',').forEach(g => genres.add(g.trim()));
+                }
+            });
+            
+            const filterContainer = document.getElementById('explore-filters');
+            filterContainer.innerHTML = '<div class="filter-tag active" onclick="filterGenre(\'all\', this)">Semua</div>';
+            genres.forEach(g => {
+                filterContainer.innerHTML += `<div class="filter-tag" onclick="filterGenre('${g}', this)">${g}</div>`;
+            });
+
+            // 2. Render Semua Buku Awalnya
+            renderGrid(libraryData, 'explore-grid');
+        }
+
+        // Fungsi global agar bisa dipanggil onclick
+        window.filterGenre = function(genre, element) {
+            document.querySelectorAll('.filter-tag').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            
+            const filtered = genre === 'all' ? libraryData : libraryData.filter(b => b.genre && b.genre.includes(genre));
+            renderGrid(filtered, 'explore-grid');
+        };
+
+        // Init
+        scanLocalFolder(); // Auto scan saat aplikasi dibuka
+        switchTab('library');
+    </script>
 </body>
 </html>

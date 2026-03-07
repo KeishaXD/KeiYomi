@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Comic Detail</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  background: #1b1f22;
+  color: #e5e5e5;
+}
+
+/* NAVBAR */
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: #14181b;
+}
+
+.logo {
+  font-weight: bold;
+  font-size: 18px;
+  color: #4dd0e1;
+}
+
+.search {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+  background: #24292e;
+  color: #fff;
+}
+
+.login {
+  background: #4dd0e1;
+  color: #000;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* MAIN */
+.container {
+  padding: 20px;
+  max-width: 1100px;
+  margin: auto;
+}
+
+/* COMIC INFO */
+.comic-info {
+  display: flex;
+  gap: 20px;
+}
+
+.cover {
+  width: 180px;
+  height: 260px;
+  background: #2a2f33;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.info h1 {
+  font-size: 22px;
+  margin: 8px 0;
+}
+
+.tag {
+  font-size: 12px;
+  color: #9aa0a6;
+}
+
+.alt-title {
+  font-size: 14px;
+  color: #b0b6bb;
+}
+
+.actions {
+  margin: 14px 0;
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.primary {
+  background: #4dd0e1;
+  color: #000;
+  font-weight: 600;
+}
+
+.icon {
+  background: #2a2f33;
+  color: #fff;
+}
+
+.description {
+  font-size: 14px;
+  color: #c5c5c5;
+  line-height: 1.5;
+}
+
+.rating {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* CHAPTERS */
+.chapters {
+  margin-top: 32px;
+  background: #14181b;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chapters h2 {
+  padding: 14px;
+  font-size: 16px;
+  border-bottom: 1px solid #2a2f33;
+}
+
+.chapter {
+  padding: 12px 14px;
+  border-bottom: 1px solid #2a2f33;
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chapter span {
+  color: #9aa0a6;
+  font-size: 12px;
+}
+
+.chapter:hover {
+  background: #24292e;
+}
+
+/* RESPONSIVE */
+@media (max-width: 700px) {
+  .comic-info {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cover {
+    width: 200px;
+    height: 290px;
+  }
+
+  .info {
+    text-align: center;
+  }
+
+  .actions {
+    justify-content: center;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header class="navbar">
+  <div class="logo">XCOMIX</div>
+  <input type="text" class="search" placeholder="Search comic...">
+</header>
+
+<main class="container">
+
+  <section class="comic-info">
+    <!-- Ganti src dengan cover kamu -->
+    <img src="https://via.placeholder.com/300x420" class="cover" alt="Cover">
+
+    <div class="info">
+      <div class="tag">#441 · 2022 · FINISHED</div>
+      <h1>Omega Heroine Wants Her Alpha Villainess</h1>
+      <div class="alt-title">
+        White Moonlight Female Host Always Wants to Monopolize Me
+      </div>
+
+      <div class="actions">
+        <button class="btn primary">▶ START READING</button>
+        <button class="btn icon">★</button>
+        <button class="btn icon">⚠</button>
+      </div>
+
+      <p class="description">
+        Ji Xiao accidentally transmigrates into a novel and becomes the Alpha villain
+        who shares the same name as her. To save her life, she treats the heroine
+        with utmost care, but things slowly begin to change...
+      </p>
+
+      <div class="rating">
+        ⭐⭐⭐⭐⭐ <strong>9 / 10</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapters">
+    <h2>Chapter List</h2>
+
+    <div class="chapter">Ch. 152 – Series Finale <span>4 mo ago</span></div>
+    <div class="chapter">Ch. 151 <span>4 mo ago</span></div>
+    <div class="chapter">Ch. 150 <span>4 mo ago</span></div>
+    <div class="chapter">Ch. 149 <span>4 mo ago</span></div>
+    <div class="chapter">Ch. 148 <span>4 mo ago</span></div>
+    <div class="chapter">Ch. 147 <span>4 mo ago</span></div>
+    <div class="chapter">Ch. 146 – Finale <span>4 mo ago</span></div>
+  </section>
+
+</main>
+
+</body>
+</html>

@@ -19,12 +19,12 @@ My Pembaca Dokumen adalah aplikasi desktop (PC) berbasis **Electron + JavaScript
 ## Struktur Proyek
 
 My Pembaca Dokumen/
-├── node_modules/
-├── package.json
-├── package-lock.json
-├── main.js
-├── preload.js
-└── index.html
+   ├── node_modules/
+   ├── package.json
+   ├── package-lock.json
+   ├── main.js
+   ├── preload.js
+   └── index.html
 
 ## Cara Menjalankan (Development)
 

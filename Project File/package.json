@@ -1,13 +1,14 @@
 {
-  "name": "my-pembaca-dokumen",
+  "name": "my-pembaca-document",
   "version": "1.0.0",
-  "description": "Aplikasi pembaca novel dan dokumen",
+  "description": "",
   "main": "main.js",
-  "type": "commonjs",
   "scripts": {
     "start": "electron ."
   },
+  "author": "",
+  "license": "ISC",
   "devDependencies": {
-    "electron": "^30.0.0"
+    "electron": "^29.0.0"
   }
 }
