@@ -1,6 +1,8 @@
 {
-  "name": "my-pembaca-document",
+  "name": "keiyomi",
   "version": "1.0.0",
+  "versionCode": 1,
+  "updateJson": "https://raw.githubusercontent.com/KeishaXD/KeiYomi/main/update.json",
   "description": "",
   "main": "main.js",
   "scripts": {
