@@ -105,6 +105,89 @@
         .filter-container { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
         .filter-tag { padding: 6px 12px; background: white; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 0.85rem; color: #64748b; cursor: pointer; transition: 0.2s; }
         .filter-tag:hover, .filter-tag.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* Reader Modes */
+        .reader-container.webtoon-mode .page-placeholder { margin-bottom: 0 !important; }
+        .reader-container.webtoon-mode canvas, .reader-container.webtoon-mode img { margin-bottom: 0 !important; }
+
+        /* Floating Action Button & Settings */
+        .fab-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .fab-btn:hover {
+            transform: scale(1.05);
+            background-color: var(--accent-hover);
+        }
+        .fab-btn svg {
+            width: 28px;
+            height: 28px;
+            fill: currentColor;
+        }
+
+        .settings-popup {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 99;
+            width: 220px;
+            display: none;
+            animation: slideUp 0.2s ease-out;
+            border: 1px solid #e2e8f0;
+        }
+        .settings-popup.show {
+            display: block;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .settings-popup h3 {
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            color: var(--text-dark);
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+            font-weight: 600;
+        }
+        .setting-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+        .setting-option:last-child { margin-bottom: 0; }
+        .setting-option label {
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #475569;
+            flex-grow: 1;
+            margin-left: 8px;
+        }
+        .setting-option input[type="radio"] {
+            cursor: pointer;
+            accent-color: var(--accent);
+            width: 16px;
+            height: 16px;
+        }
     </style>
     <!-- Integrasi PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -202,6 +285,24 @@
         </div>
     </div>
 
+    <!-- Floating Settings Button -->
+    <div id="reader-settings-container" style="display: none;">
+        <div id="settings-popup" class="settings-popup">
+            <h3>Pengaturan Baca</h3>
+            <div class="setting-option">
+                <input type="radio" name="reader-mode" id="mode-webtoon" value="webtoon">
+                <label for="mode-webtoon">Mode Webtoon (Scroll)</label>
+            </div>
+            <div class="setting-option">
+                <input type="radio" name="reader-mode" id="mode-pages" value="normal">
+                <label for="mode-pages">Mode Halaman (Split)</label>
+            </div>
+        </div>
+        <button id="btn-settings-fab" class="fab-btn" title="Pengaturan">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.04.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.08-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </button>
+    </div>
+
     <script>
         const { ipcRenderer } = require('electron');
         const path = require('path');
@@ -211,6 +312,11 @@
         const btnBack = document.getElementById('btn-back');
         const btnRefresh = document.getElementById('btn-refresh');
         const searchInput = document.getElementById('search-input');
+        const readerSettingsContainer = document.getElementById('reader-settings-container');
+        const btnSettingsFab = document.getElementById('btn-settings-fab');
+        const settingsPopup = document.getElementById('settings-popup');
+        const radioWebtoon = document.getElementById('mode-webtoon');
+        const radioPages = document.getElementById('mode-pages');
         const pageTitle = document.getElementById('page-title');
         const reader = document.getElementById('reader');
         let currentBookPath = null;
@@ -224,10 +330,12 @@
         ];
 
         let riwayatBacaan = JSON.parse(localStorage.getItem('my-history')) || [];
+        let isWebtoonMode = localStorage.getItem('reader-mode') !== 'normal'; // Default Webtoon (true)
 
         function saveData() {
             localStorage.setItem('my-library', JSON.stringify(libraryData));
             localStorage.setItem('my-history', JSON.stringify(riwayatBacaan));
+            localStorage.setItem('reader-mode', isWebtoonMode ? 'webtoon' : 'normal');
         }
 
         // --- NAVIGATION LOGIC ---
@@ -244,6 +352,7 @@
             // Reset Header UI
             btnBack.style.display = 'none';
             searchInput.style.display = 'block';
+            readerSettingsContainer.style.display = 'none';
             searchInput.value = ''; // Reset search
 
             // Tampilkan view yang dipilih
@@ -470,6 +579,7 @@
             // UI Adjustments for Reader
             btnBack.style.display = 'block';
             searchInput.style.display = 'none';
+            readerSettingsContainer.style.display = 'block';
             // currentView = 'reader'; // Optional: track reader state
 
             // Tambahkan ke riwayat
@@ -490,6 +600,9 @@
             // Bersihkan reader
             reader.innerHTML = '';
 
+            // Terapkan mode baca
+            updateReaderModeUI();
+
             if (ext === '.pdf') {
                 await renderPDF(filePath);
             } else if (ext === '.cbz' || ext === '.zip') {
@@ -506,6 +619,40 @@
                 }, 100);
             }
         }
+
+        // --- READER MODE LOGIC ---
+        function updateReaderModeUI() {
+            if (isWebtoonMode) {
+                reader.classList.add('webtoon-mode');
+                radioWebtoon.checked = true;
+            } else {
+                reader.classList.remove('webtoon-mode');
+                radioPages.checked = true;
+            }
+        }
+
+        // Toggle Popup Settings
+        btnSettingsFab.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsPopup.classList.toggle('show');
+        });
+
+        // Close popup when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!settingsPopup.contains(e.target) && !btnSettingsFab.contains(e.target)) {
+                settingsPopup.classList.remove('show');
+            }
+        });
+
+        // Handle Radio Change
+        function changeMode(mode) {
+            isWebtoonMode = (mode === 'webtoon');
+            saveData();
+            updateReaderModeUI();
+        }
+
+        radioWebtoon.addEventListener('change', () => changeMode('webtoon'));
+        radioPages.addEventListener('change', () => changeMode('normal'));
 
         async function renderPDF(filePath) {
             try {
@@ -526,7 +673,7 @@
                     div.style.height = 'auto';
                     div.style.background = 'transparent';
                     div.style.boxShadow = 'none';
-                    div.style.marginBottom = '0'; // Webtoon Mode: Hapus jarak antar container
+                    // Margin diatur oleh CSS class .webtoon-mode
                     div.innerText = '';
 
                     const canvas = document.createElement('canvas');
@@ -536,7 +683,7 @@
                     canvas.style.maxWidth = '100%';
                     canvas.style.height = 'auto';
                     canvas.style.display = 'block'; // Pastikan block agar tidak ada celah baris
-                    canvas.style.marginBottom = '0'; // Hapus jarak bawah canvas
+                    // Margin diatur oleh CSS class .webtoon-mode
                     
                     div.appendChild(canvas);
                     reader.appendChild(div);
@@ -581,7 +728,7 @@
                     div.style.height = 'auto';
                     div.style.background = 'transparent';
                     div.style.boxShadow = 'none';
-                    div.style.marginBottom = '0'; // Webtoon Mode: Hapus jarak antar container
+                    // Margin diatur oleh CSS class .webtoon-mode
                     div.innerText = '';
 
                     const img = document.createElement('img');
@@ -589,7 +736,7 @@
                     img.style.maxWidth = '100%';
                     img.style.height = 'auto';
                     img.style.display = 'block';
-                    img.style.marginBottom = '0'; // Hapus jarak bawah gambar
+                    // Margin diatur oleh CSS class .webtoon-mode
                     
                     div.appendChild(img);
                     reader.appendChild(div);
