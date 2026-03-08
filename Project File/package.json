@@ -2,13 +2,12 @@
   "name": "keiyomi",
   "version": "1.0.0",
   "versionCode": 1,
-  "updateJson": "https://raw.githubusercontent.com/KeishaXD/KeiYomi/main/update.json",
   "description": "KeiYomi Desktop Manga & Document Reader",
   "main": "main.js",
 
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "build": "electron-builder --win"
   },
 
   "author": "KeishaXD",
@@ -23,27 +22,53 @@
     "appId": "com.keishaxd.keiyomi",
     "productName": "KeiYomi",
 
+    "compression": "maximum",
+    "asar": true,
+
     "directories": {
       "output": "dist"
     },
 
     "files": [
-      "**/*"
+      "main.js",
+      "preload.js",
+      "index.html",
+      "assets/**/*",
+      "package.json",
+      "!node_modules/.cache",
+      "!dist",
+      "!.git",
+      "!.github",
+      "!*.md"
     ],
 
-    "asar": true,
+    "extraMetadata": {
+      "versionCode": 1
+    },
 
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
-        "nsis",
-        "portable"
-      ],
-      "icon": "assets/icon.ico"
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "zip",
+          "arch": ["x64"]
+        }
+      ]
     },
 
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   }
 }
