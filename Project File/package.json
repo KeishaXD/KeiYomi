@@ -9,7 +9,7 @@
     "start": "electron ."
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "electron": "^40.8.0"
   }

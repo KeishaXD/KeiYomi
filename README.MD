@@ -1,64 +1,69 @@
+![Banner](assets-repo/banner.svg)
 # KeiYomi
 
-KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, dokumen, dan komik digital secara offline dengan antarmuka yang modern dan responsif.
+[Baca dalam Bahasa Indonesia](README.ID.md)
 
-## Fitur Utama
+KeiYomi is a desktop application (PC) based on **Electron** for reading novels, documents, and digital comics offline with a modern and responsive interface.
 
-- **Dukungan Format:** Membaca file **PDF**, **CBZ**, **ZIP**, dan **TXT**.
-- **Mode Baca Fleksibel:**
-  - **Mode Webtoon:** Scroll vertikal tanpa putus (cocok untuk Manhwa/Webtoon).
-  - **Mode Normal:** Tampilan per halaman (cocok untuk PDF/Dokumen).
-- **Manajemen Pustaka:**
-  - **Scan Otomatis:** Mendeteksi buku dan folder komik dari folder lokal (`Documents/KeiYomi`).
-  - **Riwayat Bacaan:** Menyimpan halaman terakhir yang dibaca secara otomatis.
-  - **Favorit:** Tandai buku atau chapter tertentu sebagai favorit.
-  - **Pencarian & Filter:** Cari buku berdasarkan judul atau filter berdasarkan genre.
-  - **Sortir:** Urutkan berdasarkan Nama, Tanggal, atau Terakhir Dibaca.
-- **Kustomisasi:**
-  - **Tema:** Mode Terang (Light) dan Gelap (Dark).
-  - **Bahasa:** Dukungan Bahasa Indonesia dan Inggris.
-  - **Edit Metadata:** Ubah judul, penulis, sampul, dan sinopsis buku langsung dari aplikasi.
-- **Performa Tinggi:** Menggunakan *Lazy Loading* untuk memuat gambar/halaman hanya saat dibutuhkan.
+> **Note:** This project is inspired by the famous Android application **Tachiyomi**. However, please note that **KeiYomi does not use any source code from Tachiyomi**. This is an independent project built from scratch using Electron and web technologies for desktop platforms.
 
-## Teknologi
+## Key Features
+
+- **Format Support:** Read **PDF**, **CBZ**, **ZIP**, and **TXT** files.
+- **Flexible Reading Modes:**
+  - **Webtoon Mode:** Continuous vertical scroll (suitable for Manhwa/Webtoon).
+  - **Normal Mode:** Page-by-page view (suitable for PDF/Documents).
+- **Library Management:**
+  - **Auto Scan:** Detects books and comic folders from the local folder (`Documents/KeiYomi`).
+  - **Reading History:** Automatically saves the last read page.
+  - **Favorites:** Mark specific books or chapters as favorites.
+  - **Search & Filter:** Search books by title or filter by genre.
+  - **Sort:** Sort by Name, Date, or Last Read.
+- **Customization:**
+  - **Themes:** Light and Dark Mode.
+  - **Language:** Support for Indonesian and English.
+  - **Edit Metadata:** Change title, author, cover, and synopsis directly from the app.
+- **High Performance:** Uses *Lazy Loading* to load images/pages only when needed.
+
+## Technologies
 
 - Electron
 - Node.js
 - HTML5, CSS3, JavaScript
-- PDF.js (Rendering PDF)
-- JSZip (Ekstraksi CBZ/ZIP)
+- PDF.js (PDF Rendering)
+- JSZip (CBZ/ZIP Extraction)
 
-## Cara Menjalankan (Development)
+## How to Run (Development)
 
-1. Pastikan Node.js sudah terinstall.
-2. Masuk ke folder project:
+1. Ensure Node.js is installed.
+2. Enter the project folder:
    ```bash
    cd "My Pembaca Dokumen"
    ```
-3. Install dependency:
+3. Install dependencies:
    ```bash
    npm install
    ```
-4. Jalankan aplikasi:
+4. Run the application:
    ```bash
    npm start
    ```
 
-## Pintasan Keyboard
+## Keyboard Shortcuts
 
-- **Panah Atas/Bawah:** Scroll halaman / navigasi menu.
-- **Panah Kiri/Kanan:** Pindah halaman (Next/Prev Page).
-- **ESC:** Kembali / Tutup Modal / Keluar Aplikasi.
+- **Up/Down Arrow:** Scroll page / navigate menu.
+- **Left/Right Arrow:** Change page (Next/Prev Page).
+- **ESC:** Back / Close Modal / Exit App.
 
-## Struktur Folder (Auto-Scan)
+## Folder Structure (Auto-Scan)
 
-Aplikasi akan membuat folder `KeiYomi` di dalam folder Documents Anda. Anda dapat menyusun folder komik seperti berikut agar terdeteksi sebagai satu seri:
+The application will create a `KeiYomi` folder inside your Documents folder. You can organize comic folders as follows to be detected as a series:
 
 ```text
 KeiYomi/
-└── Judul Manga/
-    ├── info.json       (Metadata buku)
-    ├── cover.jpg       (Gambar sampul)
+└── Manga Title/
+    ├── info.json       (Book metadata)
+    ├── cover.jpg       (Cover image)
     ├── Chapter 1.pdf
     ├── Chapter 2.cbz
     └── ...
