@@ -2,15 +2,48 @@
   "name": "keiyomi",
   "version": "1.0.0",
   "versionCode": 1,
-  "updateJson": "https://raw.githubusercontent.com/KeishaXD/My-Pembaca-Dokumen-PC/main/update.json",
-  "description": "",
+  "updateJson": "https://raw.githubusercontent.com/KeishaXD/KeiYomi/main/update.json",
+  "description": "KeiYomi Desktop Manga & Document Reader",
   "main": "main.js",
+
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder"
   },
-  "author": "",
+
+  "author": "KeishaXD",
   "license": "MIT",
+
   "devDependencies": {
-    "electron": "^40.8.0"
+    "electron": "^40.8.0",
+    "electron-builder": "^26.8.1"
+  },
+
+  "build": {
+    "appId": "com.keishaxd.keiyomi",
+    "productName": "KeiYomi",
+
+    "directories": {
+      "output": "dist"
+    },
+
+    "files": [
+      "**/*"
+    ],
+
+    "asar": true,
+
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
+
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

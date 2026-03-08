@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeiYomi - Desktop Manga & Document Reader</title>
+    <meta name="description" content="KeiYomi is a free, open-source desktop application for reading Manga, Comics, and Documents (PDF, CBZ, ZIP) offline.">
+    <link rel="icon" type="image/png"
+    href="assets-repo/logo.svg" />
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- VARIABLES (Inspired by Tachiyomi Site) --- */
+        :root {
+            --primary: #0F172A;
+            --secondary: #334155;
+            --accent: #3B82F6;
+            --text-dark: #1E293B;
+            --text-light: #ffffff;
+            --bg-light: #F1F5F9;
+            --gradient: linear-gradient(to bottom, #0F172A, #020617);
+        }
+
+        /* --- RESET & BASE --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Montserrat', sans-serif; color: var(--text-dark); line-height: 1.6; overflow-x: hidden; }
+        a { text-decoration: none; transition: 0.3s; }
+        ul { list-style: none; }
+
+        /* --- HEADER --- */
+        header {
+            background: var(--primary);
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+        .logo { font-size: 1.5rem; font-weight: 700; color: var(--text-light); display: flex; align-items: center; gap: 10px; }
+        .logo span { color: var(--accent); }
+        .nav-menu { display: flex; gap: 30px; }
+        .nav-menu a { color: var(--text-light); font-weight: 600; font-size: 0.9rem; text-transform: uppercase; }
+        .nav-menu a:hover { color: var(--accent); }
+        .mobile-toggle { display: none; font-size: 1.5rem; color: var(--text-light); cursor: pointer; }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            background: var(--gradient);
+            color: var(--text-light);
+            padding: 100px 5% 150px;
+            text-align: center;
+            position: relative;
+        }
+        .hero h1 { font-size: 3.5rem; font-weight: 700; margin-bottom: 20px; line-height: 1.2; }
+        .hero p { font-size: 1.2rem; max-width: 700px; margin: 0 auto 40px; opacity: 0.9; }
+        
+        .btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            padding: 15px 35px; border-radius: 50px;
+            font-weight: 600; text-transform: uppercase; font-size: 0.9rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .btn-primary { background: var(--primary); color: var(--text-light); }
+        .btn-outline { border: 2px solid var(--text-light); color: var(--text-light); margin-left: 15px; }
+        .btn-outline:hover { background: var(--text-light); color: var(--secondary); }
+
+        /* SVG Wave */
+        .wave-bottom { position: absolute; bottom: -1px; left: 0; width: 100%; overflow: hidden; line-height: 0; transform: rotate(180deg); }
+        .wave-bottom svg { position: relative; display: block; width: calc(100% + 1.3px); height: 80px; }
+        .wave-bottom .shape-fill { fill: #ffffff; }
+
+        /* --- FEATURES --- */
+        .features { padding: 80px 5%; text-align: center; }
+        .section-title { font-size: 2.5rem; color: var(--secondary); margin-bottom: 10px; font-weight: 700; }
+        .divider { width: 60px; height: 4px; background: var(--primary); margin: 0 auto 50px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .card {
+            background: var(--text-light);
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.05);
+            transition: 0.3s;
+            text-align: left;
+            border: 1px solid transparent;
+        }
+        .card:hover { transform: translateY(-10px); border-color: var(--primary); }
+        .icon-box {
+            width: 70px; height: 70px;
+            background: var(--bg-light);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; color: var(--secondary);
+            margin-bottom: 20px;
+            border: 1px solid var(--primary);
+        }
+        .card h3 { font-size: 1.3rem; margin-bottom: 15px; color: var(--secondary); }
+        .card p { color: #666; font-size: 0.95rem; }
+
+        /* --- HOW IT WORKS --- */
+        .how-it-works { background: var(--bg-light); padding: 80px 5%; text-align: center; }
+        .step-item { padding: 20px; }
+        .step-icon { font-size: 3rem; color: var(--secondary); margin-bottom: 20px; }
+        .step-item h4 { font-size: 1.2rem; margin-bottom: 10px; }
+
+        /* --- FOOTER --- */
+        footer { background: var(--gradient); color: var(--text-light); padding: 50px 5% 20px; text-align: center; }
+        .footer-links { margin-bottom: 30px; }
+        .footer-links a { color: var(--text-light); margin: 0 15px; opacity: 0.8; }
+        .footer-links a:hover { opacity: 1; }
+        .copyright { opacity: 0.6; font-size: 0.85rem; }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .nav-menu { display: none; }
+            .mobile-toggle { display: block; }
+            .btn { width: 100%; justify-content: center; margin: 10px 0 0 0; }
+            .btn-outline { margin-left: 0; }
+        }
+
+        /* --- ANIMATION ON SCROLL --- */
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <a href="#" class="logo">
+            KeiYomi
+        </a>
+        <nav>
+            <ul class="nav-menu">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how-it-works">How it Works</a></li>
+                <li><a href="https://github.com/KeishaXD/KeiYomi" target="_blank">GitHub</a></li>
+                <li><a href="https://github.com/KeishaXD/KeiYomi/releases" target="_blank" class="btn-primary" style="padding: 8px 20px; border-radius: 20px; background: var(--text-light); color: var(--primary);">Download</a></li>
+            </ul>
+            <div class="mobile-toggle"><i class="fas fa-bars"></i></div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>Your Ultimate Desktop<br>Document and Manga Reader</h1>
+        <p>Fast, Free, and Open Source. Read your favorite Manga, Comics, and Documents offline with a modern interface inspired by Tachiyomi.</p>
+        
+        <div>
+            <a href="https://github.com/KeishaXD/KeiYomi/releases" target="_blank" class="btn btn-outline">
+                <i class="fab fa-windows"></i> Download for Windows
+            </a>
+            <a href="https://github.com/KeishaXD/KeiYomi" target="_blank" class="btn btn-outline">
+                <i class="fab fa-github"></i> View Source
+            </a>
+        </div>
+
+        <div class="wave-bottom">
+            <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+                <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" class="shape-fill"></path>
+            </svg>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <h2 class="section-title">Why Choose KeiYomi?</h2>
+        <div class="divider"></div>
+
+        <div class="grid">
+            <div class="card reveal">
+                <div class="icon-box"><i class="fas fa-file-pdf"></i></div>
+                <h3>Multi-Format Support</h3>
+                <p>Seamlessly read PDF, CBZ, ZIP, and TXT files. Perfect for Manga, Manhwa, Comics, and Novels.</p>
+            </div>
+            <div class="card reveal">
+                <div class="icon-box"><i class="fas fa-columns"></i></div>
+                <h3>Flexible Reading Modes</h3>
+                <p>Switch between Webtoon (Continuous Scroll) for manhwa and Normal (Paged) modes for traditional comics.</p>
+            </div>
+            <div class="card reveal">
+                <div class="icon-box"><i class="fas fa-folder-open"></i></div>
+                <h3>Local Library</h3>
+                <p>Automatically scans your folder to organize your collection. Keeps track of your reading progress and history.</p>
+            </div>
+            <div class="card reveal">
+                <div class="icon-box"><i class="fas fa-palette"></i></div>
+                <h3>Customizable</h3>
+                <p>Dark/Light themes, metadata editing, and favorites management. Tailor the app to your liking.</p>
+            </div>
+            <div class="card reveal">
+                <div class="icon-box"><i class="fas fa-bolt"></i></div>
+                <h3>High Performance</h3>
+                <p>Built with Electron and optimized with Lazy Loading for a smooth experience even on lower-end devices.</p>
+            </div>
+            <div class="card reveal">
+                <div class="icon-box"><i class="fas fa-code"></i></div>
+                <h3>Open Source</h3>
+                <p>100% Free and Open Source (MIT License). No ads, no tracking. Built by the community, for the community.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="how-it-works">
+        <h2 class="section-title">How It Works</h2>
+        <div class="divider"></div>
+        <p style="max-width: 600px; margin: 0 auto 40px;">KeiYomi is designed to be simple. Just point it to your document folder, and it does the rest.</p>
+
+        <div class="grid" style="text-align: center;">
+            <div class="step-item reveal">
+                <i class="fas fa-download step-icon"></i>
+                <h4>1. Download</h4>
+                <p>Get the latest release from GitHub and install it on your PC.</p>
+            </div>
+            <div class="step-item reveal">
+                <i class="fas fa-folder-plus step-icon"></i>
+                <h4>2. Add Files</h4>
+                <p>Place your PDF/CBZ files in the <code>Documents/KeiYomi</code> folder.</p>
+            </div>
+            <div class="step-item reveal">
+                <i class="fas fa-glasses step-icon"></i>
+                <h4>3. Read</h4>
+                <p>Open the app, let it scan, and enjoy your reading!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="https://github.com/KeishaXD/KeiYomi" target="_blank">GitHub</a>
+            <a href="https://github.com/KeishaXD/KeiYomi/issues" target="_blank">Report Issue</a>
+            <a href="#" target="_blank">Terms of Service</a>
+            <a href="#" target="_blank">Privacy Policy</a>
+        </div>
+        <p class="copyright">&copy; 2026 KeiYomi. Developed by KeishaXD. Inspired by Tachiyomi.</p>
+    </footer>
+
+    <script>
+        // Smooth Scroll untuk Link Anchor (Navigasi)
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+
+        // Animasi Reveal saat Scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                    // Hapus class 'reveal' setelah animasi selesai (0.8s) agar tidak mengganggu hover effect
+                    setTimeout(() => {
+                        entry.target.classList.remove('reveal');
+                        entry.target.classList.remove('active');
+                    }, 800);
+                    observer.unobserve(entry.target); // Stop observing setelah muncul
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>

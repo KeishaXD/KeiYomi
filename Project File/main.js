@@ -8,7 +8,7 @@ function createWindow() {
         width: 1200,
         height: 800,
         title: "KeiYomi",
-        icon: path.join(__dirname, 'assets/icon.svg'),
+        icon: path.join(__dirname, 'assets/logo.ico'), // Pastikan Anda memiliki ikon di path ini
         backgroundColor: '#1e1e1e', // Mencegah flash putih saat loading (Dark Mode)
         webPreferences: {
             nodeIntegration: true,
