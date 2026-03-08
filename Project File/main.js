@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, nativeTheme } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeTheme, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { execSync } = require('child_process');
@@ -338,11 +338,29 @@ ipcMain.handle('updater:check', async () => {
             return { error: 'URL updateJson tidak ditemukan di package.json' };
         }
 
-        // Fetch update.json dari remote (GitHub)
-        const response = await fetch(localInfo.updateJson);
-        if (!response.ok) throw new Error(`Gagal akses update.json: ${response.status} ${response.statusText}. Pastikan file sudah di-upload ke GitHub.`);
-        
-        const remoteInfo = await response.json();
+        // Fetch update.json dari remote (GitHub) menggunakan net module Electron
+        // Menggunakan net.request lebih stabil daripada fetch di lingkungan Electron
+        const remoteInfo = await new Promise((resolve, reject) => {
+            const request = net.request(localInfo.updateJson);
+            
+            request.on('response', (response) => {
+                if (response.statusCode !== 200) {
+                    reject(new Error(`Gagal akses update.json: HTTP ${response.statusCode}`));
+                    return;
+                }
+                
+                let data = '';
+                response.on('data', (chunk) => { data += chunk; });
+                response.on('end', () => {
+                    try { resolve(JSON.parse(data)); }
+                    catch (e) { reject(new Error('Format JSON tidak valid')); }
+                });
+            });
+            
+            request.on('error', (error) => reject(error));
+            request.end();
+        });
+
         const localCode = parseInt(localInfo.versionCode || 0);
         const remoteCode = parseInt(remoteInfo.versionCode || 0);
 
