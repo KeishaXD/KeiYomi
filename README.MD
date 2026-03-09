@@ -70,4 +70,4 @@ KeiYomi/
 ```
 
 ## Lisensi
-ISC License
+MIT License
