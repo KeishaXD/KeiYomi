@@ -42,9 +42,6 @@ body:
       options:
         - Windows 10
         - Windows 11
-        - macOS
-        - Linux
-        - Other
     validations:
       required: true
   - type: input
