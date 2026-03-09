@@ -1,0 +1,23 @@
+Halo semuanya! 👋
+
+Perkenalkan, namaku **Jovallin Keisha Rafael Dewantara** dari kelas **2025i**, Prodi **PPKn**, **Fakultas Ilmu Sosial dan Politik**.
+
+Aku mau izin share project aplikasi yang aku buat, namanya **KeiYomi**. 📚✨
+
+**Apa itu KeiYomi?**
+KeiYomi adalah aplikasi desktop (PC) buat baca Novel, Komik, dan Dokumen Kuliah (PDF) yang nyaman banget. 🖥️🚀
+
+Buat kalian yang suka baca Manhwa/Webtoon di HP tapi pengen layar gede di Laptop, atau butuh PDF reader yang gak ribet buat materi kuliah, wajib cobain ini!
+
+🔥 **Fitur Unggulan:**
+✅ **Webtoon Mode:** Scroll vertikal tanpa putus, enak banget buat baca Manga!
+✅ **Support Banyak Format:** PDF, CBZ, ZIP, sampai TXT.
+✅ **Manajemen Pustaka:** Scan otomatis folder komik/buku kalian, ada Riwayat Baca & Favorit juga.
+✅ **Tampilan Kece:** Modern, Responsif, dan pastinya ada **Dark Mode** biar mata gak pedes pas begadang! 🌙
+✅ **Ringan:** Dibangun pakai teknologi web (Electron) yang dioptimalkan.
+
+Project ini terinspirasi dari *Tachiyomi* tapi khusus buat PC dan dibangun dari nol. 100% Gratis & Open Source (MIT License).
+
+Yuk cobain biar pengalaman baca di PC makin asik! 📖☕
+
+#KeiYomi #AppShowcase #MahasiswaProduktif #MangaReader #PDFReader #FISIP #PPKn
