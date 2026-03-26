@@ -10,6 +10,7 @@ function createWindow() {
         title: "KeiYomi",
         icon: path.join(__dirname, 'assets/logo.ico'), // Pastikan Anda memiliki ikon di path ini
         backgroundColor: '#1e1e1e', // Mencegah flash putih saat loading (Dark Mode)
+        autoHideMenuBar: true, // Menyembunyikan menu bar File, Edit, View, dll.
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
