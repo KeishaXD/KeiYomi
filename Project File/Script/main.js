@@ -66,6 +66,18 @@ ipcMain.handle('dialog:openCover', async () => {
     }
 });
 
+// Menangani permintaan pemilihan direktori folder dari index.html
+ipcMain.handle('dialog:openDirectory', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+        properties: ['openDirectory']
+    });
+    if (canceled) {
+        return null;
+    } else {
+        return filePaths[0];
+    }
+});
+
 // --- FITUR BARU: SAVE/LOAD DATA KE FILE TERSEMBUNYI ---
 ipcMain.handle('data:save', async (event, data) => {
     const docPath = app.getPath('documents');
@@ -116,7 +128,7 @@ ipcMain.handle('data:load', async () => {
 });
 
 // --- FITUR BARU: SCAN LIBRARY OTOMATIS ---
-ipcMain.handle('library:scanLocal', async () => {
+ipcMain.handle('library:scanLocal', async (event, customFolders = []) => {
     const docPath = app.getPath('documents');
     const baseDir = path.join(docPath, 'KeiYomi');
 
@@ -248,81 +260,93 @@ Catatan:
     const results = [];
     const supportedExts = ['.pdf', '.epub', '.cbz', '.zip', '.txt'];
 
-    try {
-        const items = fs.readdirSync(baseDir, { withFileTypes: true });
+    const foldersToScan = [baseDir, ...(Array.isArray(customFolders) ? customFolders : [])];
+    const scannedDirs = new Set();
 
-        for (const item of items) {
-            const fullPath = path.join(baseDir, item.name);
+    for (const targetDir of foldersToScan) {
+        if (!fs.existsSync(targetDir)) continue;
+        
+        // Menghindari scan ganda jika user menambahkan path default secara manual
+        const normPath = path.normalize(targetDir).toLowerCase();
+        if (scannedDirs.has(normPath)) continue;
+        scannedDirs.add(normPath);
 
-            // KASUS 1: File Langsungan (Simple)
-            if (item.isFile()) {
-                const ext = path.extname(item.name).toLowerCase();
-                if (supportedExts.includes(ext)) {
-                    results.push({
-                        structureType: 'simple',
-                        title: item.name,
-                        path: fullPath,
-                        genre: 'Local File',
-                        synopsis: 'File ditemukan otomatis di folder KeiYomi'
-                    });
-                }
-            } 
-            // KASUS 2: Folder Khusus (Structured/Manga)
-            else if (item.isDirectory()) {
-                const infoPath = path.join(fullPath, 'info.json');
-                
-                if (fs.existsSync(infoPath)) {
-                    try {
-                        // Baca info.json
-                        const infoData = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
-                        
-                        // --- LOGIKA BARU: Auto-detect Cover ---
-                        let detectedCover = infoData.cover;
-                        
-                        // FIX: Cek apakah file cover yang tertulis di info.json benar-benar ada
-                        if (detectedCover && !fs.existsSync(path.join(fullPath, detectedCover))) {
-                            detectedCover = null; // Jika tidak ada, paksa auto-detect ulang
-                        }
+        try {
+            const items = fs.readdirSync(targetDir, { withFileTypes: true });
 
-                        if (!detectedCover) {
-                            const possibleCovers = [
-                                'cover.svg', 'cover.jpeg', 'cover.png', 'cover.webp', 'cover.gif', 'cover.avif',
-                            ];
-                            for (const img of possibleCovers) {
-                                if (fs.existsSync(path.join(fullPath, img))) {
-                                    detectedCover = img; // Gunakan nama file relatif
-                                    break;
+            for (const item of items) {
+                const fullPath = path.join(targetDir, item.name);
+
+                // KASUS 1: File Langsungan (Simple)
+                if (item.isFile()) {
+                    const ext = path.extname(item.name).toLowerCase();
+                    if (supportedExts.includes(ext)) {
+                        results.push({
+                            structureType: 'simple',
+                            title: item.name,
+                            path: fullPath,
+                            genre: 'Local File',
+                            synopsis: `File ditemukan otomatis di folder ${path.basename(targetDir)}`
+                        });
+                    }
+                } 
+                // KASUS 2: Folder Khusus (Structured/Manga)
+                else if (item.isDirectory()) {
+                    const infoPath = path.join(fullPath, 'info.json');
+                    
+                    if (fs.existsSync(infoPath)) {
+                        try {
+                            // Baca info.json
+                            const infoData = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+                            
+                            // --- LOGIKA BARU: Auto-detect Cover ---
+                            let detectedCover = infoData.cover;
+                            
+                            // FIX: Cek apakah file cover yang tertulis di info.json benar-benar ada
+                            if (detectedCover && !fs.existsSync(path.join(fullPath, detectedCover))) {
+                                detectedCover = null; // Jika tidak ada, paksa auto-detect ulang
+                            }
+
+                            if (!detectedCover) {
+                                const possibleCovers = [
+                                    'cover.svg', 'cover.jpeg', 'cover.png', 'cover.webp', 'cover.gif', 'cover.avif',
+                                ];
+                                for (const img of possibleCovers) {
+                                    if (fs.existsSync(path.join(fullPath, img))) {
+                                        detectedCover = img; // Gunakan nama file relatif
+                                        break;
+                                    }
                                 }
                             }
+
+                            // Cari file chapter di dalam folder ini
+                            const files = fs.readdirSync(fullPath)
+                                .filter(f => supportedExts.includes(path.extname(f).toLowerCase()));
+                            
+                            // Sortir file agar urutan benar (1, 2, 10)
+                            files.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+
+                            const chapterFiles = files.map((f, index) => ({
+                                name: `Chapter ${index + 1}`,
+                                path: path.join(fullPath, f)
+                            }));
+
+                            results.push({
+                                structureType: 'series',
+                                ...infoData, // Mengambil title, genre, synopsis dari json
+                                cover: detectedCover, // Gunakan cover yang dideteksi
+                                path: fullPath, // Path folder utama
+                                chapters: chapterFiles // List file chapter
+                            });
+                        } catch (err) {
+                            console.error("Error parsing info.json in " + item.name, err);
                         }
-
-                        // Cari file chapter di dalam folder ini
-                        const files = fs.readdirSync(fullPath)
-                            .filter(f => supportedExts.includes(path.extname(f).toLowerCase()));
-                        
-                        // Sortir file agar urutan benar (1, 2, 10)
-                        files.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
-
-                        const chapterFiles = files.map((f, index) => ({
-                            name: `Chapter ${index + 1}`,
-                            path: path.join(fullPath, f)
-                        }));
-
-                        results.push({
-                            structureType: 'series',
-                            ...infoData, // Mengambil title, genre, synopsis dari json
-                            cover: detectedCover, // Gunakan cover yang dideteksi
-                            path: fullPath, // Path folder utama
-                            chapters: chapterFiles // List file chapter
-                        });
-                    } catch (err) {
-                        console.error("Error parsing info.json in " + item.name, err);
                     }
                 }
             }
+        } catch (error) {
+            console.error(`Gagal scan folder ${targetDir}:`, error);
         }
-    } catch (error) {
-        console.error("Gagal scan folder:", error);
     }
 
     return results;

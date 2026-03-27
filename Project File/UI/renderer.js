@@ -67,7 +67,7 @@ let currentRenderId = 0;
 let libraryData = [];
 let riwayatBacaan = [];
 let isWebtoonMode = true;
-let userSettings = { username: '', theme: 'light', language: 'id' };
+let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [] };
 
 async function loadData() {
     const data = await ipcRenderer.invoke('data:load');
@@ -78,6 +78,7 @@ async function loadData() {
         userSettings.username = data.username || '';
         userSettings.theme = data.theme || 'light';
         userSettings.language = data.language || 'id';
+        userSettings.customFolders = data.customFolders || [];
     } else {
         libraryData = [];
         riwayatBacaan = [];
@@ -93,7 +94,8 @@ async function saveData() {
         mode: isWebtoonMode ? 'webtoon' : 'normal',
         username: userSettings.username,
         theme: userSettings.theme,
-        language: userSettings.language
+        language: userSettings.language,
+        customFolders: userSettings.customFolders
     };
     await ipcRenderer.invoke('data:save', data);
 }
@@ -134,6 +136,9 @@ const translations = {
         settings_mode_normal: "Normal (Per Halaman)",
         settings_language: "Bahasa / Language",
         settings_save: "Simpan Perubahan",
+        settings_folders: "Folder Pustaka Tambahan",
+        btn_add_folder: "+ Tambah Folder",
+        btn_remove: "Hapus",
         about_title: "Tentang",
         about_donate: "Dukungan Pengembangan",
         about_check_update: "Cek Pembaruan",
@@ -237,6 +242,9 @@ const translations = {
         settings_mode_normal: "Normal (Paged)",
         settings_language: "Language",
         settings_save: "Save Changes",
+        settings_folders: "Additional Library Folders",
+        btn_add_folder: "+ Add Folder",
+        btn_remove: "Remove",
         about_title: "About",
         about_donate: "Support Development",
         about_check_update: "Check for Updates",
@@ -381,6 +389,7 @@ function switchTab(tabName) {
         document.getElementById('setting-theme').value = userSettings.theme;
         document.getElementById('setting-mode').value = isWebtoonMode ? 'webtoon' : 'normal';
         document.getElementById('setting-language').value = userSettings.language;
+        renderCustomFolders();
     }
 }
 
@@ -1043,7 +1052,7 @@ function renderLibrarySorted() {
         });
 
         async function scanLocalFolder(silent = false) {
-            const scannedBooks = await ipcRenderer.invoke('library:scanLocal');
+        const scannedBooks = await ipcRenderer.invoke('library:scanLocal', userSettings.customFolders || []);
             if (scannedBooks) {
                 scannedBooks.forEach(newBook => {
                     const normNewBookPath = newBook.path.replace(/[\\/]+/g, '/').toLowerCase();
@@ -1091,12 +1100,9 @@ function renderLibrarySorted() {
 
                 const scannedPaths = new Set(scannedBooks.map(b => b.path.replace(/[\\/]+/g, '/').toLowerCase()));
                 libraryData = libraryData.filter(book => {
-                    if (!book.path) return true;
-                    const normPath = book.path.replace(/[\\/]+/g, '/').toLowerCase();
-                    if (normPath.includes('keiyomi')) {
-                        return scannedPaths.has(normPath);
-                    }
-                    return true;
+                if (!book.structureType) return true; // Pertahankan buku yang diimpor manual
+                const normPath = book.path.replace(/[\\/]+/g, '/').toLowerCase();
+                return scannedPaths.has(normPath); // Hapus buku otomatis yang file/foldernya telah dihapus/hilang
                 });
 
                 saveData();
@@ -1412,6 +1418,62 @@ function renderLibrarySorted() {
             const filtered = genre === 'all' ? libraryData : libraryData.filter(b => b.genre && b.genre.includes(genre));
             renderGrid(filtered, 'explore-grid');
         };
+
+    // --- CUSTOM FOLDERS LOGIC ---
+    const customFoldersList = document.getElementById('custom-folders-list');
+    const btnAddFolder = document.getElementById('btn-add-folder');
+
+    function renderCustomFolders() {
+        if(!customFoldersList) return;
+        customFoldersList.innerHTML = '';
+        const isDark = document.body.getAttribute('data-theme') === 'dark';
+        
+        (userSettings.customFolders || []).forEach((folder, index) => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.style.background = isDark ? '#334155' : '#f8f9fa';
+            div.style.padding = '8px 12px';
+            div.style.borderRadius = '6px';
+            div.style.border = '1px solid ' + (isDark ? '#475569' : '#cbd5e1');
+            
+            const span = document.createElement('span');
+            span.innerText = folder;
+            span.style.wordBreak = 'break-all';
+            span.style.marginRight = '12px';
+            span.style.color = isDark ? '#f1f5f9' : 'inherit';
+            
+            const btn = document.createElement('button');
+            btn.innerText = t('btn_remove') || 'Hapus';
+            btn.className = 'btn-cancel';
+            btn.style.padding = '4px 8px';
+            btn.style.fontSize = '0.8rem';
+            btn.onclick = () => {
+                userSettings.customFolders.splice(index, 1);
+                saveData(); // Simpan perubahan folder secara otomatis
+                renderCustomFolders();
+            };
+            
+            div.appendChild(span);
+            div.appendChild(btn);
+            customFoldersList.appendChild(div);
+        });
+    }
+
+    if (btnAddFolder) {
+        btnAddFolder.addEventListener('click', async () => {
+            const folderPath = await ipcRenderer.invoke('dialog:openDirectory');
+            if (folderPath) {
+                if (!userSettings.customFolders) userSettings.customFolders = [];
+                if (!userSettings.customFolders.includes(folderPath)) {
+                    userSettings.customFolders.push(folderPath);
+                    saveData(); // Simpan perubahan folder secara otomatis
+                    renderCustomFolders();
+                }
+            }
+        });
+    }
 
         document.getElementById('btn-save-settings-page').addEventListener('click', async () => {
             userSettings.username = document.getElementById('setting-username').value;
