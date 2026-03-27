@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "versionCode": 1,
   "description": "KeiYomi Desktop Manga & Document Reader",
-  "main": "main.js",
+  "main": "Script/main.js",
 
   "scripts": {
     "start": "electron .",

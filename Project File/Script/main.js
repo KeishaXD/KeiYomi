@@ -8,7 +8,7 @@ function createWindow() {
         width: 1200,
         height: 800,
         title: "KeiYomi",
-        icon: path.join(__dirname, 'assets/logo.ico'), // Pastikan Anda memiliki ikon di path ini
+        icon: path.join(__dirname, '../assets/logo.ico'), // Path disesuaikan
         backgroundColor: '#1e1e1e', // Mencegah flash putih saat loading (Dark Mode)
         autoHideMenuBar: true, // Menyembunyikan menu bar File, Edit, View, dll.
         webPreferences: {
@@ -17,7 +17,7 @@ function createWindow() {
         }
     });
 
-    win.loadFile('index.html');
+    win.loadFile(path.join(__dirname, '../UI/index.html')); // Path disesuaikan
 }
 
 app.whenReady().then(() => {
@@ -134,8 +134,8 @@ ipcMain.handle('library:scanLocal', async () => {
         }
         
             // 1. Siapkan Cover (Cari di assets: cover.svg -> logo.svg)
-            const assetCover = path.join(__dirname, 'assets', 'cover.svg');
-            const assetLogo = path.join(__dirname, 'assets', 'logo.svg');
+            const assetCover = path.join(__dirname, '../assets', 'cover.svg'); // Path disesuaikan
+            const assetLogo = path.join(__dirname, '../assets', 'logo.svg'); // Path disesuaikan
             let usedCoverName = 'cover.svg';
 
             if (fs.existsSync(assetCover)) {

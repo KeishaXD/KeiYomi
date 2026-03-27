@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeiYomi</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Memuat UI/styles.css -->
+    <!-- Integrasi PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <!-- Integrasi JSZip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+
+    <!-- Splash Screen -->
+    <div id="splash-screen">
+        <div class="splash-content">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="150 100 500 480" width="100%" height="100%">
+              <defs>
+                <linearGradient id="gradK" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#818CF8"/>
+                  <stop offset="100%" stop-color="#F43F5E"/>
+                </linearGradient>
+                <linearGradient id="gradY" x1="0%" y1="100%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#06B6D4"/>
+                  <stop offset="100%" stop-color="#3B82F6"/>
+                </linearGradient>
+              </defs>
+              <g transform="translate(400, 240)">
+                <path d="M -100 -80 L -100 80 M -100 0 L -10 -70 M -100 0 L -10 70" fill="none" stroke="url(#gradK)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 100 -30 L 100 80 M 60 -70 L 100 -30 M 140 -70 L 100 -30" fill="none" stroke="url(#gradY)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M -150 130 C -80 130, -30 150, 0 170 C 30 150, 80 130, 150 130" fill="none" stroke="#94A3B8" stroke-width="8" stroke-linecap="round" opacity="0.6"/>
+                <path d="M -150 150 C -80 150, -30 170, 0 190 C 30 170, 80 150, 150 150" fill="none" stroke="#94A3B8" stroke-width="8" stroke-linecap="round" opacity="0.2"/>
+              </g>
+              <text x="400" y="490" font-family="'Segoe UI', Roboto, Helvetica, sans-serif" font-weight="800" font-size="64" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">
+                Kei<tspan fill="#06B6D4">Yomi</tspan>
+              </text>
+              <text x="400" y="530" font-family="'Segoe UI', Roboto, Helvetica, sans-serif" font-weight="600" font-size="16" fill="#94A3B8" text-anchor="middle" letter-spacing="8">
+                DOCUMENT READER
+              </text>
+            </svg>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <div class="brand" id="btn-home">
+            <img src="../assets/logo.svg" alt="KeiYomi Logo"> <!-- Perubahan path assets -->
+            <h2>KeiYomi</h2>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item active" onclick="switchTab('library')">
+                <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+                <span data-i18n="nav_library">Semua File</span>
+            </li>
+            <li class="nav-item" onclick="switchTab('history')">
+                <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+                <span data-i18n="nav_history">Riwayat</span>
+            </li>
+            <li class="nav-item" onclick="switchTab('favorites')">
+                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <span data-i18n="nav_favorites">Favorit</span>
+            </li>
+            <li class="nav-item" onclick="switchTab('explore')">
+                <svg viewBox="0 0 24 24"><path d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z"/></svg>
+                <span data-i18n="nav_explore">Jelajah</span>
+            </li>
+            <li class="nav-item" onclick="switchTab('settings')">
+                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.04.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.08-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                <span data-i18n="nav_settings">Pengaturan</span>
+            </li>
+        </ul>
+
+        <button class="btn-import" id="btn-pilih-file">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+            <span data-i18n="btn_import">Impor File</span>
+        </button>
+
+        <button class="btn-exit" id="btn-exit-app">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+            <span data-i18n="nav_exit">Keluar</span>
+        </button>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div class="header-left">
+                <button class="btn-back" id="btn-back" title="Kembali"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+                <h1 id="page-title">Pustaka Saya</h1>
+                <button id="btn-refresh" title="Scan Folder Lokal" style="background:none; border:none; cursor:pointer; color:var(--text-muted);">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                </button>
+            </div>
+            <input type="text" class="search-bar" id="search-input" placeholder="Cari buku..." data-i18n-placeholder="search_placeholder">
+        </div>
+
+        <!-- VIEW: LIBRARY (Semua File) -->
+        <div id="view-library" class="view-section active">
+            <div class="library-toolbar">
+                <select id="sort-select" class="sort-select">
+                    <option value="name_asc" data-i18n="sort_name_asc">Nama (A-Z)</option>
+                    <option value="name_desc" data-i18n="sort_name_desc">Nama (Z-A)</option>
+                    <option value="date_new" data-i18n="sort_date_new">Tanggal (Terbaru)</option>
+                    <option value="date_old" data-i18n="sort_date_old">Tanggal (Terlama)</option>
+                    <option value="recent" data-i18n="sort_recent">Terakhir Dibaca</option>
+                </select>
+            </div>
+            <div class="book-grid" id="library-grid"></div>
+        </div>
+
+        <!-- VIEW: HISTORY (Riwayat) -->
+        <div id="view-history" class="view-section">
+            <div class="book-grid" id="history-grid"></div>
+        </div>
+
+        <!-- VIEW: FAVORITES (Buku Favorit) -->
+        <div id="view-favorites" class="view-section">
+            <div class="book-grid" id="favorites-grid"></div>
+        </div>
+
+        <!-- VIEW: EXPLORE (Jelajah) -->
+        <div id="view-explore" class="view-section">
+            <div class="filter-container" id="explore-filters"></div>
+            <div class="book-grid" id="explore-grid"></div>
+        </div>
+
+        <!-- VIEW: SETTINGS (Pengaturan Full UI) -->
+        <div id="view-settings" class="view-section">
+            <div class="settings-container">
+                <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;" data-i18n="settings_title">Pengaturan Aplikasi</h2>
+                
+                <div class="form-group">
+                    <label data-i18n="settings_username">Nama Pengguna</label>
+                    <input type="text" id="setting-username" placeholder="Masukkan nama Anda" data-i18n-placeholder="settings_username_placeholder">
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="settings_theme">Tema Aplikasi</label>
+                    <select id="setting-theme">
+                        <option value="light" data-i18n="settings_theme_light">Terang (Light)</option>
+                        <option value="dark" data-i18n="settings_theme_dark">Gelap (Dark)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="settings_mode">Mode Baca Default</label>
+                    <select id="setting-mode">
+                        <option value="webtoon" data-i18n="settings_mode_webtoon">Webtoon (Scroll)</option>
+                        <option value="normal" data-i18n="settings_mode_normal">Normal (Per Halaman)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label data-i18n="settings_language">Bahasa / Language</label>
+                    <select id="setting-language">
+                        <option value="id">Indonesia</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 32px; text-align: right;">
+                    <button class="btn-save" id="btn-save-settings-page" data-i18n="settings_save">Simpan Perubahan</button>
+                </div>
+            </div>
+
+            <div class="settings-container" style="margin-top: 24px;">
+                <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;" data-i18n="about_title">Tentang</h2>
+                <div style="text-align: center;">
+                    <div style="width: 120px; margin: 0 auto 16px auto;">
+                        <img src="../assets/logo.svg" alt="KeiYomi Logo" style="width: 100%; height: auto;"> <!-- Perubahan path assets -->
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 8px; color: var(--text-dark);">KeiYomi</h3>
+                    <p style="color: #64748b; margin-bottom: 24px;" data-i18n="about_version">Versi 1.0.0</p>
+                    
+                    <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 24px;">
+                        <button class="btn-social btn-github" onclick="openLink('https://github.com/KeishaXD')">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+                            GitHub
+                        </button>
+                        <button class="btn-social btn-website" onclick="openLink('https://keishaxd.com')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            Website
+                        </button>
+                    </div>
+                    
+                    <button class="btn-social btn-update" style="margin: 0 auto;" onclick="checkUpdate()">
+                        <svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        <span data-i18n="about_check_update">Cek Pembaruan</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-container" style="margin-top: 24px;">
+                <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;" data-i18n="about_donate">Dukungan Pengembangan</h2>
+                <div style="text-align: center;">
+                    <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 8px;">
+                        <button class="btn-social btn-qris" onclick="showQrisModal()">
+                            <svg viewBox="0 0 24 24"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm-3 4h3v2h-3v-2zm3 0h2v2h-2v-2zm-3-4h2v2h-2v-2zM3 21h18v-2H3v2zm18-8h-2v2h2v-2z"/></svg>
+                            QRIS
+                        </button>
+                        <button class="btn-social btn-paypal" onclick="openLink('https://paypal.me/KeishaXD')">
+                            <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                            PayPal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: BOOK DETAIL (Informasi Buku) -->
+        <div id="view-detail" class="view-section">
+            <div class="detail-container" id="detail-content"></div>
+        </div>
+
+        <!-- VIEW: READER (Baca Buku) -->
+        <div class="reader-container" id="reader"></div>
+    </div>
+
+    <!-- Floating Settings Button -->
+    <div id="reader-settings-container" style="display: none;">
+        <div id="settings-popup" class="settings-popup">
+            <h3 data-i18n="reader_settings_title">Pengaturan Baca</h3>
+            <div class="setting-option">
+                <input type="radio" name="reader-mode" id="mode-webtoon" value="webtoon">
+                <label for="mode-webtoon" data-i18n="reader_mode_webtoon">Mode Webtoon (Scroll)</label>
+            </div>
+            <div class="setting-option">
+                <input type="radio" name="reader-mode" id="mode-pages" value="normal">
+                <label for="mode-pages" data-i18n="reader_mode_pages">Mode Halaman (Split)</label>
+            </div>
+        </div>
+        <button id="btn-settings-fab" class="fab-btn" title="Pengaturan">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.04.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.08-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        </button>
+    </div>
+
+    <!-- Context Menu -->
+    <div id="context-menu" class="context-menu">
+        <div class="context-item" id="ctx-delete" data-i18n="ctx_delete">🗑 Hapus Buku</div>
+    </div>
+
+    <!-- Add Book Modal -->
+    <div id="add-book-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;" data-i18n="modal_add_title">Tambah Buku Baru</h2>
+            <div class="form-group">
+                <label data-i18n="lbl_title">Judul</label>
+                <input type="text" id="input-title">
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_author">Penulis</label>
+                <input type="text" id="input-author">
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_cover">Sampul Buku (Opsional)</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-cover" readonly placeholder="Default" data-i18n-placeholder="ph_default">
+                    <button class="btn-secondary" id="btn-browse-cover" data-i18n="btn_choose_image">Pilih Gambar</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_type">Jenis Buku</label>
+                <select id="input-type">
+                    <option value="Artikel">Artikel</option>
+                    <option value="Journal">Journal</option>
+                    <option value="Manga">Manga</option>
+                    <option value="Manhua">Manhua</option>
+                    <option value="Manhwa">Manhwa</option>
+                </select>
+            </div>
+            <div class="form-group" id="group-date" style="display:none;">
+                <label data-i18n="lbl_date">Tanggal Publikasi</label>
+                <input type="date" id="input-date">
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_genre">Genre</label>
+                <div class="genre-checkboxes" id="genre-container">
+                </div>
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_synopsis">Sinopsis</label>
+                <textarea id="input-synopsis"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="btn-cancel-add" data-i18n="btn_cancel">Batal</button>
+                <button class="btn-save" id="btn-save-add" data-i18n="btn_save">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Chapter Modal -->
+    <div id="add-chapter-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;" data-i18n="modal_chapter_title">Tambah Chapter</h2>
+            <div class="form-group">
+                <label data-i18n="lbl_chapter_name">Nama Chapter / Info</label>
+                <input type="text" id="input-chapter-name" placeholder="Misal: Chapter 1" data-i18n-placeholder="ph_chapter_name">
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_file">File</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-chapter-path" readonly placeholder="Belum ada file dipilih" data-i18n-placeholder="ph_file_none">
+                    <button class="btn-secondary" id="btn-browse-chapter" data-i18n="btn_choose_file">Pilih File</button>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="btn-cancel-chapter" data-i18n="btn_cancel">Batal</button>
+                <button class="btn-save" id="btn-save-chapter" data-i18n="btn_save">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Book Modal -->
+    <div id="edit-book-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;" data-i18n="modal_edit_title">Edit Info Buku</h2>
+            <div class="form-group">
+                <label data-i18n="lbl_title">Judul</label>
+                <input type="text" id="input-edit-title">
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_author">Penulis</label>
+                <input type="text" id="input-edit-author">
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_cover_edit">Sampul Buku</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-edit-cover" readonly placeholder="Default" data-i18n-placeholder="ph_default">
+                    <button class="btn-secondary" id="btn-browse-edit-cover" data-i18n="btn_change_image">Ubah Gambar</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_type">Jenis Buku</label>
+                <select id="input-edit-type">
+                    <option value="Artikel">Artikel</option>
+                    <option value="Journal">Journal</option>
+                    <option value="Manga">Manga</option>
+                    <option value="Manhua">Manhua</option>
+                    <option value="Manhwa">Manhwa</option>
+                </select>
+            </div>
+            <div class="form-group" id="group-edit-date" style="display:none;">
+                <label data-i18n="lbl_date">Tanggal Publikasi</label>
+                <input type="date" id="input-edit-date">
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_genre">Genre</label>
+                <div class="genre-checkboxes" id="genre-edit-container">
+                </div>
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_synopsis">Sinopsis</label>
+                <textarea id="input-edit-synopsis"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="btn-cancel-edit" data-i18n="btn_cancel">Batal</button>
+                <button class="btn-save" id="btn-save-edit" data-i18n="btn_save_changes">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QRIS Modal -->
+    <div id="qris-modal" class="modal">
+        <div class="modal-content" style="text-align: center; max-width: 400px;">
+            <h2 style="margin-bottom: 16px;" data-i18n="modal_qris_title">Scan QRIS</h2>
+            <div style="background: #f1f5f9; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <img src="https://via.placeholder.com/300?text=QRIS+Code+Here" alt="QRIS Code" style="width: 100%; max-width: 250px; border-radius: 8px;">
+                <p style="margin-top: 12px; color: #64748b; font-size: 0.9rem;" data-i18n="modal_qris_desc">Dukung pengembangan aplikasi ini dengan donasi seikhlasnya.</p>
+            </div>
+            <button class="btn-cancel" onclick="document.getElementById('qris-modal').classList.remove('show')" data-i18n="btn_close">Tutup</button>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script> <!-- Memuat UI/renderer.js -->
+</body>
+</html>
