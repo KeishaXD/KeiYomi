@@ -1499,6 +1499,11 @@ function renderLibrarySorted() {
         }
     });
 
+    // --- CUSTOM TITLE BAR LOGIC ---
+    document.getElementById('btn-minimize').addEventListener('click', () => ipcRenderer.send('window:minimize'));
+    document.getElementById('btn-maximize').addEventListener('click', () => ipcRenderer.send('window:maximize'));
+    document.getElementById('btn-close').addEventListener('click', () => ipcRenderer.send('window:close'));
+
         document.getElementById('btn-save-settings-page').addEventListener('click', async () => {
             userSettings.username = document.getElementById('setting-username').value;
             userSettings.theme = document.getElementById('setting-theme').value;

@@ -10,6 +10,7 @@ function createWindow() {
         icon: path.join(__dirname, '../assets/logo.ico'), // Path disesuaikan
         backgroundColor: '#1e1e1e', // Mencegah flash putih saat loading (Dark Mode)
         autoHideMenuBar: true, // Menyembunyikan menu bar File, Edit, View, dll.
+        frame: false, // Menghilangkan border dan title bar bawaan OS
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false
@@ -406,4 +407,22 @@ ipcMain.on('app:quit', () => {
 ipcMain.on('app:relaunch', () => {
     app.relaunch();
     app.quit();
+});
+
+// --- FITUR BARU: CUSTOM TITLE BAR CONTROLS ---
+ipcMain.on('window:minimize', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) win.minimize();
+});
+
+ipcMain.on('window:maximize', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) {
+        win.isMaximized() ? win.unmaximize() : win.maximize();
+    }
+});
+
+ipcMain.on('window:close', () => {
+    const win = BrowserWindow.getFocusedWindow();
+    if (win) win.close();
 });
