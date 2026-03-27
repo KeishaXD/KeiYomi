@@ -5,7 +5,7 @@ const fs = require('fs');
 function createWindow() {
     const win = new BrowserWindow({
         width: 1200,
-        height: 800,
+        height: 720,
         title: "KeiYomi",
         icon: path.join(__dirname, '../assets/logo.ico'), // Path disesuaikan
         backgroundColor: '#1e1e1e', // Mencegah flash putih saat loading (Dark Mode)
