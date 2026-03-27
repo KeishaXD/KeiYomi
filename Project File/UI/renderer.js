@@ -139,6 +139,7 @@ const translations = {
         settings_folders: "Folder Pustaka Tambahan",
         btn_add_folder: "+ Tambah Folder",
         btn_remove: "Hapus",
+        btn_clear_cache: "Hapus Cache Data",
         about_title: "Tentang",
         about_donate: "Dukungan Pengembangan",
         about_check_update: "Cek Pembaruan",
@@ -157,6 +158,8 @@ const translations = {
         msg_saved: "Pengaturan berhasil disimpan!",
         msg_delete_confirm: "Apakah Anda yakin ingin menghapus buku ini dari pustaka?",
         msg_exit_confirm: "Apakah Anda yakin ingin keluar dari aplikasi?",
+        msg_clear_cache_confirm: "PERINGATAN: Apakah Anda yakin ingin menghapus semua cache data (Riwayat, Favorit, dan Pengaturan)? Aplikasi akan dimuat ulang setelah ini.",
+        msg_clear_cache_success: "Cache data berhasil dihapus. Aplikasi akan dimuat ulang.",
         msg_update_check: "Sedang memeriksa pembaruan...\n\nAnda menggunakan versi terbaru (v1.0.0).",
         modal_add_title: "Tambah Buku Baru",
         lbl_title: "Judul",
@@ -245,6 +248,7 @@ const translations = {
         settings_folders: "Additional Library Folders",
         btn_add_folder: "+ Add Folder",
         btn_remove: "Remove",
+        btn_clear_cache: "Clear Data Cache",
         about_title: "About",
         about_donate: "Support Development",
         about_check_update: "Check for Updates",
@@ -263,6 +267,8 @@ const translations = {
         msg_saved: "Settings saved successfully!",
         msg_delete_confirm: "Are you sure you want to delete this book from the library?",
         msg_exit_confirm: "Are you sure you want to exit the application?",
+        msg_clear_cache_confirm: "WARNING: Are you sure you want to clear all data cache (History, Favorites, and Settings)? The application will reload after this.",
+        msg_clear_cache_success: "Data cache successfully cleared. Application will reload.",
         msg_update_check: "Checking for updates...\n\nYou are using the latest version (v1.0.0).",
         modal_add_title: "Add New Book",
         lbl_title: "Title",
@@ -1474,6 +1480,24 @@ function renderLibrarySorted() {
             }
         });
     }
+
+    document.getElementById('btn-clear-cache').addEventListener('click', async () => {
+        if (confirm(t('msg_clear_cache_confirm'))) {
+            // 1. Batalkan semua proses auto-save yang mungkin sedang berjalan
+            clearTimeout(saveTimeout);
+            
+            // 2. Kosongkan memori sementara agar data lama tidak ter-save ulang
+            libraryData = [];
+            riwayatBacaan = [];
+            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [] };
+
+            const success = await ipcRenderer.invoke('data:clear');
+            if (success) {
+                alert(t('msg_clear_cache_success'));
+                ipcRenderer.send('app:relaunch'); // Restart aplikasi secara native
+            }
+        }
+    });
 
         document.getElementById('btn-save-settings-page').addEventListener('click', async () => {
             userSettings.username = document.getElementById('setting-username').value;

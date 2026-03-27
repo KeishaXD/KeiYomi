@@ -108,6 +108,22 @@ ipcMain.handle('data:load', async () => {
     return null;
 });
 
+// --- FITUR BARU: HAPUS CACHE ---
+ipcMain.handle('data:clear', async () => {
+    const userDataPath = app.getPath('userData');
+    const filePath = path.join(userDataPath, 'user_config.json');
+    
+    try {
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath); // Menghapus file cache
+        }
+        return true;
+    } catch (error) {
+        console.error("Gagal menghapus cache:", error);
+        return false;
+    }
+});
+
 // --- FITUR BARU: SCAN LIBRARY OTOMATIS ---
 ipcMain.handle('library:scanLocal', async (event, customFolders = []) => {
     const docPath = app.getPath('documents');
@@ -383,5 +399,11 @@ ipcMain.handle('updater:check', async () => {
 
 // --- FITUR BARU: KELUAR APLIKASI ---
 ipcMain.on('app:quit', () => {
+    app.quit();
+});
+
+// --- FITUR BARU: RESTART APLIKASI ---
+ipcMain.on('app:relaunch', () => {
+    app.relaunch();
     app.quit();
 });
