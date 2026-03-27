@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, nativeTheme, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { execSync } = require('child_process');
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -80,31 +79,13 @@ ipcMain.handle('dialog:openDirectory', async () => {
 
 // --- FITUR BARU: SAVE/LOAD DATA KE FILE TERSEMBUNYI ---
 ipcMain.handle('data:save', async (event, data) => {
-    const docPath = app.getPath('documents');
-    const baseDir = path.join(docPath, 'KeiYomi');
-    const filePath = path.join(baseDir, '.user_config.json'); // Nama file dengan awalan titik
+    // Menggunakan standar folder AppData bawaan OS
+    const userDataPath = app.getPath('userData');
+    const filePath = path.join(userDataPath, 'user_config.json'); 
 
     try {
-        if (!fs.existsSync(baseDir)) {
-            fs.mkdirSync(baseDir, { recursive: true });
-        }
-        
-        // Windows: Hapus atribut hidden dulu jika file sudah ada agar bisa ditimpa
-        if (process.platform === 'win32' && fs.existsSync(filePath)) {
-            try {
-                execSync(`attrib -h "${filePath}"`);
-            } catch (e) { /* Abaikan error jika gagal unhide */ }
-        }
-
-        // Simpan data ke file
+        // Simpan data ke file (tidak perlu disembunyikan manual karena folder AppData sudah tersembunyi dari user)
         fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-
-        // Windows: Set atribut hidden kembali
-        if (process.platform === 'win32') {
-            try {
-                execSync(`attrib +h "${filePath}"`);
-            } catch (e) { /* Abaikan error */ }
-        }
         return true;
     } catch (error) {
         console.error("Gagal menyimpan data:", error);
@@ -113,8 +94,8 @@ ipcMain.handle('data:save', async (event, data) => {
 });
 
 ipcMain.handle('data:load', async () => {
-    const docPath = app.getPath('documents');
-    const filePath = path.join(docPath, 'KeiYomi', '.user_config.json');
+    const userDataPath = app.getPath('userData');
+    const filePath = path.join(userDataPath, 'user_config.json');
     
     try {
         if (fs.existsSync(filePath)) {
