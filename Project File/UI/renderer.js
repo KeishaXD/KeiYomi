@@ -770,13 +770,13 @@ function renderLibrarySorted() {
 
         let pendingBookPath = null;
         const genreLists = {
-            commonComic: ['Action', 'Romance', 'Fantasy', 'Sci-fi', 'Slice of Life', 'Horror', 'Mystery', 'Comedy', 'Drama', 'Psychological', 'Supernatural', 'Sports', 'Historical'],
+            commonComic: ['Action', 'Romance', 'Fantasy', 'Sci-Fi', 'Slice of Life', 'Horror', 'Mystery', 'Comedy', 'Drama', 'Psychological', 'Supernatural', 'Sports', 'Historical'],
             manga: ['Shounen', 'Shoujo', 'Seinen', 'Josei', 'Isekai', 'Mecha', 'Iyashikei', 'Mahou Shoujo'],
             manhwa: ['Hunter/System', 'Regression', 'Murim', 'Villainess', 'School Bullying'],
-            manhua: ['Wuxia', 'Xianxia', 'Xuanhuan', 'Kultivasi'],
-            artikel: ['Berita', 'Feature', 'Opini', 'Tajuk Rencana', 'Panduan', 'Ulasan', 'Esai'],
-        journal: ['Penelitian Asli', 'Tinjauan Pustaka', 'Studi Kasus', 'Metodologi', 'Komunikasi Singkat'],
-        novel: ['Romantis atau Percintaan', 'Misteri', 'Horor', 'Fantasi', 'Fiksi Ilmiah atau Sci-Fi', 'Thriller atau Suspense', 'Sejarah', 'Fiksi Remaja atau Teenlit', 'Chicklit', 'Metropop', 'Komedi atau Humor', 'Inspiratif']
+            manhua: ['Wuxia', 'Xianxia', 'Xuanhuan', 'Cultivation'],
+            artikel: ['News', 'Feature', 'Opinion', 'Editorial', 'Guide', 'Review', 'Essay'],
+            journal: ['Original Research', 'Literature Review', 'Case Study', 'Methodology', 'Short Communication'],
+            novel: ['Romance', 'Mystery', 'Horror', 'Fantasy', 'Sci-Fi', 'Thriller', 'Historical', 'Teenlit', 'Chicklit', 'Metropop', 'Comedy', 'Inspirational']
         };
 
         function updateGenreOptions() {
