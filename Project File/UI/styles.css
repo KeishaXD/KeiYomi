@@ -30,6 +30,9 @@
 [data-theme="dark"] .chapter-row:hover { background: #334155; }
 [data-theme="dark"] .chapter-name { color: #e2e8f0; }
 [data-theme="dark"] .settings-container { background: #1e293b; }
+[data-theme="dark"] .settings-popup { background: #1e293b; border-color: #334155; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+[data-theme="dark"] .settings-popup h3 { color: #f8fafc; border-bottom-color: #334155; }
+[data-theme="dark"] .setting-option label { color: #cbd5e1; }
 [data-theme="dark"] .form-group label { color: #e2e8f0; }
 [data-theme="dark"] .form-group input, [data-theme="dark"] .form-group select { background: #334155; border-color: #475569; color: white; }
 [data-theme="dark"] .btn-secondary-action { background: #334155; border-color: #475569; color: #e2e8f0; }
