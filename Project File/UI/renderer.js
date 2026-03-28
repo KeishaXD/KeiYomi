@@ -17,6 +17,9 @@ const sortSelect = document.getElementById('sort-select');
 const btnToggleFullscreen = document.getElementById('btn-toggle-fullscreen');
 const pageTitle = document.getElementById('page-title');
 const reader = document.getElementById('reader');
+const nightLightOverlay = document.getElementById('night-light-overlay');
+const settingNightIntensity = document.getElementById('setting-night-intensity');
+const btnToggleNightmode = document.getElementById('btn-toggle-nightmode');
 
 // Modal Elements
 const modalAddBook = document.getElementById('add-book-modal');
@@ -147,7 +150,7 @@ function showToast(message, duration = 4000) {
 let libraryData = [];
 let riwayatBacaan = [];
 let isWebtoonMode = true;
-let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [] };
+let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50 };
 
 async function loadData() {
     const data = await ipcRenderer.invoke('data:load');
@@ -160,12 +163,17 @@ async function loadData() {
         userSettings.language = data.language || 'id';
         userSettings.customFolders = data.customFolders || [];
         userSettings.ignoredPaths = data.ignoredPaths || [];
+        userSettings.nightModeEnabled = data.nightModeEnabled || false;
+        userSettings.nightModeIntensity = data.nightModeIntensity !== undefined ? data.nightModeIntensity : 50;
     } else {
         libraryData = [];
         riwayatBacaan = [];
     }
     applyTheme(userSettings.theme);
     applyLanguage(userSettings.language);
+    settingNightIntensity.value = userSettings.nightModeIntensity;
+    applyNightMode();
+    updateNightModeButton();
 }
 
 async function saveData() {
@@ -177,7 +185,9 @@ async function saveData() {
         theme: userSettings.theme,
         language: userSettings.language,
         customFolders: userSettings.customFolders,
-        ignoredPaths: userSettings.ignoredPaths
+        ignoredPaths: userSettings.ignoredPaths,
+        nightModeEnabled: userSettings.nightModeEnabled,
+        nightModeIntensity: userSettings.nightModeIntensity
     };
     await ipcRenderer.invoke('data:save', data);
 }
@@ -275,6 +285,7 @@ function switchTab(tabName) {
         document.getElementById('setting-theme').value = userSettings.theme;
         document.getElementById('setting-mode').value = isWebtoonMode ? 'webtoon' : 'normal';
         document.getElementById('setting-language').value = userSettings.language;
+        settingNightIntensity.value = userSettings.nightModeIntensity;
         renderCustomFolders();
         renderIgnoredPaths();
     }
@@ -1210,10 +1221,60 @@ function renderLibrarySorted() {
             if (!hasSeenFullscreenTip) {
                 hasSeenFullscreenTip = true;
                 setTimeout(() => {
-                    showToast(t('msg_fullscreen_tip') || "Tip: Tekan tombol F1 di keyboard Anda untuk mengaktifkan mode layar penuh (Fullscreen).", 5000);
+                    showToast(t('msg_reader_tips') || "Tip: Tekan F1 untuk Layar Penuh, dan F2 untuk Mode Cahaya Malam (Eye Comfort).", 5000);
                 }, 800); // Munculkan pop up setelah buku termuat
             }
         }
+
+        // --- NIGHT LIGHT / EYE COMFORT LOGIC ---
+        function applyNightMode() {
+            if (userSettings.nightModeEnabled) {
+                const intensity = parseInt(userSettings.nightModeIntensity, 10);
+                let bgColor = 'rgba(0, 0, 0, 0)'; // Default: Transparan (Normal di 50)
+
+                if (intensity > 50) {
+                    // Warm (Kuning/Jingga Hangat)
+                    const alpha = ((intensity - 50) / 50) * 0.55; // Semakin ke kanan, opacity naik hingga 0.55
+                    bgColor = `rgba(255, 110, 0, ${alpha})`; // Warna Amber/Orange yang lebih hangat
+                } else if (intensity < 50) {
+                    // Cold (Biru Adem)
+                    const alpha = ((50 - intensity) / 50) * 0.25; // Opacity biru jangan terlalu pekat (maks 0.25)
+                    bgColor = `rgba(0, 150, 255, ${alpha})`; // Warna biru terang/cyan
+                }
+                
+                nightLightOverlay.style.backgroundColor = bgColor;
+                nightLightOverlay.classList.add('active');
+            } else {
+                nightLightOverlay.classList.remove('active');
+            }
+        }
+
+        function updateNightModeButton() {
+            if (!btnToggleNightmode) return;
+            const span = btnToggleNightmode.querySelector('span');
+            const svg = btnToggleNightmode.querySelector('svg');
+            if (userSettings.nightModeEnabled) {
+                span.innerText = t('reader_night_mode_exit') || "Matikan Mode Malam";
+                svg.innerHTML = '<path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>';
+            } else {
+                span.innerText = t('reader_night_mode_enter') || "Aktifkan Mode Malam";
+                svg.innerHTML = '<path d="M9.37 5.51A7.35 7.35 0 0 0 9.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0 1 12 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>';
+            }
+        }
+
+        function toggleNightMode() {
+            userSettings.nightModeEnabled = !userSettings.nightModeEnabled;
+            applyNightMode();
+            updateNightModeButton();
+            saveData();
+        }
+
+        btnToggleNightmode.addEventListener('click', toggleNightMode);
+
+        settingNightIntensity.addEventListener('input', (e) => {
+            userSettings.nightModeIntensity = e.target.value;
+            if (userSettings.nightModeEnabled) applyNightMode();
+        });
 
         function renderChapterNavigation(currentPath) {
             let foundBook = null;
@@ -1713,6 +1774,13 @@ function renderLibrarySorted() {
             if (e.key === 'F1' && reader.style.display === 'flex') {
                 e.preventDefault();
                 toggleFullscreen();
+                return;
+            }
+
+            // Shortcut Mode Malam (Night Light) F2
+            if (e.key === 'F2') {
+                e.preventDefault();
+                toggleNightMode();
                 return;
             }
 

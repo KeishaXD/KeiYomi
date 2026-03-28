@@ -126,7 +126,10 @@
     "sort_date_new": "Tanggal (Terbaru)",
     "sort_date_old": "Tanggal (Terlama)",
     "sort_recent": "Terakhir Dibaca",
-    "msg_fullscreen_tip": "Tip: Tekan tombol F1 di keyboard Anda untuk mengaktifkan atau menonaktifkan mode layar penuh (Fullscreen).",
+    "msg_reader_tips": "Tip: Tekan F1 untuk Layar Penuh, dan F2 untuk Mode Cahaya Malam (Eye Comfort).",
     "reader_fullscreen_enter": "Mode Layar Penuh",
-    "reader_fullscreen_exit": "Keluar Layar Penuh"
+    "reader_fullscreen_exit": "Keluar Layar Penuh",
+    "settings_night_mode_intensity": "Intensitas Cahaya Malam (Cold - Warm)",
+    "reader_night_mode_enter": "Aktifkan Mode Malam",
+    "reader_night_mode_exit": "Matikan Mode Malam"
 }
