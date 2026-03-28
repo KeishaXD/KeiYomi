@@ -191,9 +191,18 @@
                 <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;" data-i18n="settings_backup_title">Backup & Pemulihan Data</h2>
                 <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem; line-height: 1.5;" data-i18n="msg_backup_desc">Amankan riwayat bacaan dan daftar pustaka Anda, atau pindahkan ke perangkat lain.</p>
                 <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                    <button class="btn-action btn-primary-action" id="btn-backup" data-i18n="btn_backup">Export Data (Backup)</button>
-                    <button class="btn-action btn-secondary-action" id="btn-restore" data-i18n="btn_restore">Import Data (Restore)</button>
-                    <button class="btn-action btn-danger-action" id="btn-clear-cache" data-i18n="btn_clear_cache">Hapus Cache Data</button>
+                    <button class="btn-action btn-primary-action" id="btn-backup">
+                        <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                        <span data-i18n="btn_backup">Export Data (Backup)</span>
+                    </button>
+                    <button class="btn-action btn-secondary-action" id="btn-restore">
+                        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        <span data-i18n="btn_restore">Import Data (Restore)</span>
+                    </button>
+                    <button class="btn-action btn-danger-action" id="btn-clear-cache">
+                        <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        <span data-i18n="btn_clear_cache">Hapus Cache Data</span>
+                    </button>
                 </div>
             </div>
 
