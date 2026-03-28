@@ -125,5 +125,6 @@
     "sort_name_desc": "Nama (Z-A)",
     "sort_date_new": "Tanggal (Terbaru)",
     "sort_date_old": "Tanggal (Terlama)",
-    "sort_recent": "Terakhir Dibaca"
+    "sort_recent": "Terakhir Dibaca",
+    "msg_fullscreen_tip": "Tip: Tekan tombol F1 di keyboard Anda untuk mengaktifkan atau menonaktifkan mode layar penuh (Fullscreen)."
 }

@@ -77,6 +77,7 @@ let contextMenuBook = null;
 let currentBookPath = null;
 let saveTimeout;
 let currentRenderId = 0; 
+let hasSeenFullscreenTip = false;
 
 // --- CUSTOM MODAL DIALOGS ---
 function customAlert(message, title = "Pemberitahuan") {
@@ -122,6 +123,23 @@ function customConfirm(message, title = "Konfirmasi", okText = "Ya", cancelText 
         btnOk.addEventListener('click', okHandler);
         btnCancel.addEventListener('click', cancelHandler);
     });
+}
+
+// --- TOAST NOTIFICATION ---
+function showToast(message, duration = 4000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerText = message;
+    toast.style.animation = 'toastFadeIn 0.3s ease-out forwards';
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'toastFadeOut 0.3s ease-out forwards';
+        setTimeout(() => { if (toast.parentElement) toast.remove(); }, 300);
+    }, duration);
 }
 
 // --- DATA MANAGEMENT ---
@@ -1185,6 +1203,13 @@ function renderLibrarySorted() {
                     if (pageElement) pageElement.scrollIntoView();
                 }, 100);
             }
+
+            if (!hasSeenFullscreenTip) {
+                hasSeenFullscreenTip = true;
+                setTimeout(() => {
+                    showToast(t('msg_fullscreen_tip') || "Tip: Tekan tombol F1 di keyboard Anda untuk mengaktifkan mode layar penuh (Fullscreen).", 5000);
+                }, 800); // Munculkan pop up setelah buku termuat
+            }
         }
 
         function renderChapterNavigation(currentPath) {
@@ -1654,7 +1679,25 @@ function renderLibrarySorted() {
 
         document.addEventListener('keydown', async (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            // Shortcut Fullscreen F1 (Toggle Hidup / Mati)
+            if (e.key === 'F1' && reader.style.display === 'flex') {
+                e.preventDefault();
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => console.error(err));
+                } else {
+                    document.exitFullscreen().catch(err => console.error(err));
+                }
+                return;
+            }
+
             if (e.key === 'Escape') {
+                // Jika sedang Fullscreen, cukup keluar dari Fullscreen saja (jangan tutup buku)
+                if (document.fullscreenElement) {
+                    document.exitFullscreen().catch(err => console.error(err));
+                    return; 
+                }
+
                 const openModals = document.querySelectorAll('.modal.show');
                 if (openModals.length > 0) { 
                     const openModal = openModals[openModals.length - 1];
