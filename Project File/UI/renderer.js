@@ -1322,6 +1322,40 @@ function renderLibrarySorted() {
         }
     });
 
+    // --- FITUR BARU: BACKUP & RESTORE DATA ---
+    const btnBackup = document.getElementById('btn-backup');
+    if (btnBackup) {
+        btnBackup.addEventListener('click', async () => {
+            try {
+                const result = await ipcRenderer.invoke('data:backup');
+                if (result.success) {
+                    alert(t('msg_backup_success').replace('{0}', result.filePath));
+                } else if (!result.canceled) {
+                    alert(t('msg_backup_fail') + (result.message || 'Error tidak diketahui'));
+                }
+            } catch (error) {
+                alert(t('msg_backup_fail') + error.message);
+            }
+        });
+    }
+
+    const btnRestore = document.getElementById('btn-restore');
+    if (btnRestore) {
+        btnRestore.addEventListener('click', async () => {
+            try {
+                const result = await ipcRenderer.invoke('data:restore');
+                if (result.success) {
+                    alert(t('msg_restore_success'));
+                    ipcRenderer.send('app:relaunch'); // Restart aplikasi secara otomatis
+                } else if (!result.canceled) {
+                    alert(t('msg_restore_fail') + (result.message || 'File tidak valid'));
+                }
+            } catch (error) {
+                alert(t('msg_restore_fail') + error.message);
+            }
+        });
+    }
+
     // --- CUSTOM TITLE BAR LOGIC ---
     document.getElementById('btn-minimize').addEventListener('click', () => ipcRenderer.send('window:minimize'));
     document.getElementById('btn-maximize').addEventListener('click', () => ipcRenderer.send('window:maximize'));
