@@ -14,6 +14,7 @@ const settingsPopup = document.getElementById('settings-popup');
 const radioWebtoon = document.getElementById('mode-webtoon');
 const radioPages = document.getElementById('mode-pages');
 const sortSelect = document.getElementById('sort-select');
+const btnToggleFullscreen = document.getElementById('btn-toggle-fullscreen');
 const pageTitle = document.getElementById('page-title');
 const reader = document.getElementById('reader');
 
@@ -1181,6 +1182,8 @@ function renderLibrarySorted() {
             reader.innerHTML = '';
             updateReaderModeUI();
 
+            updateFullscreenButton(); // Set initial state for fullscreen button
+
             if (ext === '.pdf') {
                 await renderPDF(filePath, myRenderId);
             } else if (ext === '.cbz' || ext === '.zip') {
@@ -1305,6 +1308,32 @@ function renderLibrarySorted() {
 
         radioWebtoon.addEventListener('change', () => changeMode('webtoon'));
         radioPages.addEventListener('change', () => changeMode('normal'));
+
+        // --- FULLSCREEN LOGIC ---
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.error(err));
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen().catch(err => console.error(err));
+                }
+            }
+        }
+
+        function updateFullscreenButton() {
+            const span = btnToggleFullscreen.querySelector('span');
+            const svg = btnToggleFullscreen.querySelector('svg');
+            if (document.fullscreenElement) {
+                span.innerText = t('reader_fullscreen_exit') || "Keluar Layar Penuh";
+                svg.innerHTML = '<path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>';
+            } else {
+                span.innerText = t('reader_fullscreen_enter') || "Mode Layar Penuh";
+                svg.innerHTML = '<path d="M5 5h5V3H3v7h2V5zm5 14H5v-5H3v7h7v-2zm11-5h-2v5h-5v2h7v-7zm-2-9h-5V3h7v7h-2V5z"/>';
+            }
+        }
+
+        btnToggleFullscreen.addEventListener('click', toggleFullscreen);
+        document.addEventListener('fullscreenchange', updateFullscreenButton);
 
         async function renderPDF(filePath) {
             try {
@@ -1683,11 +1712,7 @@ function renderLibrarySorted() {
             // Shortcut Fullscreen F1 (Toggle Hidup / Mati)
             if (e.key === 'F1' && reader.style.display === 'flex') {
                 e.preventDefault();
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen().catch(err => console.error(err));
-                } else {
-                    document.exitFullscreen().catch(err => console.error(err));
-                }
+                toggleFullscreen();
                 return;
             }
 

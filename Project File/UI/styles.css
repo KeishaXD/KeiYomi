@@ -318,6 +318,29 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 .setting-option:last-child { margin-bottom: 0; }
 .setting-option label { cursor: pointer; font-size: 0.9rem; color: #475569; flex-grow: 1; margin-left: 8px; }
 .setting-option input[type="radio"] { cursor: pointer; accent-color: var(--accent); width: 16px; height: 16px; }
+.setting-divider {
+    height: 1px;
+    background-color: #e2e8f0;
+    margin: 12px 0;
+}
+[data-theme="dark"] .setting-divider {
+    background-color: #334155;
+}
+.setting-button {
+    background: none; border: none; width: 100%; padding: 8px 0; text-align: left;
+    cursor: pointer; display: flex; align-items: center; gap: 8px;
+    font-size: 0.9rem; color: #475569; font-family: 'Segoe UI', system-ui, sans-serif;
+    font-weight: 500; transition: color 0.2s;
+}
+.setting-button:hover { color: var(--accent); }
+[data-theme="dark"] .setting-button { color: #cbd5e1; }
+[data-theme="dark"] .setting-button:hover { color: var(--accent); }
+.setting-button svg {
+    fill: currentColor;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
 
 /* Context Menu */
 .context-menu { display: none; position: absolute; background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 8px; z-index: 2000; min-width: 160px; overflow: hidden; }
