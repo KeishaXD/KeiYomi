@@ -162,6 +162,42 @@ ipcMain.handle('data:clear', async () => {
     }
 });
 
+// --- FITUR BARU: BUAT FOLDER SERI ---
+ipcMain.handle('library:createFolder', async (event, data) => {
+    const docPath = app.getPath('documents');
+    const baseDir = path.join(docPath, 'KeiYomi', data.folderName);
+    
+    if (fs.existsSync(baseDir)) {
+        return { success: false, message: "Folder dengan nama tersebut sudah ada!" };
+    }
+    
+    try {
+        fs.mkdirSync(baseDir, { recursive: true });
+        
+        let coverFileName = "";
+        if (data.cover && fs.existsSync(data.cover)) {
+            const ext = path.extname(data.cover);
+            coverFileName = `cover${ext}`;
+            fs.copyFileSync(data.cover, path.join(baseDir, coverFileName));
+        }
+
+        const infoPath = path.join(baseDir, 'info.json');
+        const infoContent = {
+            title: data.title || data.folderName,
+            author: data.author || "Unknown",
+            cover: coverFileName,
+            genre: data.genre || "",
+            synopsis: data.synopsis || "",
+            type: data.type || "Manga",
+            date: data.date || ""
+        };
+        fs.writeFileSync(infoPath, JSON.stringify(infoContent, null, 2));
+        return { success: true, path: baseDir };
+    } catch (err) {
+        return { success: false, message: err.message };
+    }
+});
+
 // --- FITUR BARU: SCAN LIBRARY OTOMATIS ---
 ipcMain.handle('library:scanLocal', async (event, customFolders = []) => {
     const docPath = app.getPath('documents');

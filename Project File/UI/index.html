@@ -92,6 +92,11 @@
             <span data-i18n="btn_import">Impor File</span>
         </button>
 
+        <button class="btn-import" id="btn-create-folder" style="margin-top: 12px;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 8h-3v3h-2v-3h-3v-2h3v-3h2v3h3v2z"/></svg>
+            <span data-i18n="btn_create_folder">Buat Folder</span>
+        </button>
+
         <button class="btn-exit" id="btn-exit-app">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
             <span data-i18n="nav_exit">Keluar</span>
@@ -403,6 +408,57 @@
             <div class="modal-actions">
                 <button class="btn-cancel" id="btn-cancel-edit" data-i18n="btn_cancel">Batal</button>
                 <button class="btn-save" id="btn-save-edit" data-i18n="btn_save_changes">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Folder Modal -->
+    <div id="create-folder-modal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;" data-i18n="modal_create_folder_title">Buat Folder Seri Baru</h2>
+            <div class="form-group">
+                <label data-i18n="lbl_folder_name">Nama Folder</label>
+                <input type="text" id="input-cf-folder" placeholder="Misal: Naruto" data-i18n-placeholder="ph_folder_name">
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_author">Penulis</label>
+                <input type="text" id="input-cf-author">
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_cover">Sampul Buku (Opsional)</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="input-cf-cover" readonly placeholder="Default" data-i18n-placeholder="ph_default">
+                    <button class="btn-secondary" id="btn-browse-cf-cover" data-i18n="btn_choose_image">Pilih Gambar</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_type">Jenis Buku</label>
+                <select id="input-cf-type">
+                    <option value="" disabled selected data-i18n="ph_select_type">Pilih Jenis Buku</option>
+                    <option value="Artikel">Artikel</option>
+                    <option value="Journal">Journal</option>
+                    <option value="Manga">Manga (Jepang)</option>
+                    <option value="Manhua">Manhua (Tiongkok)</option>
+                    <option value="Manhwa">Manhwa (Korea)</option>
+                    <option value="Novel">Novel</option>
+                </select>
+            </div>
+            <div class="form-group" id="group-cf-date" style="display:none;">
+                <label data-i18n="lbl_date">Tanggal Publikasi</label>
+                <input type="date" id="input-cf-date">
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_genre">Genre</label>
+                <div class="genre-checkboxes" id="genre-cf-container">
+                </div>
+            </div>
+            <div class="form-group">
+                <label data-i18n="lbl_synopsis">Sinopsis</label>
+                <textarea id="input-cf-synopsis"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" id="btn-cancel-cf" data-i18n="btn_cancel">Batal</button>
+                <button class="btn-save" id="btn-save-cf" data-i18n="btn_create_folder">Buat Folder</button>
             </div>
         </div>
     </div>

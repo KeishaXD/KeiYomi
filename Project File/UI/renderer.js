@@ -3,6 +3,7 @@ const path = require('path');
 const { promises: fs } = require('fs');
 
 const btnPilihFile = document.getElementById('btn-pilih-file');
+const btnCreateFolder = document.getElementById('btn-create-folder');
 const btnExitApp = document.getElementById('btn-exit-app');
 const btnBack = document.getElementById('btn-back');
 const btnRefresh = document.getElementById('btn-refresh');
@@ -53,6 +54,20 @@ const inputEditSynopsis = document.getElementById('input-edit-synopsis');
 const btnCancelEdit = document.getElementById('btn-cancel-edit');
 const btnSaveEdit = document.getElementById('btn-save-edit');
 let currentEditingBookId = null;
+
+// Create Folder Modal Elements
+const modalCreateFolder = document.getElementById('create-folder-modal');
+const inputCfFolder = document.getElementById('input-cf-folder');
+const inputCfAuthor = document.getElementById('input-cf-author');
+const inputCfCover = document.getElementById('input-cf-cover');
+const btnBrowseCfCover = document.getElementById('btn-browse-cf-cover');
+const inputCfType = document.getElementById('input-cf-type');
+const inputCfDate = document.getElementById('input-cf-date');
+const groupCfDate = document.getElementById('group-cf-date');
+const genreCfContainer = document.getElementById('genre-cf-container');
+const inputCfSynopsis = document.getElementById('input-cf-synopsis');
+const btnCancelCf = document.getElementById('btn-cancel-cf');
+const btnSaveCf = document.getElementById('btn-save-cf');
 
 // Context Menu Elements
 const contextMenu = document.getElementById('context-menu');
@@ -873,6 +888,102 @@ function renderLibrarySorted() {
                 }
             }
         });
+
+    if (btnCreateFolder) {
+        btnCreateFolder.addEventListener('click', () => {
+            inputCfFolder.value = '';
+            inputCfAuthor.value = '';
+            inputCfCover.value = '';
+            inputCfType.value = '';
+            inputCfDate.value = '';
+            inputCfSynopsis.value = '';
+            updateCfGenreOptions();
+            modalCreateFolder.classList.add('show');
+        });
+    }
+    
+    function updateCfGenreOptions() {
+        const type = inputCfType.value;
+        const genreGroup = genreCfContainer.parentElement;
+        let genres = [];
+
+        if (!type) {
+            groupCfDate.style.display = 'none';
+            genreGroup.style.display = 'none';
+        } else if (type === 'Artikel') {
+            genres = genreLists.artikel;
+            groupCfDate.style.display = 'block';
+            genreGroup.style.display = 'none';
+        } else if (type === 'Journal') {
+            genres = genreLists.journal;
+            groupCfDate.style.display = 'block';
+            genreGroup.style.display = 'none';
+        } else {
+            groupCfDate.style.display = 'none';
+            genreGroup.style.display = 'block';
+            genres = [...genreLists.commonComic];
+            if (type === 'Manga') genres.push(...genreLists.manga);
+            if (type === 'Manhwa') genres.push(...genreLists.manhwa);
+            if (type === 'Manhua') genres.push(...genreLists.manhua);
+            if (type === 'Novel') genres.push(...genreLists.novel);
+        }
+        
+        genres = [...new Set(genres)].sort();
+        genreCfContainer.innerHTML = '';
+        genres.forEach(g => {
+            const label = document.createElement('label');
+            label.className = 'genre-option';
+            label.innerHTML = `<input type="checkbox" value="${g}"> ${g}`;
+            genreCfContainer.appendChild(label);
+        });
+    }
+    inputCfType.addEventListener('change', updateCfGenreOptions);
+
+    btnCancelCf.addEventListener('click', () => modalCreateFolder.classList.remove('show'));
+
+    btnBrowseCfCover.addEventListener('click', async () => {
+        const coverPath = await ipcRenderer.invoke('dialog:openCover');
+        if (coverPath) {
+            const compressedPath = await ipcRenderer.invoke('image:compressCover', coverPath);
+            inputCfCover.value = compressedPath;
+        }
+    });
+
+    btnSaveCf.addEventListener('click', async () => {
+        const folderName = inputCfFolder.value.trim();
+        if (!folderName) {
+            alert("Nama folder wajib diisi!");
+            return;
+        }
+        if (!inputCfType.value) {
+            alert(t('msg_fill_type') || "Mohon pilih jenis buku!");
+            return;
+        }
+        
+        const selectedGenres = Array.from(genreCfContainer.querySelectorAll('input:checked')).map(cb => cb.value).join(', ');
+        
+        const folderData = {
+            folderName: folderName,
+            title: folderName,
+            author: inputCfAuthor.value.trim(),
+            cover: inputCfCover.value,
+            type: inputCfType.value,
+            date: (inputCfType.value === 'Artikel' || inputCfType.value === 'Journal') ? inputCfDate.value : null,
+            genre: selectedGenres,
+            synopsis: inputCfSynopsis.value.trim()
+        };
+
+        const result = await ipcRenderer.invoke('library:createFolder', folderData);
+        if (result.success) {
+            alert((t('msg_create_folder_success') || "Folder berhasil dibuat di:\n{0}").replace('{0}', result.path));
+            require('electron').shell.openPath(result.path);
+            await scanLocalFolder(true); 
+            renderLibrarySorted();       
+            modalCreateFolder.classList.remove('show');
+        } else {
+            alert((t('msg_create_folder_fail') || "Gagal membuat folder:\n{0}").replace('{0}', result.message));
+        }
+    });
 
         btnExitApp.addEventListener('click', () => {
             if (confirm(t('msg_exit_confirm'))) {

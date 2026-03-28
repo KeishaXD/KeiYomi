@@ -45,7 +45,7 @@
 [data-theme="dark"] .reader-container::-webkit-scrollbar-thumb { background-color: #334155; border: 2px solid var(--bg-color); }
 
 /* Library Toolbar */
-.library-toolbar { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+.library-toolbar { display: flex; justify-content: flex-end; margin-bottom: 28px; }
 .sort-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; color: var(--text-dark); font-size: 0.9rem; cursor: pointer; outline: none; }
 .chapter-read .chapter-name { color: #94a3b8; }
 
