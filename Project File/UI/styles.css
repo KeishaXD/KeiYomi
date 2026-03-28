@@ -317,7 +317,8 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 /* Modal Styles */
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
 .modal.show { display: flex; }
-.modal-content { background-color: #fff; padding: 24px; border-radius: 12px; width: 500px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out; max-height: 90vh; overflow-y: auto; }
+.modal-content { background-color: #fff; padding: 24px; border-radius: 12px; width: 500px; max-width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: slideUp 0.3s ease-out; max-height: 90vh; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.modal-content::-webkit-scrollbar { display: none; }
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-dark); }
 .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; outline: none; transition: border 0.2s; background: #fff; color: var(--text-dark); }
@@ -326,7 +327,8 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
 .btn-cancel { background: #e2e8f0; color: #475569; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
 .btn-save { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-.genre-checkboxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; max-height: 150px; overflow-y: auto; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; }
+.genre-checkboxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; max-height: 150px; overflow-y: auto; border: 1px solid #cbd5e1; padding: 10px; border-radius: 6px; scrollbar-width: none; -ms-overflow-style: none; }
+.genre-checkboxes::-webkit-scrollbar { display: none; }
 .genre-option { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; }
 .genre-option input { width: auto; }
 

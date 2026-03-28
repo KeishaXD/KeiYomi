@@ -909,21 +909,27 @@ function renderLibrarySorted() {
                             });
                             newBook.chapters = mergedChapters;
                         }
-                        const userTitle = exists.title;
-                        const userAuthor = exists.author;
-                        const userCover = exists.cover;
-                        const userGenre = exists.genre;
-                        const userSynopsis = exists.synopsis;
-                        const userFav = exists.isFavorite;
+                        // BUG FIX: Simpan semua data yang bisa diedit user agar tidak tertimpa oleh hasil scan.
+                        // ID sangat penting untuk tidak hilang.
+                        const userPreservedData = {
+                            id: exists.id,
+                            title: exists.title,
+                            author: exists.author,
+                            cover: exists.cover,
+                            genre: exists.genre,
+                            synopsis: exists.synopsis,
+                            isFavorite: exists.isFavorite,
+                            type: exists.type,
+                            publishDate: exists.publishDate
+                        };
                         
+                        // Timpa data yang ada dengan hasil scan terbaru (untuk update chapter list, dll)
                         Object.assign(exists, newBook);
 
-                        if (userTitle) exists.title = userTitle;
-                        if (userAuthor) exists.author = userAuthor;
-                        if (userCover) exists.cover = userCover;
-                        if (userGenre) exists.genre = userGenre;
-                        if (userSynopsis) exists.synopsis = userSynopsis;
-                        exists.isFavorite = userFav;
+                        // Kembalikan data yang sudah diedit user.
+                        // Ini akan menimpa kembali title, author, dll dari hasil scan
+                        // dengan data yang sudah disimpan oleh user sebelumnya.
+                        Object.assign(exists, userPreservedData);
                     }
                 });
 
