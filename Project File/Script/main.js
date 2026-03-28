@@ -198,6 +198,20 @@ ipcMain.handle('library:createFolder', async (event, data) => {
     }
 });
 
+// --- FITUR BARU: DIALOG HAPUS BUKU ---
+ipcMain.handle('dialog:deleteBook', async (event, options) => {
+    const { response } = await dialog.showMessageBox({
+        type: 'warning',
+        title: options.title,
+        message: options.message,
+        detail: options.detail,
+        buttons: [options.btnCancel, options.btnRemoveLib],
+        cancelId: 0,
+        defaultId: 0
+    });
+    return response;
+});
+
 // --- FITUR BARU: SCAN LIBRARY OTOMATIS ---
 ipcMain.handle('library:scanLocal', async (event, customFolders = []) => {
     const docPath = app.getPath('documents');

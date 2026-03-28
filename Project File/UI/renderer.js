@@ -78,11 +78,57 @@ let currentBookPath = null;
 let saveTimeout;
 let currentRenderId = 0; 
 
+// --- CUSTOM MODAL DIALOGS ---
+function customAlert(message, title = "Pemberitahuan") {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('custom-alert-modal');
+        document.getElementById('custom-alert-title').innerText = title;
+        document.getElementById('custom-alert-message').innerText = message;
+        modal.classList.add('show');
+        
+        const btnOk = document.getElementById('btn-custom-alert-ok');
+        const clickHandler = () => {
+            btnOk.removeEventListener('click', clickHandler);
+            modal.classList.remove('show');
+            resolve();
+        };
+        btnOk.addEventListener('click', clickHandler);
+    });
+}
+
+function customConfirm(message, title = "Konfirmasi", okText = "Ya", cancelText = "Batal") {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('custom-confirm-modal');
+        document.getElementById('custom-confirm-title').innerText = title;
+        document.getElementById('custom-confirm-message').innerText = message;
+        
+        const btnOk = document.getElementById('btn-custom-confirm-ok');
+        const btnCancel = document.getElementById('btn-custom-confirm-cancel');
+        
+        btnOk.innerText = okText;
+        btnCancel.innerText = cancelText;
+        
+        modal.classList.add('show');
+        
+        const cleanUp = () => {
+            btnOk.removeEventListener('click', okHandler);
+            btnCancel.removeEventListener('click', cancelHandler);
+            modal.classList.remove('show');
+        };
+        
+        const okHandler = () => { cleanUp(); resolve(true); };
+        const cancelHandler = () => { cleanUp(); resolve(false); };
+        
+        btnOk.addEventListener('click', okHandler);
+        btnCancel.addEventListener('click', cancelHandler);
+    });
+}
+
 // --- DATA MANAGEMENT ---
 let libraryData = [];
 let riwayatBacaan = [];
 let isWebtoonMode = true;
-let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [] };
+let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [] };
 
 async function loadData() {
     const data = await ipcRenderer.invoke('data:load');
@@ -94,6 +140,7 @@ async function loadData() {
         userSettings.theme = data.theme || 'light';
         userSettings.language = data.language || 'id';
         userSettings.customFolders = data.customFolders || [];
+        userSettings.ignoredPaths = data.ignoredPaths || [];
     } else {
         libraryData = [];
         riwayatBacaan = [];
@@ -110,7 +157,8 @@ async function saveData() {
         username: userSettings.username,
         theme: userSettings.theme,
         language: userSettings.language,
-        customFolders: userSettings.customFolders
+        customFolders: userSettings.customFolders,
+        ignoredPaths: userSettings.ignoredPaths
     };
     await ipcRenderer.invoke('data:save', data);
 }
@@ -209,6 +257,7 @@ function switchTab(tabName) {
         document.getElementById('setting-mode').value = isWebtoonMode ? 'webtoon' : 'normal';
         document.getElementById('setting-language').value = userSettings.language;
         renderCustomFolders();
+        renderIgnoredPaths();
     }
 }
 
@@ -552,9 +601,9 @@ function renderLibrarySorted() {
             }
         });
 
-        btnSaveChapter.addEventListener('click', () => {
+    btnSaveChapter.addEventListener('click', async () => {
             if (!inputChapterName.value || !inputChapterPath.value) {
-                alert(t('msg_fill_chapter'));
+            await customAlert(t('msg_fill_chapter'));
                 return;
             }
 
@@ -653,13 +702,13 @@ function renderLibrarySorted() {
             }
         });
 
-        btnSaveEdit.addEventListener('click', () => {
+    btnSaveEdit.addEventListener('click', async () => {
             if (!inputEditTitle.value) {
-                alert(t('msg_fill_title'));
+            await customAlert(t('msg_fill_title'));
                 return;
             }
             if (!inputEditType.value) {
-                alert(t('msg_fill_type') || 'Mohon pilih jenis buku!');
+            await customAlert(t('msg_fill_type') || 'Mohon pilih jenis buku!');
                 return;
             }
 
@@ -735,15 +784,34 @@ function renderLibrarySorted() {
             showBookDetail(book);
         };
 
-        window.deleteBook = function(bookId) {
-            if (confirm(t('msg_delete_confirm'))) {
-                const book = libraryData.find(b => b.id == bookId);
-                if (book) {
-                    libraryData = libraryData.filter(b => b.id != bookId);
-                    riwayatBacaan = riwayatBacaan.filter(r => r.path !== book.path);
-                    saveData();
-                    switchTab('library');
+        window.deleteBook = async function(bookId) {
+            const book = libraryData.find(b => b.id == bookId);
+            if (!book) return;
+
+            const options = {
+                title: t('modal_delete_title') || "Hapus Buku",
+                message: t('msg_delete_options') || "Hapus buku ini dari Pustaka?",
+                detail: t('msg_delete_detail') || "Buku ini akan dihapus dari daftar aplikasi. File aslinya di komputer Anda akan tetap aman.",
+                btnCancel: t('btn_cancel') || "Batal",
+                btnRemoveLib: t('btn_remove_lib') || "Hapus dari Pustaka"
+            };
+
+        const response = await customConfirm(options.message + "\n\n" + options.detail, options.title, options.btnRemoveLib, options.btnCancel);
+
+        if (response) {
+                // Masukkan ke daftar abaikan (Ignore List) HANYA jika buku berasal dari auto-scan
+                if (book.path && book.structureType) {
+                    const normPath = book.path.replace(/[\\/]+/g, '/').toLowerCase();
+                    if (!userSettings.ignoredPaths) userSettings.ignoredPaths = [];
+                    if (!userSettings.ignoredPaths.includes(normPath)) {
+                        userSettings.ignoredPaths.push(normPath);
+                    }
                 }
+                
+                libraryData = libraryData.filter(b => b.id != bookId);
+                riwayatBacaan = riwayatBacaan.filter(r => r.path !== book.path);
+                saveData();
+                switchTab('library');
             }
         };
 
@@ -844,11 +912,11 @@ function renderLibrarySorted() {
 
         btnSaveAdd.addEventListener('click', async () => {
             if (!inputTitle.value) {
-                alert(t('msg_fill_title'));
+            await customAlert(t('msg_fill_title'));
                 return;
             }
             if (!inputType.value) {
-                alert(t('msg_fill_type') || 'Mohon pilih jenis buku!');
+            await customAlert(t('msg_fill_type') || 'Mohon pilih jenis buku!');
                 return;
             }
             const selectedGenres = Array.from(genreContainer.querySelectorAll('input:checked')).map(cb => cb.value).join(', ');
@@ -952,11 +1020,11 @@ function renderLibrarySorted() {
     btnSaveCf.addEventListener('click', async () => {
         const folderName = inputCfFolder.value.trim();
         if (!folderName) {
-            alert("Nama folder wajib diisi!");
+            await customAlert("Nama folder wajib diisi!");
             return;
         }
         if (!inputCfType.value) {
-            alert(t('msg_fill_type') || "Mohon pilih jenis buku!");
+            await customAlert(t('msg_fill_type') || "Mohon pilih jenis buku!");
             return;
         }
         
@@ -975,18 +1043,18 @@ function renderLibrarySorted() {
 
         const result = await ipcRenderer.invoke('library:createFolder', folderData);
         if (result.success) {
-            alert((t('msg_create_folder_success') || "Folder berhasil dibuat di:\n{0}").replace('{0}', result.path));
+            await customAlert((t('msg_create_folder_success') || "Folder berhasil dibuat di:\n{0}").replace('{0}', result.path));
             require('electron').shell.openPath(result.path);
             await scanLocalFolder(true); 
             renderLibrarySorted();       
             modalCreateFolder.classList.remove('show');
         } else {
-            alert((t('msg_create_folder_fail') || "Gagal membuat folder:\n{0}").replace('{0}', result.message));
+            await customAlert((t('msg_create_folder_fail') || "Gagal membuat folder:\n{0}").replace('{0}', result.message));
         }
     });
 
-        btnExitApp.addEventListener('click', () => {
-            if (confirm(t('msg_exit_confirm'))) {
+        btnExitApp.addEventListener('click', async () => {
+            if (await customConfirm(t('msg_exit_confirm'), "Keluar Aplikasi", "Ya, Keluar")) {
                 ipcRenderer.send('app:quit');
             }
         });
@@ -994,8 +1062,12 @@ function renderLibrarySorted() {
         async function scanLocalFolder(silent = false) {
         const scannedBooks = await ipcRenderer.invoke('library:scanLocal', userSettings.customFolders || []);
             if (scannedBooks) {
+                const ignoredPathsSet = new Set(userSettings.ignoredPaths || []);
+
                 scannedBooks.forEach(newBook => {
                     const normNewBookPath = newBook.path.replace(/[\\/]+/g, '/').toLowerCase();
+                    if (ignoredPathsSet.has(normNewBookPath)) return; // Abaikan jika ada di ignore list
+
                     const exists = libraryData.find(b => {
                         const normExistPath = b.path.replace(/[\\/]+/g, '/').toLowerCase();
                         return normExistPath === normNewBookPath;
@@ -1052,9 +1124,9 @@ function renderLibrarySorted() {
                 });
 
                 saveData();
-                if (!silent) alert(t('msg_scan_success').replace('{0}', libraryData.length));
+                if (!silent) await customAlert(t('msg_scan_success').replace('{0}', libraryData.length));
             } else if (!silent) {
-                alert(t('msg_scan_fail'));
+                await customAlert(t('msg_scan_fail'));
             }
         }
 
@@ -1421,19 +1493,83 @@ function renderLibrarySorted() {
         });
     }
 
+    // --- IGNORED PATHS (RESTORE) LOGIC ---
+    const ignoredPathsList = document.getElementById('ignored-paths-list');
+    const btnRestoreAllIgnored = document.getElementById('btn-restore-all-ignored');
+
+    function renderIgnoredPaths() {
+        if (!ignoredPathsList) return;
+        ignoredPathsList.innerHTML = '';
+        const isDark = document.body.getAttribute('data-theme') === 'dark';
+
+        if (!userSettings.ignoredPaths || userSettings.ignoredPaths.length === 0) {
+            ignoredPathsList.innerHTML = `<p style="color: var(--text-muted); font-size: 0.9rem;">${t('msg_empty_ignored') || 'Tidak ada buku yang disembunyikan.'}</p>`;
+            if (btnRestoreAllIgnored) btnRestoreAllIgnored.style.display = 'none';
+            return;
+        }
+        
+        if (btnRestoreAllIgnored) btnRestoreAllIgnored.style.display = 'block';
+        
+        userSettings.ignoredPaths.forEach((folderPath, index) => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.style.background = isDark ? '#334155' : '#f8f9fa';
+            div.style.padding = '8px 12px';
+            div.style.borderRadius = '6px';
+            div.style.border = '1px solid ' + (isDark ? '#475569' : '#cbd5e1');
+            
+            const span = document.createElement('span');
+            const folderName = folderPath.split(/[\\/]/).pop(); // Ambil nama file/folder terakhirnya saja
+            span.innerText = folderName;
+            span.title = folderPath; 
+            span.style.wordBreak = 'break-all';
+            span.style.marginRight = '12px';
+            span.style.color = isDark ? '#f1f5f9' : 'inherit';
+            
+            const btn = document.createElement('button');
+            btn.innerText = t('btn_restore_ignored') || 'Pulihkan';
+            btn.className = 'btn-action btn-primary-action';
+            btn.style.padding = '4px 12px';
+            btn.style.fontSize = '0.8rem';
+            btn.onclick = async () => {
+                userSettings.ignoredPaths.splice(index, 1);
+                await saveData(); 
+                renderIgnoredPaths(); // Update UI list
+                await scanLocalFolder(true); // Scan ulang di background agar buku kembali muncul
+            };
+            
+            div.appendChild(span);
+            div.appendChild(btn);
+            ignoredPathsList.appendChild(div);
+        });
+    }
+
+    if (btnRestoreAllIgnored) {
+        btnRestoreAllIgnored.addEventListener('click', async () => {
+            if (await customConfirm(t('msg_restore_all_ignored_confirm') || "Apakah Anda yakin ingin memulihkan semua buku yang disembunyikan?", t('btn_restore_all_ignored') || "Pulihkan Semua", "Ya, Pulihkan")) {
+                userSettings.ignoredPaths = []; // Kosongkan daftar blokir
+                await saveData(); 
+                renderIgnoredPaths(); // Update UI list
+                await scanLocalFolder(true); // Scan ulang otomatis di background
+            }
+        });
+    }
+
     document.getElementById('btn-clear-cache').addEventListener('click', async () => {
-        if (confirm(t('msg_clear_cache_confirm'))) {
+        if (await customConfirm(t('msg_clear_cache_confirm'), "Hapus Cache Data", "Hapus Cache")) {
             // 1. Batalkan semua proses auto-save yang mungkin sedang berjalan
             clearTimeout(saveTimeout);
             
             // 2. Kosongkan memori sementara agar data lama tidak ter-save ulang
             libraryData = [];
             riwayatBacaan = [];
-            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [] };
+            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [] };
 
             const success = await ipcRenderer.invoke('data:clear');
             if (success) {
-                alert(t('msg_clear_cache_success'));
+                await customAlert(t('msg_clear_cache_success'));
                 ipcRenderer.send('app:relaunch'); // Restart aplikasi secara native
             }
         }
@@ -1446,12 +1582,12 @@ function renderLibrarySorted() {
             try {
                 const result = await ipcRenderer.invoke('data:backup');
                 if (result.success) {
-                    alert(t('msg_backup_success').replace('{0}', result.filePath));
+                await customAlert(t('msg_backup_success').replace('{0}', result.filePath));
                 } else if (!result.canceled) {
-                    alert(t('msg_backup_fail') + (result.message || 'Error tidak diketahui'));
+                await customAlert(t('msg_backup_fail') + (result.message || 'Error tidak diketahui'));
                 }
             } catch (error) {
-                alert(t('msg_backup_fail') + error.message);
+            await customAlert(t('msg_backup_fail') + error.message);
             }
         });
     }
@@ -1462,13 +1598,13 @@ function renderLibrarySorted() {
             try {
                 const result = await ipcRenderer.invoke('data:restore');
                 if (result.success) {
-                    alert(t('msg_restore_success'));
+                await customAlert(t('msg_restore_success'));
                     ipcRenderer.send('app:relaunch'); // Restart aplikasi secara otomatis
                 } else if (!result.canceled) {
-                    alert(t('msg_restore_fail') + (result.message || 'File tidak valid'));
+                await customAlert(t('msg_restore_fail') + (result.message || 'File tidak valid'));
                 }
             } catch (error) {
-                alert(t('msg_restore_fail') + error.message);
+            await customAlert(t('msg_restore_fail') + error.message);
             }
         });
     }
@@ -1490,7 +1626,7 @@ function renderLibrarySorted() {
             applyTheme(userSettings.theme);
             applyLanguage(userSettings.language);
             await saveData();
-            alert(t('msg_saved'));
+            await customAlert(t('msg_saved'), "Berhasil");
         });
 
         function openLink(url) { require('electron').shell.openExternal(url); }
@@ -1498,14 +1634,14 @@ function renderLibrarySorted() {
         async function checkUpdate() {
             try {
                 const result = await ipcRenderer.invoke('updater:check');
-                if (result.error) { alert(t('msg_update_fail') + result.error); return; }
+                if (result.error) { await customAlert(t('msg_update_fail') + result.error, "Gagal"); return; }
                 if (result.updateAvailable) {
                     const msg = t('msg_update_available').replace('{0}', result.remoteInfo.version);
-                    if (confirm(msg)) openLink(result.remoteInfo.zipUrl);
+                    if (await customConfirm(msg, "Pembaruan Tersedia", "Unduh", "Batal")) openLink(result.remoteInfo.zipUrl);
                 } else {
-                    alert(t('msg_update_latest').replace('{0}', result.localInfo.version));
+                    await customAlert(t('msg_update_latest').replace('{0}', result.localInfo.version), "Pembaruan");
                 }
-            } catch (e) { alert(t('msg_update_error')); }
+            } catch (e) { await customAlert(t('msg_update_error'), "Error"); }
         }
 
         window.showQrisModal = function() {
@@ -1516,14 +1652,22 @@ function renderLibrarySorted() {
             document.getElementById('paypal-modal').classList.add('show');
         };
 
-        document.addEventListener('keydown', (e) => {
+        document.addEventListener('keydown', async (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             if (e.key === 'Escape') {
-                const openModal = document.querySelector('.modal.show');
-                if (openModal) { openModal.classList.remove('show'); return; }
+                const openModals = document.querySelectorAll('.modal.show');
+                if (openModals.length > 0) { 
+                    const openModal = openModals[openModals.length - 1];
+                    const btnCancel = openModal.querySelector('.btn-cancel');
+                    const btnOk = openModal.querySelector('#btn-custom-alert-ok');
+                    if (btnCancel) btnCancel.click();
+                    else if (btnOk) btnOk.click();
+                    else openModal.classList.remove('show');
+                    return; 
+                }
                 if (settingsPopup.classList.contains('show')) { settingsPopup.classList.remove('show'); return; }
                 if (btnBack.style.display !== 'none') { btnBack.click(); return; }
-                if (confirm(t('msg_exit_confirm'))) ipcRenderer.send('app:quit');
+                if (await customConfirm(t('msg_exit_confirm'), "Keluar Aplikasi", "Ya, Keluar")) ipcRenderer.send('app:quit');
             }
 
             if (reader.style.display === 'flex') {
