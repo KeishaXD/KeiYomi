@@ -174,8 +174,7 @@
                     </select>
                 </div>
 
-                <div style="margin-top: 32px; display: flex; justify-content: space-between; align-items: center;">
-                    <button class="btn-action btn-danger-action" id="btn-clear-cache" style="padding: 10px 20px; font-weight: 600; border-radius: 6px; border: 1px solid #fee2e2;" data-i18n="btn_clear_cache">Hapus Cache Data</button>
+                <div style="margin-top: 32px; display: flex; justify-content: flex-end; align-items: center;">
                     <button class="btn-save" id="btn-save-settings-page" data-i18n="settings_save">Simpan Perubahan</button>
                 </div>
             </div>
@@ -191,9 +190,10 @@
             <div class="settings-container" style="margin-top: 24px;">
                 <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;" data-i18n="settings_backup_title">Backup & Pemulihan Data</h2>
                 <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem; line-height: 1.5;" data-i18n="msg_backup_desc">Amankan riwayat bacaan dan daftar pustaka Anda, atau pindahkan ke perangkat lain.</p>
-                <div style="display: flex; gap: 12px;">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                     <button class="btn-action btn-primary-action" id="btn-backup" data-i18n="btn_backup">Export Data (Backup)</button>
                     <button class="btn-action btn-secondary-action" id="btn-restore" data-i18n="btn_restore">Import Data (Restore)</button>
+                    <button class="btn-action btn-danger-action" id="btn-clear-cache" data-i18n="btn_clear_cache">Hapus Cache Data</button>
                 </div>
             </div>
 
