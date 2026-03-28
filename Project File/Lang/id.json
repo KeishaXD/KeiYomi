@@ -78,6 +78,8 @@
     "btn_close": "Tutup",
     "ctx_delete": "🗑 Hapus Buku",
     "ctx_delete_history": "🗑 Hapus Riwayat",
+    "modal_paypal_title": "Scan PayPal QR",
+    "modal_paypal_desc": "Dukung pengembangan aplikasi ini dengan donasi seikhlasnya.",
     "ctx_remove_favorite": "★ Hapus dari Favorit",
     "reader_settings_title": "Pengaturan Baca",
     "reader_mode_webtoon": "Mode Webtoon (Scroll)",

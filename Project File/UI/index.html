@@ -241,7 +241,7 @@
                             <svg viewBox="0 0 24 24"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 13h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-3 0h2v2h-2v-2zm-3 4h3v2h-3v-2zm3 0h2v2h-2v-2zm-3-4h2v2h-2v-2zM3 21h18v-2H3v2zm18-8h-2v2h2v-2z"/></svg>
                             QRIS
                         </button>
-                        <button class="btn-social btn-paypal" onclick="openLink('https://paypal.me/KeishaXD')">
+                        <button class="btn-social btn-paypal" onclick="showPaypalModal()">
                             <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
                             PayPal
                         </button>
@@ -409,13 +409,23 @@
 
     <!-- QRIS Modal -->
     <div id="qris-modal" class="modal">
-        <div class="modal-content" style="text-align: center; max-width: 400px;">
+        <div class="modal-content" style="text-align: center; max-width: 400px; width: 90%;">
             <h2 style="margin-bottom: 16px;" data-i18n="modal_qris_title">Scan QRIS</h2>
-            <div style="background: #f1f5f9; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-                <img src="https://via.placeholder.com/300?text=QRIS+Code+Here" alt="QRIS Code" style="width: 100%; max-width: 250px; border-radius: 8px;">
-                <p style="margin-top: 12px; color: #64748b; font-size: 0.9rem;" data-i18n="modal_qris_desc">Dukung pengembangan aplikasi ini dengan donasi seikhlasnya.</p>
+            <div style="background: #f1f5f9; padding: 12px; border-radius: 12px; margin-bottom: 20px;">
+                <img src="../assets/qris.png" alt="QRIS Code" style="width: 100%; height: auto; display: block; border-radius: 8px;">
             </div>
-            <button class="btn-cancel" onclick="document.getElementById('qris-modal').classList.remove('show')" data-i18n="btn_close">Tutup</button>
+            <button class="btn-cancel" onclick="document.getElementById('qris-modal').classList.remove('show')" data-i18n="btn_close" style="width: 100%;">Tutup</button>
+        </div>
+    </div>
+
+    <!-- PayPal Modal -->
+    <div id="paypal-modal" class="modal">
+        <div class="modal-content" style="text-align: center; max-width: 400px; width: 90%;">
+            <h2 style="margin-bottom: 16px;" data-i18n="modal_paypal_title">Scan PayPal QR</h2>
+            <div style="background: #f1f5f9; padding: 12px; border-radius: 12px; margin-bottom: 20px;">
+                <img src="../assets/paypal.png" alt="PayPal QR Code" style="width: 100%; height: auto; display: block; border-radius: 8px;">
+            </div>
+            <button class="btn-cancel" onclick="document.getElementById('paypal-modal').classList.remove('show')" data-i18n="btn_close" style="width: 100%;">Tutup</button>
         </div>
     </div>
 

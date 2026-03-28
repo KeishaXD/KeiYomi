@@ -1395,6 +1395,10 @@ function renderLibrarySorted() {
             document.getElementById('qris-modal').classList.add('show');
         };
 
+        window.showPaypalModal = function() {
+            document.getElementById('paypal-modal').classList.add('show');
+        };
+
         document.addEventListener('keydown', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             if (e.key === 'Escape') {
