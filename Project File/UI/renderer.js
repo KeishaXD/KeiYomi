@@ -287,10 +287,12 @@ function renderLibrarySorted() {
                 return;
             }
 
+            const fragment = document.createDocumentFragment();
             data.forEach(book => {
                 const card = createBookCard(book);
-                grid.appendChild(card);
+                fragment.appendChild(card);
             });
+            grid.appendChild(fragment);
         }
 
         function createBookCard(book) {
@@ -305,9 +307,10 @@ function renderLibrarySorted() {
                     coverSrc = path.join(book.path, book.cover);
                 }
                 coverSrc = coverSrc.replace(/\\/g, '/');
+                if (!coverSrc.startsWith('file://')) coverSrc = `file://${coverSrc}`;
             }
             
-            const coverHtml = coverSrc ? `<img src="${coverSrc}" class="book-cover" style="object-fit:cover;">` : `<div class="book-cover">📖</div>`;
+            const coverHtml = coverSrc ? `<img src="${coverSrc}" class="book-cover" style="object-fit:cover;" loading="lazy" decoding="async">` : `<div class="book-cover">📖</div>`;
 
             div.innerHTML = `
                 ${coverHtml}
@@ -343,6 +346,7 @@ function renderLibrarySorted() {
                     coverSrc = path.join(book.path, book.cover);
                 }
                 coverSrc = coverSrc.replace(/\\/g, '/');
+                if (!coverSrc.startsWith('file://')) coverSrc = `file://${coverSrc}`;
             }
             const coverStyle = coverSrc 
                 ? `background-image: url('${coverSrc}'); background-size: cover; color: transparent;` 
@@ -624,7 +628,9 @@ function renderLibrarySorted() {
         btnBrowseEditCover.addEventListener('click', async () => {
             const coverPath = await ipcRenderer.invoke('dialog:openCover');
             if (coverPath) {
-                inputEditCover.value = coverPath;
+                // Kompresi otomatis gambar yang dipilih
+                const compressedPath = await ipcRenderer.invoke('image:compressCover', coverPath);
+                inputEditCover.value = compressedPath;
             }
         });
 
@@ -802,7 +808,9 @@ function renderLibrarySorted() {
         btnBrowseCover.addEventListener('click', async () => {
             const coverPath = await ipcRenderer.invoke('dialog:openCover');
             if (coverPath) {
-                inputCover.value = coverPath;
+                // Kompresi otomatis gambar yang dipilih
+                const compressedPath = await ipcRenderer.invoke('image:compressCover', coverPath);
+                inputCover.value = compressedPath;
             }
         });
 

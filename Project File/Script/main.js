@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, nativeTheme, net } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeTheme, net, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -78,6 +78,38 @@ ipcMain.handle('dialog:openDirectory', async () => {
     }
 });
 
+// --- FITUR BARU: KOMPRESI GAMBAR SAMPUL ---
+ipcMain.handle('image:compressCover', async (event, sourcePath) => {
+    try {
+        const userDataPath = app.getPath('userData');
+        const coversDir = path.join(userDataPath, 'covers_cache');
+        
+        // Buat folder cache cover jika belum ada
+        if (!fs.existsSync(coversDir)) {
+            fs.mkdirSync(coversDir, { recursive: true });
+        }
+
+        // Gunakan nativeImage bawaan Electron untuk resize & kompresi
+        let image = nativeImage.createFromPath(sourcePath);
+        const size = image.getSize();
+        
+        // Resize ke lebar maksimal 400px agar ringan tapi tetap tajam
+        if (size.width > 400) {
+            image = image.resize({ width: 400 });
+        }
+
+        const buffer = image.toJPEG(80); // Kompresi kualitas 80%
+        const fileName = `cover_${Date.now()}.jpg`;
+        const destPath = path.join(coversDir, fileName);
+        
+        fs.writeFileSync(destPath, buffer);
+        return destPath;
+    } catch (error) {
+        console.error('Gagal mengkompresi gambar:', error);
+        return sourcePath; // Fallback ke gambar asli jika gagal
+    }
+});
+
 // --- FITUR BARU: SAVE/LOAD DATA KE FILE TERSEMBUNYI ---
 ipcMain.handle('data:save', async (event, data) => {
     // Menggunakan standar folder AppData bawaan OS
@@ -117,6 +149,11 @@ ipcMain.handle('data:clear', async () => {
     try {
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath); // Menghapus file cache
+        }
+        // Hapus juga folder cache cover jika ada
+        const coversDir = path.join(userDataPath, 'covers_cache');
+        if (fs.existsSync(coversDir)) {
+            fs.rmSync(coversDir, { recursive: true, force: true });
         }
         return true;
     } catch (error) {

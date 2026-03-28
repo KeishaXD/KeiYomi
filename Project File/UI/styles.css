@@ -67,7 +67,7 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
     justify-content: space-between;
     align-items: center;
     height: 32px;
-    background-color: var(--sidebar-bg);
+    background-color: var(--bg-color);
     color: var(--text-dark);
     user-select: none;
     z-index: 9998;
@@ -89,7 +89,7 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.5px;
-    color: var(--text-muted);
+    color: var(--text-dark);
 }
 .titlebar-controls {
     display: flex;
@@ -98,7 +98,7 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 }
 .titlebar-btn {
     background: transparent; border: none; width: 46px; height: 100%;
-    color: var(--text-muted); display: flex; justify-content: center; align-items: center;
+    color: var(--text-dark); display: flex; justify-content: center; align-items: center;
     cursor: pointer; transition: background 0.2s, color 0.2s;
 }
 .titlebar-btn:hover { background-color: rgba(0, 0, 0, 0.05); color: var(--text-dark); }
