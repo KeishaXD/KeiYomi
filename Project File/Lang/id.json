@@ -60,6 +60,8 @@
     "lbl_type": "Jenis Buku",
     "lbl_date": "Tanggal Publikasi",
     "lbl_genre": "Genre",
+    "ph_select_type": "Pilih Jenis Buku",
+    "msg_fill_type": "Mohon pilih jenis buku!",
     "lbl_synopsis": "Sinopsis",
     "btn_cancel": "Batal",
     "btn_save": "Simpan",

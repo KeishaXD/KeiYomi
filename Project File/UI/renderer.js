@@ -563,7 +563,10 @@ function renderLibrarySorted() {
             const genreGroup = genreEditContainer.parentElement;
             let genres = [];
 
-            if (type === 'Artikel') {
+            if (!type) {
+                groupEditDate.style.display = 'none';
+                genreGroup.style.display = 'none';
+            } else if (type === 'Artikel') {
                 genres = genreLists.artikel;
                 groupEditDate.style.display = 'block';
                 genreGroup.style.display = 'none';
@@ -578,6 +581,7 @@ function renderLibrarySorted() {
                 if (type === 'Manga') genres.push(...genreLists.manga);
                 if (type === 'Manhwa') genres.push(...genreLists.manhwa);
                 if (type === 'Manhua') genres.push(...genreLists.manhua);
+                if (type === 'Novel') genres.push(...genreLists.novel);
             }
             
             genres = [...new Set(genres)].sort();
@@ -601,7 +605,7 @@ function renderLibrarySorted() {
             inputEditTitle.value = book.title;
             inputEditAuthor.value = book.author || '';
             inputEditCover.value = book.cover || '';
-            inputEditType.value = book.type || 'Manga'; 
+            inputEditType.value = book.type || ''; 
             inputEditDate.value = book.publishDate || '';
             inputEditSynopsis.value = book.synopsis || '';
 
@@ -637,6 +641,10 @@ function renderLibrarySorted() {
         btnSaveEdit.addEventListener('click', () => {
             if (!inputEditTitle.value) {
                 alert(t('msg_fill_title'));
+                return;
+            }
+            if (!inputEditType.value) {
+                alert(t('msg_fill_type') || 'Mohon pilih jenis buku!');
                 return;
             }
 
@@ -767,7 +775,8 @@ function renderLibrarySorted() {
             manhwa: ['Hunter/System', 'Regression', 'Murim', 'Villainess', 'School Bullying'],
             manhua: ['Wuxia', 'Xianxia', 'Xuanhuan', 'Kultivasi'],
             artikel: ['Berita', 'Feature', 'Opini', 'Tajuk Rencana', 'Panduan', 'Ulasan', 'Esai'],
-            journal: ['Penelitian Asli', 'Tinjauan Pustaka', 'Studi Kasus', 'Metodologi', 'Komunikasi Singkat']
+        journal: ['Penelitian Asli', 'Tinjauan Pustaka', 'Studi Kasus', 'Metodologi', 'Komunikasi Singkat'],
+        novel: ['Romantis atau Percintaan', 'Misteri', 'Horor', 'Fantasi', 'Fiksi Ilmiah atau Sci-Fi', 'Thriller atau Suspense', 'Sejarah', 'Fiksi Remaja atau Teenlit', 'Chicklit', 'Metropop', 'Komedi atau Humor', 'Inspiratif']
         };
 
         function updateGenreOptions() {
@@ -775,7 +784,10 @@ function renderLibrarySorted() {
             const genreGroup = genreContainer.parentElement;
             let genres = [];
 
-            if (type === 'Artikel') {
+            if (!type) {
+                groupDate.style.display = 'none';
+                genreGroup.style.display = 'none';
+            } else if (type === 'Artikel') {
                 genres = genreLists.artikel;
                 groupDate.style.display = 'block';
                 genreGroup.style.display = 'none';
@@ -790,6 +802,7 @@ function renderLibrarySorted() {
                 if (type === 'Manga') genres.push(...genreLists.manga);
                 if (type === 'Manhwa') genres.push(...genreLists.manhwa);
                 if (type === 'Manhua') genres.push(...genreLists.manhua);
+                if (type === 'Novel') genres.push(...genreLists.novel);
             }
             
             genres = [...new Set(genres)].sort();
@@ -817,6 +830,10 @@ function renderLibrarySorted() {
         btnSaveAdd.addEventListener('click', async () => {
             if (!inputTitle.value) {
                 alert(t('msg_fill_title'));
+                return;
+            }
+            if (!inputType.value) {
+                alert(t('msg_fill_type') || 'Mohon pilih jenis buku!');
                 return;
             }
             const selectedGenres = Array.from(genreContainer.querySelectorAll('input:checked')).map(cb => cb.value).join(', ');
@@ -849,7 +866,7 @@ function renderLibrarySorted() {
                     inputAuthor.value = '';
                     inputCover.value = '';
                     inputSynopsis.value = '';
-                    inputType.value = 'Artikel';
+                    inputType.value = '';
                     inputDate.value = '';
                     updateGenreOptions();
                     modalAddBook.classList.add('show');
