@@ -1535,18 +1535,31 @@ function renderLibrarySorted() {
 
             if (!currentBookPath) return;
 
+            // --- FIX: More robust page detection to prevent off-by-one errors ---
             const pages = document.querySelectorAll('.page-placeholder');
-            for (let page of pages) {
+            let closestPage = null;
+            let minDistance = Infinity;
+
+            // Find the page whose top is closest to the top of the viewport
+            for (const page of pages) {
                 const rect = page.getBoundingClientRect();
-                if (rect.top < window.innerHeight / 2 && rect.bottom > 0) {
-                    const pageNum = parseInt(page.getAttribute('data-page'));
-                    const historyItem = riwayatBacaan.find(r => r.path === currentBookPath);
-                    if (historyItem && historyItem.lastPage !== pageNum) {
-                        historyItem.lastPage = pageNum;
-                        clearTimeout(saveTimeout);
-                        saveTimeout = setTimeout(saveData, 1000); 
+                // Consider pages that are at least partially visible
+                if (rect.bottom > 0 && rect.top < window.innerHeight) {
+                    const distance = Math.abs(rect.top);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestPage = page;
                     }
-                    break; 
+                }
+            }
+
+            if (closestPage) {
+                const pageNum = parseInt(closestPage.getAttribute('data-page'));
+                const historyItem = riwayatBacaan.find(r => r.path === currentBookPath);
+                if (historyItem && historyItem.lastPage !== pageNum) {
+                    historyItem.lastPage = pageNum;
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(saveData, 1000);
                 }
             }
         });
