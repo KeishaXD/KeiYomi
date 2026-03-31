@@ -20,6 +20,7 @@ const reader = document.getElementById('reader');
 const nightLightOverlay = document.getElementById('night-light-overlay');
 const settingNightIntensity = document.getElementById('setting-night-intensity');
 const btnToggleNightmode = document.getElementById('btn-toggle-nightmode');
+const scrollProgressIndicator = document.getElementById('scroll-progress-indicator');
 
 // Modal Elements
 const modalAddBook = document.getElementById('add-book-modal');
@@ -249,6 +250,7 @@ function switchTab(tabName) {
     btnBack.style.display = 'none';
     searchInput.style.display = 'block';
     readerSettingsContainer.style.display = 'none';
+    scrollProgressIndicator.classList.remove('visible');
     btnRefresh.style.display = 'none';
     searchInput.value = ''; 
 
@@ -430,6 +432,7 @@ function renderLibrarySorted() {
             btnBack.style.display = 'block';
             searchInput.style.display = 'none';
             readerSettingsContainer.style.display = 'none';
+    scrollProgressIndicator.classList.remove('visible');
             btnRefresh.style.display = 'none';
 
             let coverSrc = '';
@@ -1174,6 +1177,7 @@ function renderLibrarySorted() {
             btnBack.style.display = 'block';
             searchInput.style.display = 'none';
             readerSettingsContainer.style.display = 'block';
+    scrollProgressIndicator.classList.add('visible');
             btnRefresh.style.display = 'none';
 
             currentBookPath = filePath;
@@ -1214,8 +1218,12 @@ function renderLibrarySorted() {
             if (historyItem.lastPage && historyItem.lastPage > 1) {
                 setTimeout(() => {
                     const pageElement = document.querySelector(`.page-placeholder[data-page="${historyItem.lastPage}"]`);
-                    if (pageElement) pageElement.scrollIntoView();
-                }, 100);
+                    if (pageElement) {
+                        // Menggunakan scrollTop manual agar tidak menggeser seluruh UI
+                        const readerPaddingTop = parseInt(window.getComputedStyle(reader).paddingTop, 10) || 0;
+                        reader.scrollTop = pageElement.offsetTop - readerPaddingTop;
+                    }
+                }, 200); // Beri sedikit jeda lebih lama agar layout stabil
             }
 
             if (!hasSeenFullscreenTip) {
@@ -1512,8 +1520,21 @@ function renderLibrarySorted() {
             }
         }
 
+        function updateScrollProgress() {
+            const { scrollTop, scrollHeight, clientHeight } = reader;
+            if (scrollHeight > clientHeight) {
+                const scrollPercent = Math.round((scrollTop / (scrollHeight - clientHeight)) * 100);
+                scrollProgressIndicator.innerText = `${scrollPercent}%`;
+            } else {
+                scrollProgressIndicator.innerText = '100%';
+            }
+        }
+
         reader.addEventListener('scroll', () => {
+            updateScrollProgress();
+
             if (!currentBookPath) return;
+
             const pages = document.querySelectorAll('.page-placeholder');
             for (let page of pages) {
                 const rect = page.getBoundingClientRect();
@@ -1826,14 +1847,27 @@ function renderLibrarySorted() {
             const pages = Array.from(document.querySelectorAll('.page-placeholder'));
             const readerRect = reader.getBoundingClientRect();
             const next = pages.find(p => p.getBoundingClientRect().top > readerRect.top + 50);
-            if (next) next.scrollIntoView({ behavior: 'smooth' });
+            if (next) {
+                const readerPaddingTop = parseInt(window.getComputedStyle(reader).paddingTop, 10) || 0;
+                reader.scrollTo({
+                    top: next.offsetTop - readerPaddingTop,
+                    behavior: 'smooth'
+                });
+            }
         }
 
         function goToPrevPage() {
             const pages = Array.from(document.querySelectorAll('.page-placeholder'));
             const readerRect = reader.getBoundingClientRect();
             const prevs = pages.filter(p => p.getBoundingClientRect().top < readerRect.top - 50);
-            if (prevs.length > 0) prevs[prevs.length - 1].scrollIntoView({ behavior: 'smooth' });
+            if (prevs.length > 0) {
+                const prev = prevs[prevs.length - 1];
+                const readerPaddingTop = parseInt(window.getComputedStyle(reader).paddingTop, 10) || 0;
+                reader.scrollTo({
+                    top: prev.offsetTop - readerPaddingTop,
+                    behavior: 'smooth'
+                });
+            }
         }
 
         function navigateChapter(direction) {

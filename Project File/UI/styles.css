@@ -137,7 +137,7 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 .btn-exit:hover { background-color: #dc2626; border-color: #b91c1c; }
 
 /* Main Content */
-.main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+.main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; position: relative; }
 .header { padding: 16px 32px; background: white; border-bottom: 1px solid #e2e8f0; z-index: 10; display: flex; justify-content: space-between; align-items: center; height: 64px; flex-shrink: 0; }
 .header-left { display: flex; align-items: center; gap: 16px; }
 .header h1 { font-size: 1.2rem; color: var(--text-dark); font-weight: 700; margin: 0; }
@@ -152,7 +152,7 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 }
 
 /* Reader Area (Webtoon Style) */
-.reader-container { flex-grow: 1; overflow-y: auto; display: none; flex-direction: column; align-items: center; padding: 40px; background-color: #cbd5e1; scroll-behavior: smooth; animation: fadeIn 0.3s ease-out; }
+.reader-container { flex-grow: 1; overflow-y: auto; display: none; flex-direction: column; align-items: center; padding: 40px; background-color: #cbd5e1; scroll-behavior: smooth; animation: fadeIn 0.3s ease-out; position: relative; }
 .reader-container::-webkit-scrollbar { width: 10px; }
 .reader-container::-webkit-scrollbar-track { background: #cbd5e1; }
 .reader-container::-webkit-scrollbar-thumb { background-color: #94a3b8; border-radius: 5px; border: 2px solid #cbd5e1; }
@@ -282,7 +282,7 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 
 /* Floating Action Button & Settings */
 .fab-btn {
-    position: fixed;
+    position: absolute;
     bottom: 30px;
     right: 30px;
     width: 56px;
@@ -305,8 +305,41 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 }
 .fab-btn svg { width: 28px; height: 28px; fill: currentColor; }
 
+.scroll-progress {
+    position: absolute;
+    bottom: 38px;
+    left: 30px;
+    width: auto;
+    min-width: 70px;
+    padding: 0 16px;
+    height: 40px;
+    border-radius: 20px;
+    background-color: #1e293b;
+    color: #f1f5f9;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    cursor: default;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 99;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: opacity 0.3s, transform 0.3s;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+}
+.scroll-progress.visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+[data-theme="dark"] .scroll-progress { background-color: #334155; border-color: #475569; }
+
 .settings-popup {
-    position: fixed; bottom: 100px; right: 30px; background: white; padding: 16px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 99; width: 220px; display: none; animation: slideUp 0.2s ease-out; border: 1px solid #e2e8f0;
+    position: absolute; bottom: 100px; right: 30px; background: white; padding: 16px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 99; width: 220px; display: none; animation: slideUp 0.2s ease-out; border: 1px solid #e2e8f0;
 }
 .settings-popup.show { display: block; }
 @keyframes slideUp {
