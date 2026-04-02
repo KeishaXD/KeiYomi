@@ -4,6 +4,7 @@
   "versionCode": 2,
   "description": "KeiYomi Desktop Manga & Document Reader",
   "main": "Script/main.js",
+  "updateJson": "https://raw.githubusercontent.com/KeishaXD/KeiYomi/main/update.json",
 
   "scripts": {
     "start": "electron .",
@@ -34,6 +35,7 @@
       "UI/**/*",
       "Lang/**/*",
       "assets/**/*",
+      "vendor/**/*",
       "package.json",
       "!node_modules/.cache",
       "!dist",

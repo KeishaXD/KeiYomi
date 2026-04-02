@@ -1785,8 +1785,18 @@ function renderLibrarySorted() {
                 const result = await ipcRenderer.invoke('updater:check');
                 if (result.error) { await customAlert(t('msg_update_fail') + result.error, "Gagal"); return; }
                 if (result.updateAvailable) {
-                    const msg = t('msg_update_available').replace('{0}', result.remoteInfo.version);
-                    if (await customConfirm(msg, "Pembaruan Tersedia", "Unduh", "Batal")) openLink(result.remoteInfo.zipUrl);
+            // Menampilkan changelog dan menawarkan instalasi otomatis
+            const msg = `${t('msg_update_available').replace('{0}', result.remoteInfo.version)}\n\nChangelog:\n${result.remoteInfo.changelog || '-'}\n\nApakah Anda ingin mengunduh dan menginstal pembaruan ini sekarang?`;
+            
+            if (await customConfirm(msg, "Pembaruan Tersedia", "Unduh & Install", "Batal")) {
+                showToast("Sedang mengunduh pembaruan di latar belakang... Aplikasi akan otomatis tertutup saat instalasi dimulai.", 6000);
+                try {
+                    await ipcRenderer.invoke('updater:downloadAndInstall', result.remoteInfo.zipUrl);
+                } catch (err) {
+                    await customAlert("Gagal mengunduh pembaruan: " + err.message + "\n\nMembuka tautan di browser...");
+                    openLink(result.remoteInfo.zipUrl); // Fallback: buka browser jika gagal otomatis
+                }
+            }
                 } else {
                     await customAlert(t('msg_update_latest').replace('{0}', result.localInfo.version), "Pembaruan");
                 }
