@@ -133,6 +133,25 @@ function renderLibrarySorted() {
         });
 
         // --- RENDER FUNCTIONS ---
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
+        }
+
+        function escapeJsArg(value) {
+            return escapeHtml(JSON.stringify(String(value ?? '')));
+        }
+
+        function safeNumericId(value) {
+            const numberValue = Number(value);
+            return Number.isFinite(numberValue) ? numberValue : 0;
+        }
+
         function renderGrid(data, elementId) {
             const grid = document.getElementById(elementId);
             grid.innerHTML = '';
@@ -163,6 +182,7 @@ function renderLibrarySorted() {
                 }
                 coverSrc = coverSrc.replace(/\\/g, '/');
                 if (!coverSrc.startsWith('file://')) coverSrc = `file://${coverSrc}`;
+                coverSrc = escapeHtml(coverSrc);
             }
             
             const coverHtml = coverSrc ? `<img src="${coverSrc}" class="book-cover" style="object-fit:cover;" loading="lazy" decoding="async">` : `<div class="book-cover">📖</div>`;
@@ -170,8 +190,8 @@ function renderLibrarySorted() {
             div.innerHTML = `
                 ${coverHtml}
                 <div class="book-info">
-                    <div class="book-title">${book.title}</div>
-                    <div class="book-meta">${book.genre || t('msg_unknown_genre')}</div>
+                    <div class="book-title">${escapeHtml(book.title)}</div>
+                    <div class="book-meta">${escapeHtml(book.genre || t('msg_unknown_genre'))}</div>
                 </div>
             `;
             div.addEventListener('click', () => showBookDetail(book));
@@ -187,6 +207,7 @@ function renderLibrarySorted() {
             const detailView = document.getElementById('view-detail');
             detailView.style.display = 'block';
             pageTitle.innerText = t('page_detail');
+            const safeBookId = safeNumericId(book.id);
             
             btnBack.style.display = 'block';
             searchInput.style.display = 'none';
@@ -203,6 +224,7 @@ function renderLibrarySorted() {
                 }
                 coverSrc = coverSrc.replace(/\\/g, '/');
                 if (!coverSrc.startsWith('file://')) coverSrc = `file://${coverSrc}`;
+                coverSrc = escapeHtml(coverSrc);
             }
             const coverStyle = coverSrc 
                 ? `background-image: url('${coverSrc}'); background-size: cover; color: transparent;` 
@@ -217,8 +239,9 @@ function renderLibrarySorted() {
                 if (book.chapters && book.chapters.length > 0) {
                     chapterCount = book.chapters.length;
                     book.chapters.forEach((chap, index) => {
-                        const safePath = chap.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-                        const safeTitle = `${book.title} - ${chap.name}`.replace(/'/g, "\\'");
+                        const safePath = escapeJsArg(chap.path);
+                        const safeTitle = escapeJsArg(`${book.title} - ${chap.name}`);
+                        const safeChapterName = escapeHtml(chap.name);
                         const isChapFav = chap.isFavorite;
                         const starColor = isChapFav ? '#eab308' : 'currentColor';
                         const starFill = isChapFav ? '#eab308' : 'none';
@@ -227,13 +250,13 @@ function renderLibrarySorted() {
                         const readClass = isRead ? 'chapter-read' : '';
                         const checkColor = isRead ? '#3b82f6' : '#94a3b8';
                         chapterListHtml += `
-                        <div class="chapter-row ${readClass}" onclick="bacaFile('${safePath}', '${safeTitle}')" style="cursor: pointer;">
-                            <div style="flex-grow: 1;"><span class="chapter-name">${chap.name}</span></div>
+                        <div class="chapter-row ${readClass}" onclick="bacaFile(${safePath}, ${safeTitle})" style="cursor: pointer;">
+                            <div style="flex-grow: 1;"><span class="chapter-name">${safeChapterName}</span></div>
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <div title="${isRead ? 'Sudah Dibaca' : 'Belum Dibaca'}" style="color: ${checkColor}; display: flex; cursor: pointer;" onclick="event.stopPropagation(); toggleReadStatus(${book.id}, ${index})">
+                                <div title="${isRead ? 'Sudah Dibaca' : 'Belum Dibaca'}" style="color: ${checkColor}; display: flex; cursor: pointer;" onclick="event.stopPropagation(); toggleReadStatus(${safeBookId}, ${index})">
                                     <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"/></svg>
                                 </div>
-                                <button class="btn-icon" onclick="event.stopPropagation(); toggleChapterFavorite(${book.id}, ${index})" title="${isChapFav ? t('msg_unmark_fav') : t('msg_mark_fav')}">
+                                <button class="btn-icon" onclick="event.stopPropagation(); toggleChapterFavorite(${safeBookId}, ${index})" title="${escapeHtml(isChapFav ? t('msg_unmark_fav') : t('msg_mark_fav'))}">
                                     <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:${starColor};fill:${starFill};stroke-width:2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                                 </button>
                             </div>
@@ -245,8 +268,8 @@ function renderLibrarySorted() {
                 }
             } else { 
                 chapterCount = 1;
-                const safePath = book.path.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-                const safeTitle = book.title.replace(/'/g, "\\'");
+                const safePath = escapeJsArg(book.path);
+                const safeTitle = escapeJsArg(book.title);
                 
                 const isRead = readPaths.has(book.path);
                 const readClass = isRead ? 'chapter-read' : '';
@@ -256,16 +279,16 @@ function renderLibrarySorted() {
                 const starFill = isFav ? '#eab308' : 'none';
 
                 chapterListHtml = `
-                <div class="chapter-row ${readClass}" onclick="bacaFile('${safePath}', '${safeTitle}')" style="cursor: pointer;">
+                <div class="chapter-row ${readClass}" onclick="bacaFile(${safePath}, ${safeTitle})" style="cursor: pointer;">
                     <div style="flex-grow: 1;">
-                        <span class="chapter-name">${t('msg_read_main')}</span>
-                        <span class="chapter-meta" style="margin-left:8px; font-size:0.85rem; color:#94a3b8;">${t('msg_full')}</span>
+                        <span class="chapter-name">${escapeHtml(t('msg_read_main'))}</span>
+                        <span class="chapter-meta" style="margin-left:8px; font-size:0.85rem; color:#94a3b8;">${escapeHtml(t('msg_full'))}</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <div title="${isRead ? 'Sudah Dibaca' : 'Belum Dibaca'}" style="color: ${checkColor}; display: flex; cursor: pointer;" onclick="event.stopPropagation(); toggleReadStatus(${book.id}, -1)">
+                        <div title="${isRead ? 'Sudah Dibaca' : 'Belum Dibaca'}" style="color: ${checkColor}; display: flex; cursor: pointer;" onclick="event.stopPropagation(); toggleReadStatus(${safeBookId}, -1)">
                             <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"/></svg>
                         </div>
-                        <button class="btn-icon" onclick="event.stopPropagation(); toggleFavorite(${book.id})" title="${isFav ? t('msg_unmark_fav') : t('msg_mark_fav')}">
+                        <button class="btn-icon" onclick="event.stopPropagation(); toggleFavorite(${safeBookId})" title="${escapeHtml(isFav ? t('msg_unmark_fav') : t('msg_mark_fav'))}">
                             <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:${starColor};fill:${starFill};stroke-width:2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                         </button>
                     </div>
@@ -284,7 +307,7 @@ function renderLibrarySorted() {
             
             let tagsHtml = '';
             if (book.genre) {
-                tagsHtml = book.genre.split(',').map(g => `<span class="tag-pill">${g.trim()}</span>`).join('');
+                tagsHtml = book.genre.split(',').map(g => `<span class="tag-pill">${escapeHtml(g.trim())}</span>`).join('');
             }
 
             let targetPath = '';
@@ -314,8 +337,13 @@ function renderLibrarySorted() {
                 startButtonText = isInHistory ? t('btn_continue_read') : t('btn_start_read');
             }
 
-            const safeTargetPath = targetPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-            const safeTargetTitle = targetTitle.replace(/'/g, "\\'");
+            const safeTargetPath = escapeJsArg(targetPath);
+            const safeTargetTitle = escapeJsArg(targetTitle);
+            const safeBookTitle = escapeHtml(book.title);
+            const safeBookType = escapeHtml(book.type || 'Book');
+            const safeBookAuthor = escapeHtml(book.author || t('msg_unknown_author'));
+            const safeSynopsis = escapeHtml(book.synopsis || t('msg_no_synopsis'));
+            const safeStartButtonText = escapeHtml(startButtonText);
 
             const container = document.getElementById('detail-content');
             container.innerHTML = `
@@ -323,37 +351,37 @@ function renderLibrarySorted() {
                     <div class="detail-cover" style="${coverStyle}">📖</div>
                     <div class="detail-content">
                         <div class="detail-meta-top">
-                            <span class="detail-type">${book.type || 'Book'}</span>
+                            <span class="detail-type">${safeBookType}</span>
                         </div>
-                        <h1 class="detail-title">${book.title}</h1>
+                        <h1 class="detail-title">${safeBookTitle}</h1>
                         <div class="detail-author">
-                            <span>${t('detail_author')}:</span> ${book.author || t('msg_unknown_author')}
+                            <span>${escapeHtml(t('detail_author'))}:</span> ${safeBookAuthor}
                         </div>
-                        ${book.publishDate ? `<div class="detail-date">📅 ${t('detail_date')}: ${book.publishDate}</div>` : ''}
+                        ${book.publishDate ? `<div class="detail-date">📅 ${escapeHtml(t('detail_date'))}: ${escapeHtml(book.publishDate)}</div>` : ''}
                         
                         <div class="detail-tags-container">
                             ${tagsHtml}
                         </div>
 
                         <div class="action-buttons">
-                            <button class="btn-action btn-primary-action" onclick="bacaFile('${safeTargetPath}', '${safeTargetTitle}')">${iconPlay} ${startButtonText}</button>
-                            <button class="${favBtnClass}" onclick="toggleFavorite(${book.id})">${iconHeart} ${t('btn_favorite')}</button>
-                            <button class="btn-action btn-secondary-action" onclick="openAddChapterModal(${book.id})">${iconPlus} ${t('btn_chapter')}</button>
-                            <button class="btn-action btn-secondary-action" onclick="openEditBookModal(${book.id})">${iconEdit} ${t('btn_edit')}</button>
-                            <button class="btn-action btn-danger-action" onclick="deleteBook(${book.id})">${iconTrash} ${t('btn_delete')}</button>
+                            <button class="btn-action btn-primary-action" onclick="bacaFile(${safeTargetPath}, ${safeTargetTitle})">${iconPlay} ${safeStartButtonText}</button>
+                            <button class="${favBtnClass}" onclick="toggleFavorite(${safeBookId})">${iconHeart} ${escapeHtml(t('btn_favorite'))}</button>
+                            <button class="btn-action btn-secondary-action" onclick="openAddChapterModal(${safeBookId})">${iconPlus} ${escapeHtml(t('btn_chapter'))}</button>
+                            <button class="btn-action btn-secondary-action" onclick="openEditBookModal(${safeBookId})">${iconEdit} ${escapeHtml(t('btn_edit'))}</button>
+                            <button class="btn-action btn-danger-action" onclick="deleteBook(${safeBookId})">${iconTrash} ${escapeHtml(t('btn_delete'))}</button>
                         </div>
                     </div>
                 </div>
                 
                 <div class="detail-synopsis">
-                    <div class="section-title">${t('detail_synopsis')}:</div>
-                    <p class="synopsis-text">${book.synopsis || t('msg_no_synopsis')}</p>
+                    <div class="section-title">${escapeHtml(t('detail_synopsis'))}:</div>
+                    <p class="synopsis-text">${safeSynopsis}</p>
                 </div>
 
                 <div class="chapter-list-container">
                     <div class="chapter-list-header">
-                        <div class="section-title" style="margin-bottom:0">${t('detail_chapters')}:</div>
-                        <div class="chapter-count">${chapterCount} ${t('detail_chapter_count')}</div>
+                        <div class="section-title" style="margin-bottom:0">${escapeHtml(t('detail_chapters'))}:</div>
+                        <div class="chapter-count">${chapterCount} ${escapeHtml(t('detail_chapter_count'))}</div>
                     </div>
                     <div class="chapter-grid">
                         ${chapterListHtml}
@@ -1254,7 +1282,7 @@ function renderLibrarySorted() {
                     page.render(renderContext);
                 }
             } catch (error) {
-                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat PDF: ${error.message}</div>`;
+                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat PDF: ${escapeHtml(error.message)}</div>`;
             }
         }
 
@@ -1299,7 +1327,7 @@ function renderLibrarySorted() {
                     reader.appendChild(div);
                 }
             } catch (error) {
-                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat CBZ/ZIP: ${error.message}</div>`;
+                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat CBZ/ZIP: ${escapeHtml(error.message)}</div>`;
             }
         }
 
@@ -1321,7 +1349,7 @@ function renderLibrarySorted() {
                 div.innerText = data;
                 reader.appendChild(div);
             } catch (error) {
-                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat TXT: ${error.message}</div>`;
+                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat TXT: ${escapeHtml(error.message)}</div>`;
             }
         }
 
@@ -1387,9 +1415,18 @@ function renderLibrarySorted() {
             });
             
             const filterContainer = document.getElementById('explore-filters');
-            filterContainer.innerHTML = `<div class="filter-tag active" onclick="filterGenre('all', this)">${t('filter_all')}</div>`;
+            filterContainer.innerHTML = '';
+            const allTag = document.createElement('div');
+            allTag.className = 'filter-tag active';
+            allTag.innerText = t('filter_all');
+            allTag.addEventListener('click', () => filterGenre('all', allTag));
+            filterContainer.appendChild(allTag);
             genres.forEach(g => {
-                filterContainer.innerHTML += `<div class="filter-tag" onclick="filterGenre('${g}', this)">${g}</div>`;
+                const tag = document.createElement('div');
+                tag.className = 'filter-tag';
+                tag.innerText = g;
+                tag.addEventListener('click', () => filterGenre(g, tag));
+                filterContainer.appendChild(tag);
             });
 
             renderGrid(libraryData, 'explore-grid');
