@@ -1,7 +1,27 @@
-const { app, BrowserWindow, ipcMain, dialog, nativeTheme, net, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, nativeTheme, net, nativeImage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
+
+function isAllowedUpdateUrl(downloadUrl) {
+    try {
+        const parsed = new URL(downloadUrl);
+        return parsed.protocol === 'https:' &&
+            parsed.hostname === 'github.com' &&
+            parsed.pathname.startsWith('/KeishaXD/KeiYomi/releases/download/');
+    } catch {
+        return false;
+    }
+}
+
+function isSafeExternalUrl(url) {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+    } catch {
+        return false;
+    }
+}
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -13,9 +33,29 @@ function createWindow() {
         autoHideMenuBar: true, // Menyembunyikan menu bar File, Edit, View, dll.
         frame: false, // Menghilangkan border dan title bar bawaan OS
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true
         }
+    });
+
+    win.webContents.on('preload-error', (event, preloadPath, error) => {
+        console.error(`Preload error (${preloadPath}):`, error);
+    });
+
+    win.webContents.on('console-message', (event, details) => {
+        if (details.level >= 3) {
+            console.error(`[renderer:${details.level}] ${details.message} (${details.sourceId}:${details.lineNumber})`);
+        }
+    });
+
+    win.webContents.on('render-process-gone', (event, details) => {
+        console.error('Renderer process gone:', details);
+    });
+
+    win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+        console.error(`Gagal memuat ${validatedURL}: ${errorCode} ${errorDescription}`);
     });
 
     win.loadFile(path.join(__dirname, '../UI/index.html')); // Path disesuaikan
@@ -140,6 +180,39 @@ ipcMain.handle('data:load', async () => {
         console.error("Gagal memuat data:", error);
     }
     return null;
+});
+
+ipcMain.handle('file:read', async (event, filePath, encoding) => {
+    return fs.promises.readFile(filePath, encoding);
+});
+
+ipcMain.handle('lang:load', async () => {
+    const idPath = path.join(__dirname, '../Lang/id.json');
+    const enPath = path.join(__dirname, '../Lang/en.json');
+
+    const [idData, enData] = await Promise.all([
+        fs.promises.readFile(idPath, 'utf8'),
+        fs.promises.readFile(enPath, 'utf8')
+    ]);
+
+    return {
+        id: JSON.parse(idData),
+        en: JSON.parse(enData)
+    };
+});
+
+ipcMain.handle('shell:openExternal', async (event, url) => {
+    if (!isSafeExternalUrl(url)) {
+        throw new Error('URL eksternal tidak diizinkan.');
+    }
+    return shell.openExternal(url);
+});
+
+ipcMain.handle('shell:openPath', async (event, targetPath) => {
+    if (typeof targetPath !== 'string' || targetPath.trim() === '') {
+        throw new Error('Path tidak valid.');
+    }
+    return shell.openPath(targetPath);
 });
 
 // --- FITUR BARU: HAPUS CACHE ---
@@ -488,6 +561,10 @@ ipcMain.handle('updater:check', async () => {
 
 // --- FITUR BARU: DOWNLOAD & INSTALL UPDATE OTOMATIS ---
 ipcMain.handle('updater:downloadAndInstall', async (event, downloadUrl) => {
+    if (!isAllowedUpdateUrl(downloadUrl)) {
+        throw new Error('URL installer tidak diizinkan.');
+    }
+
     const tempPath = app.getPath('temp');
     const filePath = path.join(tempPath, 'KeiYomi_Update.exe');
 

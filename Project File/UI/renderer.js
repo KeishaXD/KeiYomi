@@ -1,6 +1,19 @@
-const { ipcRenderer } = require('electron');
-const path = require('path');
-const { promises: fs } = require('fs');
+const keiyomiApi = window.keiyomi;
+
+if (!keiyomiApi) {
+    const splash = document.getElementById('splash-screen');
+    if (splash) splash.classList.add('hidden');
+    throw new Error('Preload API window.keiyomi tidak tersedia.');
+}
+
+const ipcRenderer = {
+    invoke: (...args) => keiyomiApi.invoke(...args),
+    send: (...args) => keiyomiApi.send(...args)
+};
+const path = keiyomiApi.path;
+const fs = keiyomiApi.files;
+const shell = keiyomiApi.shell;
+const MIN_SPLASH_MS = 3600;
 
 const btnPilihFile = document.getElementById('btn-pilih-file');
 const btnCreateFolder = document.getElementById('btn-create-folder');
@@ -206,14 +219,7 @@ let translations = {};
 
 async function loadTranslations() {
     try {
-        const idPath = path.join(__dirname, '../Lang/id.json');
-        const enPath = path.join(__dirname, '../Lang/en.json');
-
-        const idData = await fs.readFile(idPath, 'utf8');
-        const enData = await fs.readFile(enPath, 'utf8');
-
-        translations.id = JSON.parse(idData);
-        translations.en = JSON.parse(enData);
+        translations = await keiyomiApi.loadTranslations();
     } catch (error) {
         console.error("Gagal memuat file bahasa:", error);
         translations.en = { "nav_library": "Library" };
@@ -1077,7 +1083,7 @@ function renderLibrarySorted() {
         const result = await ipcRenderer.invoke('library:createFolder', folderData);
         if (result.success) {
             await customAlert((t('msg_create_folder_success') || "Folder berhasil dibuat di:\n{0}").replace('{0}', result.path));
-            require('electron').shell.openPath(result.path);
+            shell.openPath(result.path);
             await scanLocalFolder(true); 
             renderLibrarySorted();       
             modalCreateFolder.classList.remove('show');
@@ -1778,7 +1784,7 @@ function renderLibrarySorted() {
             await customAlert(t('msg_saved'), "Berhasil");
         });
 
-        function openLink(url) { require('electron').shell.openExternal(url); }
+        function openLink(url) { shell.openExternal(url); }
 
         async function checkUpdate() {
             try {
@@ -1917,12 +1923,41 @@ function renderLibrarySorted() {
 
 // Init Application
 (async () => {
-    await loadTranslations();
-    await loadData(); 
-    await scanLocalFolder(true); 
-    switchTab('library');
-    updateReaderModeUI();
-    setTimeout(() => {
+    const splashStartedAt = Date.now();
+    let initError = null;
+
+    try {
+        await loadTranslations();
+        await loadData(); 
+        switchTab('library');
+        updateReaderModeUI();
+    } catch (error) {
+        console.error("Gagal inisialisasi aplikasi:", error);
+        initError = error;
+    } finally {
+        const elapsed = Date.now() - splashStartedAt;
+        const remainingSplashTime = Math.max(0, MIN_SPLASH_MS - elapsed);
+        if (remainingSplashTime > 0) {
+            await new Promise(resolve => setTimeout(resolve, remainingSplashTime));
+        }
         document.getElementById('splash-screen').classList.add('hidden');
-    }, 4000);
+    }
+
+    if (initError) {
+        await customAlert(`Gagal memulai aplikasi:\n${initError.message || initError}`, "Error");
+        return;
+    }
+
+    setTimeout(() => {
+        scanLocalFolder(true)
+            .then(() => {
+                if (currentView === 'library') {
+                    renderLibrarySorted();
+                }
+            })
+            .catch(error => {
+                console.error("Gagal scan folder awal:", error);
+                showToast(`Gagal scan folder: ${error.message || error}`, 6000);
+            });
+    }, 1000);
 })();
