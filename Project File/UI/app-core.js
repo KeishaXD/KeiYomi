@@ -99,6 +99,7 @@ let saveTimeout;
 let nightModeSaveTimeout;
 let nightModeSettingsPreview = false;
 let currentRenderId = 0;
+let activeObjectUrls = [];
 let hasSeenFullscreenTip = false;
 
 // --- CUSTOM MODAL DIALOGS ---

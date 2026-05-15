@@ -152,6 +152,16 @@ function renderLibrarySorted() {
             return Number.isFinite(numberValue) ? numberValue : 0;
         }
 
+        function rememberObjectUrl(url) {
+            activeObjectUrls.push(url);
+            return url;
+        }
+
+        function cleanupObjectUrls() {
+            activeObjectUrls.forEach(url => URL.revokeObjectURL(url));
+            activeObjectUrls = [];
+        }
+
         function renderGrid(data, elementId) {
             const grid = document.getElementById(elementId);
             grid.innerHTML = '';
@@ -981,6 +991,7 @@ function renderLibrarySorted() {
             riwayatBacaan.unshift(historyItem);
             saveData();
 
+            cleanupObjectUrls();
             reader.innerHTML = '';
             updateReaderModeUI();
 
@@ -990,6 +1001,8 @@ function renderLibrarySorted() {
                 await renderPDF(filePath, myRenderId);
             } else if (ext === '.cbz' || ext === '.zip') {
                 await renderCBZ(filePath, myRenderId);
+            } else if (ext === '.epub') {
+                await renderEPUB(filePath, myRenderId);
             } else if (ext === '.txt') {
                 await renderTXT(filePath, myRenderId);
             } else {
@@ -1308,7 +1321,7 @@ function renderLibrarySorted() {
                     const fileData = await zip.files[filename].async('blob');
                     if (renderId !== currentRenderId) return;
 
-                    const imageUrl = URL.createObjectURL(fileData);
+                    const imageUrl = rememberObjectUrl(URL.createObjectURL(fileData));
                     const div = document.createElement('div');
                     div.className = 'page-placeholder';
                     div.setAttribute('data-page', i + 1);
@@ -1328,6 +1341,152 @@ function renderLibrarySorted() {
                 }
             } catch (error) {
                 reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat CBZ/ZIP: ${escapeHtml(error.message)}</div>`;
+            }
+        }
+
+        function getElementsByLocalName(root, localName) {
+            return Array.from(root.getElementsByTagName('*')).filter(el => el.localName === localName);
+        }
+
+        function resolveZipPath(baseDir, relativePath) {
+            const baseParts = baseDir ? baseDir.split('/').filter(Boolean) : [];
+            const relParts = String(relativePath || '').split('#')[0].split('/').filter(Boolean);
+            const parts = [...baseParts];
+
+            relParts.forEach(part => {
+                if (part === '.') return;
+                if (part === '..') parts.pop();
+                else parts.push(part);
+            });
+
+            return parts.join('/');
+        }
+
+        function getZipFile(zip, filePath) {
+            const normalized = String(filePath || '').replace(/\\/g, '/');
+            const exact = zip.file(normalized);
+            if (exact) return exact;
+
+            try {
+                return zip.file(decodeURIComponent(normalized));
+            } catch {
+                return null;
+            }
+        }
+
+        function sanitizeEpubContent(root) {
+            const blockedTags = new Set(['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta', 'title']);
+            const allowedAttrs = new Set(['src', 'alt', 'title', 'colspan', 'rowspan']);
+
+            Array.from(root.querySelectorAll('*')).forEach(el => {
+                const tagName = el.tagName.toLowerCase();
+                if (blockedTags.has(tagName)) {
+                    el.remove();
+                    return;
+                }
+
+                Array.from(el.attributes).forEach(attr => {
+                    const name = attr.name.toLowerCase();
+                    if (name.startsWith('on') || !allowedAttrs.has(name)) {
+                        el.removeAttribute(attr.name);
+                    }
+                });
+            });
+        }
+
+        async function renderEPUB(filePath, renderId) {
+            try {
+                const fileContent = await fs.readFile(filePath);
+                if (renderId !== currentRenderId) return;
+
+                const zip = await JSZip.loadAsync(fileContent);
+                const containerFile = zip.file('META-INF/container.xml');
+                if (!containerFile) throw new Error('container.xml tidak ditemukan.');
+
+                const parser = new DOMParser();
+                const containerXml = parser.parseFromString(await containerFile.async('text'), 'application/xml');
+                const rootfile = getElementsByLocalName(containerXml, 'rootfile')[0];
+                const opfPath = rootfile && rootfile.getAttribute('full-path');
+                const opfFile = getZipFile(zip, opfPath);
+                if (!opfPath || !opfFile) throw new Error('File OPF EPUB tidak ditemukan.');
+
+                const opfDir = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/')) : '';
+                const opfXml = parser.parseFromString(await opfFile.async('text'), 'application/xml');
+                const manifestItems = new Map();
+                getElementsByLocalName(opfXml, 'item').forEach(item => {
+                    const id = item.getAttribute('id');
+                    const href = item.getAttribute('href');
+                    if (id && href) {
+                        manifestItems.set(id, {
+                            href,
+                            mediaType: item.getAttribute('media-type') || ''
+                        });
+                    }
+                });
+
+                const spineRefs = getElementsByLocalName(opfXml, 'itemref')
+                    .map(itemref => manifestItems.get(itemref.getAttribute('idref')))
+                    .filter(Boolean);
+
+                if (spineRefs.length === 0) throw new Error('Daftar chapter EPUB kosong.');
+
+                for (let i = 0; i < spineRefs.length; i++) {
+                    if (renderId !== currentRenderId) return;
+
+                    const spineItem = spineRefs[i];
+                    const chapterPath = resolveZipPath(opfDir, spineItem.href);
+                    const chapterFile = getZipFile(zip, chapterPath);
+                    if (!chapterFile) continue;
+
+                    const chapterDir = chapterPath.includes('/') ? chapterPath.slice(0, chapterPath.lastIndexOf('/')) : '';
+                    const chapterHtml = await chapterFile.async('text');
+                    const doc = parser.parseFromString(chapterHtml, 'text/html');
+                    const body = doc.body;
+                    if (!body) continue;
+
+                    const imageTasks = Array.from(body.querySelectorAll('img')).map(async img => {
+                        const rawSrc = img.getAttribute('src') || img.getAttribute('xlink:href') || img.getAttribute('href');
+                        if (!rawSrc || /^https?:|^data:/i.test(rawSrc)) {
+                            img.removeAttribute('src');
+                            return;
+                        }
+
+                        const imagePath = resolveZipPath(chapterDir, rawSrc);
+                        const imageFile = getZipFile(zip, imagePath);
+                        if (!imageFile) {
+                            img.removeAttribute('src');
+                            return;
+                        }
+
+                        const blob = await imageFile.async('blob');
+                        const objectUrl = rememberObjectUrl(URL.createObjectURL(blob));
+                        img.setAttribute('src', objectUrl);
+                    });
+
+                    await Promise.all(imageTasks);
+                    sanitizeEpubContent(body);
+                    if (renderId !== currentRenderId) return;
+
+                    const div = document.createElement('div');
+                    div.className = 'page-placeholder epub-page';
+                    div.setAttribute('data-page', i + 1);
+                    div.style.height = 'auto';
+                    div.innerText = '';
+
+                    while (body.firstChild) {
+                        div.appendChild(document.importNode(body.firstChild, true));
+                        body.removeChild(body.firstChild);
+                    }
+
+                    reader.appendChild(div);
+                }
+
+                if (reader.children.length === 0) {
+                    throw new Error('Tidak ada konten EPUB yang bisa ditampilkan.');
+                }
+            } catch (error) {
+                cleanupObjectUrls();
+                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat EPUB: ${escapeHtml(error.message)}</div>`;
             }
         }
 
