@@ -23,6 +23,10 @@ function isSafeExternalUrl(url) {
     }
 }
 
+function getUserConfigPath() {
+    return path.join(app.getPath('userData'), 'user_config.json');
+}
+
 function createWindow() {
     const win = new BrowserWindow({
         width: 1200,
@@ -154,8 +158,7 @@ ipcMain.handle('image:compressCover', async (event, sourcePath) => {
 // --- FITUR BARU: SAVE/LOAD DATA KE FILE TERSEMBUNYI ---
 ipcMain.handle('data:save', async (event, data) => {
     // Menggunakan standar folder AppData bawaan OS
-    const userDataPath = app.getPath('userData');
-    const filePath = path.join(userDataPath, 'user_config.json'); 
+    const filePath = getUserConfigPath(); 
 
     try {
         // Simpan data ke file (tidak perlu disembunyikan manual karena folder AppData sudah tersembunyi dari user)
@@ -168,8 +171,7 @@ ipcMain.handle('data:save', async (event, data) => {
 });
 
 ipcMain.handle('data:load', async () => {
-    const userDataPath = app.getPath('userData');
-    const filePath = path.join(userDataPath, 'user_config.json');
+    const filePath = getUserConfigPath();
     
     try {
         if (fs.existsSync(filePath)) {
@@ -180,6 +182,82 @@ ipcMain.handle('data:load', async () => {
         console.error("Gagal memuat data:", error);
     }
     return null;
+});
+
+// --- FITUR BARU: BACKUP & RESTORE DATA ---
+ipcMain.handle('data:backup', async () => {
+    const sourcePath = getUserConfigPath();
+
+    try {
+        if (!fs.existsSync(sourcePath)) {
+            return { success: false, message: 'Belum ada data aplikasi yang bisa dibackup.' };
+        }
+
+        const now = new Date();
+        const dateStamp = now.toISOString().slice(0, 10);
+        const { canceled, filePath } = await dialog.showSaveDialog({
+            title: 'Backup Data KeiYomi',
+            defaultPath: path.join(app.getPath('documents'), `KeiYomi_Backup_${dateStamp}.json`),
+            filters: [
+                { name: 'KeiYomi Backup', extensions: ['json'] }
+            ]
+        });
+
+        if (canceled || !filePath) {
+            return { success: false, canceled: true };
+        }
+
+        const raw = await fs.promises.readFile(sourcePath, 'utf8');
+        JSON.parse(raw);
+        await fs.promises.writeFile(filePath, raw, 'utf8');
+
+        return { success: true, filePath };
+    } catch (error) {
+        console.error('Gagal backup data:', error);
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('data:restore', async () => {
+    const targetPath = getUserConfigPath();
+
+    try {
+        const { canceled, filePaths } = await dialog.showOpenDialog({
+            title: 'Restore Data KeiYomi',
+            properties: ['openFile'],
+            filters: [
+                { name: 'KeiYomi Backup', extensions: ['json'] }
+            ]
+        });
+
+        if (canceled || !filePaths || filePaths.length === 0) {
+            return { success: false, canceled: true };
+        }
+
+        const backupPath = filePaths[0];
+        const raw = await fs.promises.readFile(backupPath, 'utf8');
+        const parsed = JSON.parse(raw);
+
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return { success: false, message: 'File backup tidak valid.' };
+        }
+
+        if (parsed.library !== undefined && !Array.isArray(parsed.library)) {
+            return { success: false, message: 'Format library pada file backup tidak valid.' };
+        }
+
+        if (parsed.history !== undefined && !Array.isArray(parsed.history)) {
+            return { success: false, message: 'Format history pada file backup tidak valid.' };
+        }
+
+        await fs.promises.mkdir(path.dirname(targetPath), { recursive: true });
+        await fs.promises.writeFile(targetPath, JSON.stringify(parsed, null, 2), 'utf8');
+
+        return { success: true, filePath: backupPath };
+    } catch (error) {
+        console.error('Gagal restore data:', error);
+        return { success: false, message: error.message };
+    }
 });
 
 ipcMain.handle('file:read', async (event, filePath, encoding) => {
@@ -218,7 +296,7 @@ ipcMain.handle('shell:openPath', async (event, targetPath) => {
 // --- FITUR BARU: HAPUS CACHE ---
 ipcMain.handle('data:clear', async () => {
     const userDataPath = app.getPath('userData');
-    const filePath = path.join(userDataPath, 'user_config.json');
+    const filePath = getUserConfigPath();
     
     try {
         if (fs.existsSync(filePath)) {
