@@ -32,6 +32,7 @@ const pageTitle = document.getElementById('page-title');
 const reader = document.getElementById('reader');
 const nightLightOverlay = document.getElementById('night-light-overlay');
 const settingNightIntensity = document.getElementById('setting-night-intensity');
+const settingPdfQuality = document.getElementById('setting-pdf-quality');
 const btnToggleNightmode = document.getElementById('btn-toggle-nightmode');
 const btnResetNightIntensity = document.getElementById('btn-reset-night-intensity');
 const btnPreviewNightIntensity = document.getElementById('btn-preview-night-intensity');
@@ -169,7 +170,7 @@ function showToast(message, duration = 4000) {
 let libraryData = [];
 let riwayatBacaan = [];
 let isWebtoonMode = true;
-let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50 };
+let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light' };
 
 function isManualImportedBook(book) {
     return book && (book.importSource === 'manual' || book.isManualImport === true || !book.structureType);
@@ -199,6 +200,7 @@ async function loadData() {
         userSettings.ignoredPaths = data.ignoredPaths || [];
         userSettings.nightModeEnabled = data.nightModeEnabled || false;
         userSettings.nightModeIntensity = data.nightModeIntensity !== undefined ? data.nightModeIntensity : 50;
+        userSettings.pdfQualityMode = data.pdfQualityMode === 'original' ? 'original' : 'light';
     } else {
         libraryData = [];
         riwayatBacaan = [];
@@ -206,6 +208,7 @@ async function loadData() {
     applyTheme(userSettings.theme);
     applyLanguage(userSettings.language);
     settingNightIntensity.value = userSettings.nightModeIntensity;
+    if (settingPdfQuality) settingPdfQuality.value = userSettings.pdfQualityMode;
     applyNightMode();
     updateNightModeButton();
 }
@@ -221,7 +224,8 @@ async function saveData() {
         customFolders: userSettings.customFolders,
         ignoredPaths: userSettings.ignoredPaths,
         nightModeEnabled: userSettings.nightModeEnabled,
-        nightModeIntensity: userSettings.nightModeIntensity
+        nightModeIntensity: userSettings.nightModeIntensity,
+        pdfQualityMode: userSettings.pdfQualityMode
     };
     return await ipcRenderer.invoke('data:save', data);
 }

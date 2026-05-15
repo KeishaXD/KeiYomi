@@ -45,6 +45,7 @@ function switchTab(tabName) {
         document.getElementById('setting-username').value = userSettings.username;
         document.getElementById('setting-theme').value = userSettings.theme;
         document.getElementById('setting-mode').value = isWebtoonMode ? 'webtoon' : 'normal';
+        if (settingPdfQuality) settingPdfQuality.value = userSettings.pdfQualityMode || 'light';
         document.getElementById('setting-language').value = userSettings.language;
         settingNightIntensity.value = userSettings.nightModeIntensity;
         renderCustomFolders();
@@ -1336,11 +1337,13 @@ function renderLibrarySorted() {
                 const data = await fs.readFile(filePath);
                 const loadingTask = pdfjsLib.getDocument(new Uint8Array(data));
                 const pdf = await loadingTask.promise;
+                const isOriginalQuality = userSettings.pdfQualityMode === 'original';
+                const baseScale = isOriginalQuality ? 1.75 : 1.5;
+                const outputScale = isOriginalQuality ? Math.min(window.devicePixelRatio || 1, 2) : 1;
                 
                 for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                     const page = await pdf.getPage(pageNum);
-                    const scale = 1.5;
-                    const viewport = page.getViewport({ scale });
+                    const viewport = page.getViewport({ scale: baseScale });
 
                     const div = document.createElement('div');
                     div.className = 'page-placeholder';
@@ -1352,17 +1355,22 @@ function renderLibrarySorted() {
 
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    canvas.style.maxWidth = '100%';
+                    canvas.width = Math.floor(viewport.width * outputScale);
+                    canvas.height = Math.floor(viewport.height * outputScale);
+                    canvas.style.width = `${Math.floor(viewport.width)}px`;
                     canvas.style.height = 'auto';
+                    canvas.style.maxWidth = '100%';
                     canvas.style.display = 'block'; 
                     
                     div.appendChild(canvas);
                     reader.appendChild(div);
 
-                    const renderContext = { canvasContext: context, viewport: viewport };
-                    page.render(renderContext);
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport,
+                        transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null
+                    };
+                    await page.render(renderContext).promise;
                 }
             } catch (error) {
                 reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat PDF: ${escapeHtml(error.message)}</div>`;
@@ -1796,7 +1804,7 @@ function renderLibrarySorted() {
             // 2. Kosongkan memori sementara agar data lama tidak ter-save ulang
             libraryData = [];
             riwayatBacaan = [];
-            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [] };
+            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light' };
 
             const success = await ipcRenderer.invoke('data:clear');
             if (success) {
@@ -1849,6 +1857,7 @@ function renderLibrarySorted() {
             userSettings.username = document.getElementById('setting-username').value;
             userSettings.theme = document.getElementById('setting-theme').value;
             userSettings.language = document.getElementById('setting-language').value;
+            userSettings.pdfQualityMode = settingPdfQuality ? settingPdfQuality.value : 'light';
             const selectedMode = document.getElementById('setting-mode').value;
             
             isWebtoonMode = (selectedMode === 'webtoon');
