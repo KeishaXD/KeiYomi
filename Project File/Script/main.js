@@ -3,6 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 
+const allowedDocumentExts = new Set(['.pdf', '.epub', '.cbz', '.zip', '.txt']);
+const allowedImageExts = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.svg', '.avif', '.jfif', '.ico']);
+const allowedPickedFiles = new Set();
+const allowedPickedDirs = new Set();
+
 function isAllowedUpdateUrl(downloadUrl) {
     try {
         const parsed = new URL(downloadUrl);
@@ -25,6 +30,90 @@ function isSafeExternalUrl(url) {
 
 function getUserConfigPath() {
     return path.join(app.getPath('userData'), 'user_config.json');
+}
+
+function normalizePathForAccess(targetPath) {
+    if (typeof targetPath !== 'string' || targetPath.trim() === '') {
+        return null;
+    }
+
+    try {
+        return path.resolve(targetPath);
+    } catch {
+        return null;
+    }
+}
+
+function rememberAllowedFile(filePath) {
+    const normalized = normalizePathForAccess(filePath);
+    if (normalized) allowedPickedFiles.add(normalized.toLowerCase());
+}
+
+function rememberAllowedDir(dirPath) {
+    const normalized = normalizePathForAccess(dirPath);
+    if (normalized) allowedPickedDirs.add(normalized.toLowerCase());
+}
+
+function isPathInside(childPath, parentPath) {
+    const child = normalizePathForAccess(childPath);
+    const parent = normalizePathForAccess(parentPath);
+    if (!child || !parent) return false;
+
+    const relative = path.relative(parent, child);
+    return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
+}
+
+function getSavedAccessRoots() {
+    const roots = [
+        path.join(app.getPath('documents'), 'KeiYomi'),
+        path.join(app.getPath('userData'), 'covers_cache')
+    ];
+
+    try {
+        const configPath = getUserConfigPath();
+        if (fs.existsSync(configPath)) {
+            const data = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            if (Array.isArray(data.customFolders)) {
+                data.customFolders.forEach(folderPath => roots.push(folderPath));
+            }
+
+            const collectBookPaths = (items = []) => {
+                items.forEach(item => {
+                    if (!item || typeof item !== 'object') return;
+                    if (item.structureType === 'series' && item.path) roots.push(item.path);
+                    if (item.path) rememberAllowedFile(item.path);
+                    if (Array.isArray(item.chapters)) {
+                        item.chapters.forEach(chapter => {
+                            if (chapter && chapter.path) rememberAllowedFile(chapter.path);
+                        });
+                    }
+                });
+            };
+
+            collectBookPaths(data.library);
+            collectBookPaths(data.history);
+        }
+    } catch (error) {
+        console.error('Gagal membaca daftar akses file tersimpan:', error);
+    }
+
+    return roots.filter(Boolean);
+}
+
+function isKnownAllowedPath(targetPath) {
+    const normalized = normalizePathForAccess(targetPath);
+    if (!normalized) return false;
+
+    const lower = normalized.toLowerCase();
+    if (allowedPickedFiles.has(lower) || allowedPickedDirs.has(lower)) return true;
+    return getSavedAccessRoots().some(root => isPathInside(normalized, root));
+}
+
+function isAllowedReadableFile(filePath, allowedExts) {
+    const normalized = normalizePathForAccess(filePath);
+    if (!normalized) return false;
+    const ext = path.extname(normalized).toLowerCase();
+    return allowedExts.has(ext) && isKnownAllowedPath(normalized);
 }
 
 function createWindow() {
@@ -93,6 +182,7 @@ ipcMain.handle('dialog:openFile', async () => {
     if (canceled) {
         return null;
     } else {
+        rememberAllowedFile(filePaths[0]);
         return filePaths[0];
     }
 });
@@ -107,6 +197,7 @@ ipcMain.handle('dialog:openCover', async () => {
     if (canceled) {
         return null;
     } else {
+        rememberAllowedFile(filePaths[0]);
         return filePaths[0];
     }
 });
@@ -119,6 +210,7 @@ ipcMain.handle('dialog:openDirectory', async () => {
     if (canceled) {
         return null;
     } else {
+        rememberAllowedDir(filePaths[0]);
         return filePaths[0];
     }
 });
@@ -126,6 +218,10 @@ ipcMain.handle('dialog:openDirectory', async () => {
 // --- FITUR BARU: KOMPRESI GAMBAR SAMPUL ---
 ipcMain.handle('image:compressCover', async (event, sourcePath) => {
     try {
+        if (!isAllowedReadableFile(sourcePath, allowedImageExts)) {
+            throw new Error('Akses gambar sampul tidak diizinkan.');
+        }
+
         const userDataPath = app.getPath('userData');
         const coversDir = path.join(userDataPath, 'covers_cache');
         
@@ -148,6 +244,7 @@ ipcMain.handle('image:compressCover', async (event, sourcePath) => {
         const destPath = path.join(coversDir, fileName);
         
         fs.writeFileSync(destPath, buffer);
+        rememberAllowedFile(destPath);
         return destPath;
     } catch (error) {
         console.error('Gagal mengkompresi gambar:', error);
@@ -261,7 +358,12 @@ ipcMain.handle('data:restore', async () => {
 });
 
 ipcMain.handle('file:read', async (event, filePath, encoding) => {
-    return fs.promises.readFile(filePath, encoding);
+    if (!isAllowedReadableFile(filePath, allowedDocumentExts)) {
+        throw new Error('Akses file tidak diizinkan.');
+    }
+
+    const normalized = normalizePathForAccess(filePath);
+    return fs.promises.readFile(normalized, encoding);
 });
 
 ipcMain.handle('lang:load', async () => {
@@ -290,7 +392,12 @@ ipcMain.handle('shell:openPath', async (event, targetPath) => {
     if (typeof targetPath !== 'string' || targetPath.trim() === '') {
         throw new Error('Path tidak valid.');
     }
-    return shell.openPath(targetPath);
+
+    if (!isKnownAllowedPath(targetPath)) {
+        throw new Error('Akses path tidak diizinkan.');
+    }
+
+    return shell.openPath(normalizePathForAccess(targetPath));
 });
 
 // --- FITUR BARU: HAPUS CACHE ---
@@ -325,9 +432,14 @@ ipcMain.handle('library:createFolder', async (event, data) => {
     
     try {
         fs.mkdirSync(baseDir, { recursive: true });
+        rememberAllowedDir(baseDir);
         
         let coverFileName = "";
         if (data.cover && fs.existsSync(data.cover)) {
+            if (!isAllowedReadableFile(data.cover, allowedImageExts)) {
+                return { success: false, message: "Akses gambar sampul tidak diizinkan." };
+            }
+
             const ext = path.extname(data.cover);
             coverFileName = `cover${ext}`;
             fs.copyFileSync(data.cover, path.join(baseDir, coverFileName));
@@ -368,6 +480,7 @@ ipcMain.handle('dialog:deleteBook', async (event, options) => {
 ipcMain.handle('library:scanLocal', async (event, customFolders = []) => {
     const docPath = app.getPath('documents');
     const baseDir = path.join(docPath, 'KeiYomi');
+    rememberAllowedDir(baseDir);
 
     // 1. Buat folder jika belum ada
     if (!fs.existsSync(baseDir)) {
@@ -497,11 +610,15 @@ Catatan:
     const results = [];
     const supportedExts = ['.pdf', '.epub', '.cbz', '.zip', '.txt'];
 
-    const foldersToScan = [baseDir, ...(Array.isArray(customFolders) ? customFolders : [])];
+    const safeCustomFolders = Array.isArray(customFolders)
+        ? customFolders.filter(folderPath => isKnownAllowedPath(folderPath))
+        : [];
+    const foldersToScan = [baseDir, ...safeCustomFolders];
     const scannedDirs = new Set();
 
     for (const targetDir of foldersToScan) {
         if (!fs.existsSync(targetDir)) continue;
+        rememberAllowedDir(targetDir);
         
         // Menghindari scan ganda jika user menambahkan path default secara manual
         const normPath = path.normalize(targetDir).toLowerCase();
