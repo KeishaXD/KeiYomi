@@ -186,11 +186,16 @@
                 
                 <div class="form-group" style="margin-top: 16px;">
                     <label data-i18n="settings_night_mode_intensity">Intensitas Cahaya Malam (Cold - Warm)</label>
-                    <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                    <div class="night-intensity-control" style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
                         <span style="font-size: 16px;">❄️</span>
                         <input type="range" id="setting-night-intensity" min="0" max="100" value="50" style="flex-grow: 1;">
                         <span style="font-size: 16px;">🔥</span>
                     </div>
+                </div>
+
+                <div class="night-intensity-actions">
+                    <button type="button" class="btn-action btn-secondary-action" id="btn-reset-night-intensity">Reset Netral</button>
+                    <button type="button" class="btn-action btn-primary-action" id="btn-preview-night-intensity">Tes Intensitas</button>
                 </div>
 
                 <div style="margin-top: 32px; display: flex; justify-content: flex-end; align-items: center;">

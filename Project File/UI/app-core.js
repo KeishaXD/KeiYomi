@@ -33,6 +33,8 @@ const reader = document.getElementById('reader');
 const nightLightOverlay = document.getElementById('night-light-overlay');
 const settingNightIntensity = document.getElementById('setting-night-intensity');
 const btnToggleNightmode = document.getElementById('btn-toggle-nightmode');
+const btnResetNightIntensity = document.getElementById('btn-reset-night-intensity');
+const btnPreviewNightIntensity = document.getElementById('btn-preview-night-intensity');
 const scrollProgressIndicator = document.getElementById('scroll-progress-indicator');
 
 // Modal Elements
@@ -94,6 +96,8 @@ let contextMenuBook = null;
 
 let currentBookPath = null;
 let saveTimeout;
+let nightModeSaveTimeout;
+let nightModeSettingsPreview = false;
 let currentRenderId = 0;
 let hasSeenFullscreenTip = false;
 

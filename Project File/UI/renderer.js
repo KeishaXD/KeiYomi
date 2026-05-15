@@ -994,25 +994,43 @@ function renderLibrarySorted() {
         }
 
         // --- NIGHT LIGHT / EYE COMFORT LOGIC ---
+        function clampNightIntensity(value) {
+            const parsed = Number.parseInt(value, 10);
+            if (Number.isNaN(parsed)) return 50;
+            return Math.min(100, Math.max(0, parsed));
+        }
+
         function applyNightMode() {
             if (userSettings.nightModeEnabled) {
-                const intensity = parseInt(userSettings.nightModeIntensity, 10);
-                let bgColor = 'rgba(0, 0, 0, 0)'; // Default: Transparan (Normal di 50)
+                const intensity = clampNightIntensity(userSettings.nightModeIntensity);
+                const distance = Math.abs(intensity - 50) / 50;
+                let bgColor = 'rgba(0, 0, 0, 0)';
+                let filter = 'none';
 
                 if (intensity > 50) {
-                    // Warm (Kuning/Jingga Hangat)
-                    const alpha = ((intensity - 50) / 50) * 0.55; // Semakin ke kanan, opacity naik hingga 0.55
-                    bgColor = `rgba(255, 110, 0, ${alpha})`; // Warna Amber/Orange yang lebih hangat
+                    const alpha = 0.10 + (distance * 0.42);
+                    const sepia = Math.round(18 + (distance * 42));
+                    const saturate = Math.round(108 + (distance * 34));
+                    const brightness = (1 - (distance * 0.08)).toFixed(2);
+                    bgColor = `linear-gradient(180deg, rgba(255, 214, 92, ${alpha}) 0%, rgba(255, 132, 36, ${alpha * 0.92}) 100%)`;
+                    filter = `sepia(${sepia}%) saturate(${saturate}%) brightness(${brightness})`;
                 } else if (intensity < 50) {
-                    // Cold (Biru Adem)
-                    const alpha = ((50 - intensity) / 50) * 0.25; // Opacity biru jangan terlalu pekat (maks 0.25)
-                    bgColor = `rgba(0, 150, 255, ${alpha})`; // Warna biru terang/cyan
+                    const alpha = 0.08 + (distance * 0.30);
+                    const saturate = Math.round(112 + (distance * 48));
+                    const brightness = (1 + (distance * 0.05)).toFixed(2);
+                    bgColor = `linear-gradient(180deg, rgba(74, 201, 255, ${alpha}) 0%, rgba(37, 99, 235, ${alpha * 0.88}) 100%)`;
+                    filter = `saturate(${saturate}%) brightness(${brightness})`;
                 }
                 
-                nightLightOverlay.style.backgroundColor = bgColor;
+                nightLightOverlay.style.background = bgColor;
+                nightLightOverlay.style.backdropFilter = filter;
+                nightLightOverlay.style.webkitBackdropFilter = filter;
                 nightLightOverlay.classList.add('active');
             } else {
                 nightLightOverlay.classList.remove('active');
+                nightLightOverlay.style.background = 'rgba(0, 0, 0, 0)';
+                nightLightOverlay.style.backdropFilter = 'none';
+                nightLightOverlay.style.webkitBackdropFilter = 'none';
             }
         }
 
@@ -1021,27 +1039,66 @@ function renderLibrarySorted() {
             const span = btnToggleNightmode.querySelector('span');
             const svg = btnToggleNightmode.querySelector('svg');
             if (userSettings.nightModeEnabled) {
+                btnToggleNightmode.classList.add('active');
                 span.innerText = t('reader_night_mode_exit') || "Matikan Mode Malam";
                 svg.innerHTML = '<path d="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>';
             } else {
+                btnToggleNightmode.classList.remove('active');
                 span.innerText = t('reader_night_mode_enter') || "Aktifkan Mode Malam";
                 svg.innerHTML = '<path d="M9.37 5.51A7.35 7.35 0 0 0 9.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0 1 12 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/>';
             }
         }
 
+        function updateNightPreviewButton() {
+            if (!btnPreviewNightIntensity) return;
+            btnPreviewNightIntensity.classList.toggle('active', nightModeSettingsPreview);
+            btnPreviewNightIntensity.innerText = nightModeSettingsPreview ? 'Matikan Tes' : 'Tes Intensitas';
+        }
+
         function toggleNightMode() {
             userSettings.nightModeEnabled = !userSettings.nightModeEnabled;
+            nightModeSettingsPreview = false;
             applyNightMode();
             updateNightModeButton();
+            updateNightPreviewButton();
             saveData();
         }
 
         btnToggleNightmode.addEventListener('click', toggleNightMode);
 
         settingNightIntensity.addEventListener('input', (e) => {
-            userSettings.nightModeIntensity = e.target.value;
-            if (userSettings.nightModeEnabled) applyNightMode();
+            userSettings.nightModeIntensity = clampNightIntensity(e.target.value);
+            e.target.value = userSettings.nightModeIntensity;
+            if (nightModeSettingsPreview) applyNightMode();
+            clearTimeout(nightModeSaveTimeout);
+            nightModeSaveTimeout = setTimeout(saveData, 500);
         });
+
+        if (btnResetNightIntensity) {
+            btnResetNightIntensity.addEventListener('click', () => {
+                userSettings.nightModeIntensity = 50;
+                settingNightIntensity.value = 50;
+                if (nightModeSettingsPreview) applyNightMode();
+                saveData();
+                showToast('Intensitas cahaya malam dikembalikan ke netral.', 2500);
+            });
+        }
+
+        if (btnPreviewNightIntensity) {
+            btnPreviewNightIntensity.addEventListener('click', () => {
+                nightModeSettingsPreview = !nightModeSettingsPreview;
+                userSettings.nightModeEnabled = true;
+                userSettings.nightModeIntensity = clampNightIntensity(settingNightIntensity.value);
+                if (!nightModeSettingsPreview) {
+                    userSettings.nightModeEnabled = false;
+                }
+                applyNightMode();
+                updateNightModeButton();
+                updateNightPreviewButton();
+                saveData();
+                showToast(nightModeSettingsPreview ? 'Mode cahaya malam aktif. Geser slider untuk mencoba intensitas.' : 'Tes intensitas cahaya malam dimatikan.', 3500);
+            });
+        }
 
         function renderChapterNavigation(currentPath) {
             let foundBook = null;
@@ -1581,7 +1638,7 @@ function renderLibrarySorted() {
             }
 
             // Shortcut Mode Malam (Night Light) F2
-            if (e.key === 'F2') {
+            if (e.key === 'F2' && reader.style.display === 'flex') {
                 e.preventDefault();
                 toggleNightMode();
                 return;
