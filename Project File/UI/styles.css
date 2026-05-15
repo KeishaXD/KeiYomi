@@ -266,6 +266,27 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 .btn-danger-action { background: var(--bg-secondary); border-color: #fee2e2; color: #ef4444; }
 .btn-danger-action:hover { background: #fef2f2; border-color: #fecaca; }
 
+.chapter-navigation {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 28px 20px;
+}
+.chapter-navigation-top {
+    padding-top: 8px;
+    padding-bottom: 32px;
+}
+.chapter-navigation-bottom { padding-top: 60px; padding-bottom: 60px; }
+.chapter-navigation .btn-action {
+    flex: 1 1 auto;
+    max-width: 300px;
+    justify-content: center;
+    padding: 14px 28px;
+    font-size: 1rem;
+}
+
 .detail-synopsis { background: var(--bg-secondary); padding: 32px; border-radius: 16px; box-shadow: var(--shadow); margin-bottom: 32px; }
 .section-title { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
 .synopsis-text { font-size: 1rem; line-height: 1.7; color: var(--text-primary); white-space: pre-line; }

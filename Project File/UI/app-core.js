@@ -171,10 +171,25 @@ let riwayatBacaan = [];
 let isWebtoonMode = true;
 let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50 };
 
+function isManualImportedBook(book) {
+    return book && (book.importSource === 'manual' || book.isManualImport === true || !book.structureType);
+}
+
+function normalizeLoadedBook(book) {
+    if (!book || typeof book !== 'object') return null;
+
+    const normalizedBook = { ...book };
+    if (!normalizedBook.structureType && !normalizedBook.importSource) {
+        normalizedBook.importSource = 'manual';
+    }
+
+    return normalizedBook;
+}
+
 async function loadData() {
     const data = await ipcRenderer.invoke('data:load');
     if (data) {
-        libraryData = data.library || [];
+        libraryData = (data.library || []).map(normalizeLoadedBook).filter(Boolean);
         riwayatBacaan = data.history || [];
         isWebtoonMode = data.mode !== 'normal';
         userSettings.username = data.username || '';
@@ -208,7 +223,7 @@ async function saveData() {
         nightModeEnabled: userSettings.nightModeEnabled,
         nightModeIntensity: userSettings.nightModeIntensity
     };
-    await ipcRenderer.invoke('data:save', data);
+    return await ipcRenderer.invoke('data:save', data);
 }
 
 function applyTheme(theme) {

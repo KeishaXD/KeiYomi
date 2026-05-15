@@ -441,14 +441,20 @@ function renderLibrarySorted() {
             if (book) {
                 if (!book.chapters) {
                     book.chapters = [];
-                    if (book.path && !book.path.endsWith('info.json')) {
-                        book.chapters.push({ name: 'Chapter 1', path: book.path });
+                    if (book.path && path.extname(book.path)) {
+                        book.chapters.push({ name: 'Chapter 1', path: book.path, importSource: book.importSource || 'manual' });
                     }
                 }
-                book.chapters.push({ name: inputChapterName.value, path: inputChapterPath.value });
-                saveData();
+                book.chapters.push({ name: inputChapterName.value, path: inputChapterPath.value, importSource: 'manual' });
+                const saved = await saveData();
+                if (!saved) {
+                    book.chapters.pop();
+                    await customAlert('Gagal menyimpan chapter. Coba jalankan ulang aplikasi lalu tambah chapter lagi.', 'Error');
+                    return;
+                }
                 showBookDetail(book);
                 modalAddChapter.classList.remove('show');
+                currentAddingBookId = null;
             }
         });
 
@@ -682,6 +688,7 @@ function renderLibrarySorted() {
         });
 
         let pendingBookPath = null;
+        let pendingBookId = null;
         const genreLists = {
             commonComic: ['Action', 'Romance', 'Fantasy', 'Sci-Fi', 'Slice of Life', 'Horror', 'Mystery', 'Comedy', 'Drama', 'Psychological', 'Supernatural', 'Sports', 'Historical'],
             manga: ['Shounen', 'Shoujo', 'Seinen', 'Josei', 'Isekai', 'Mecha', 'Iyashikei', 'Mahou Shoujo'],
@@ -691,6 +698,13 @@ function renderLibrarySorted() {
             journal: ['Original Research', 'Literature Review', 'Case Study', 'Methodology', 'Short Communication'],
             novel: ['Romance', 'Mystery', 'Horror', 'Fantasy', 'Sci-Fi', 'Thriller', 'Historical', 'Teenlit', 'Chicklit', 'Metropop', 'Comedy', 'Inspirational']
         };
+
+        function inferManualBookType(filePath) {
+            const ext = path.extname(filePath).toLowerCase();
+            if (ext === '.txt' || ext === '.epub') return 'Novel';
+            if (ext === '.cbz' || ext === '.zip') return 'Manga';
+            return 'Artikel';
+        }
 
         function updateGenreOptions() {
             const type = inputType.value;
@@ -729,7 +743,11 @@ function renderLibrarySorted() {
         }
 
         inputType.addEventListener('change', updateGenreOptions);
-        btnCancelAdd.addEventListener('click', () => modalAddBook.classList.remove('show'));
+        btnCancelAdd.addEventListener('click', () => {
+            modalAddBook.classList.remove('show');
+            pendingBookPath = null;
+            pendingBookId = null;
+        });
 
         btnBrowseCover.addEventListener('click', async () => {
             const coverPath = await ipcRenderer.invoke('dialog:openCover');
@@ -750,38 +768,76 @@ function renderLibrarySorted() {
                 return;
             }
             const selectedGenres = Array.from(genreContainer.querySelectorAll('input:checked')).map(cb => cb.value).join(', ');
-            const newBook = { 
-                id: Date.now(), 
+            const existingDraft = pendingBookId ? libraryData.find(b => b.id === pendingBookId) : null;
+            const bookData = {
+                id: existingDraft ? existingDraft.id : Date.now(),
                 title: inputTitle.value, 
                 author: inputAuthor.value || 'Unknown',
                 path: pendingBookPath, 
+                importSource: 'manual',
                 type: inputType.value,
                 genre: selectedGenres, 
                 synopsis: inputSynopsis.value,
                 publishDate: (inputType.value === 'Artikel' || inputType.value === 'Journal') ? inputDate.value : null,
                 cover: inputCover.value || null
             };
-            libraryData.unshift(newBook);
+
+            const newBook = existingDraft ? Object.assign(existingDraft, bookData) : bookData;
+            if (!existingDraft) libraryData.unshift(newBook);
             await saveData();
             modalAddBook.classList.remove('show');
+            pendingBookPath = null;
+            pendingBookId = null;
             showBookDetail(newBook);
         });
 
         btnPilihFile.addEventListener('click', async () => {
             const filePath = await ipcRenderer.invoke('dialog:openFile');
             if (filePath) {
-                let book = libraryData.find(b => b.path === filePath);
+                const selectedPath = filePath.replace(/[\\/]+/g, '/').toLowerCase();
+                let book = libraryData.find(b => {
+                    const bookPath = String(b.path || '').replace(/[\\/]+/g, '/').toLowerCase();
+                    return bookPath === selectedPath;
+                });
                 if (book) {
+                    if (book.importSource !== 'manual') {
+                        book.importSource = 'manual';
+                        await saveData();
+                    }
                     showBookDetail(book);
                 } else {
+                    const defaultType = inferManualBookType(filePath);
+                    const newBook = {
+                        id: Date.now(),
+                        title: path.basename(filePath, path.extname(filePath)),
+                        author: 'Unknown',
+                        path: filePath,
+                        importSource: 'manual',
+                        type: defaultType,
+                        genre: '',
+                        synopsis: '',
+                        publishDate: (defaultType === 'Artikel' || defaultType === 'Journal') ? '' : null,
+                        cover: null
+                    };
+
+                    libraryData.unshift(newBook);
+                    const saved = await saveData();
+                    if (!saved) {
+                        libraryData = libraryData.filter(b => b.id !== newBook.id);
+                        await customAlert('Gagal menyimpan file import. Coba jalankan ulang aplikasi lalu import lagi.', 'Error');
+                        return;
+                    }
+
                     pendingBookPath = filePath;
+                    pendingBookId = newBook.id;
                     inputTitle.value = path.basename(filePath, path.extname(filePath));
                     inputAuthor.value = '';
                     inputCover.value = '';
                     inputSynopsis.value = '';
-                    inputType.value = '';
+                    inputType.value = defaultType;
                     inputDate.value = '';
                     updateGenreOptions();
+                    showBookDetail(newBook);
                     modalAddBook.classList.add('show');
                 }
             }
@@ -893,13 +949,14 @@ function renderLibrarySorted() {
         const scannedBooks = await ipcRenderer.invoke('library:scanLocal', userSettings.customFolders || []);
             if (scannedBooks) {
                 const ignoredPathsSet = new Set(userSettings.ignoredPaths || []);
+                const normalizeLibraryPath = (targetPath) => String(targetPath || '').replace(/[\\/]+/g, '/').toLowerCase();
 
                 scannedBooks.forEach(newBook => {
-                    const normNewBookPath = newBook.path.replace(/[\\/]+/g, '/').toLowerCase();
+                    const normNewBookPath = normalizeLibraryPath(newBook.path);
                     if (ignoredPathsSet.has(normNewBookPath)) return; // Abaikan jika ada di ignore list
 
                     const exists = libraryData.find(b => {
-                        const normExistPath = b.path.replace(/[\\/]+/g, '/').toLowerCase();
+                        const normExistPath = normalizeLibraryPath(b.path);
                         return normExistPath === normNewBookPath;
                     });
 
@@ -920,7 +977,13 @@ function renderLibrarySorted() {
                                 }
                                 return newChap;
                             });
-                            newBook.chapters = mergedChapters;
+                            const mergedChapterPaths = new Set(mergedChapters.map(chapter => normalizeLibraryPath(chapter.path)));
+                            const manualChapters = existingChapters.filter(chapter => {
+                                if (!chapter || !chapter.path) return false;
+                                const chapterPath = normalizeLibraryPath(chapter.path);
+                                return chapter.importSource === 'manual' && !mergedChapterPaths.has(chapterPath);
+                            });
+                            newBook.chapters = [...mergedChapters, ...manualChapters];
                         }
                         // BUG FIX: Simpan semua data yang bisa diedit user agar tidak tertimpa oleh hasil scan.
                         // ID sangat penting untuk tidak hilang.
@@ -932,6 +995,8 @@ function renderLibrarySorted() {
                             genre: exists.genre,
                             synopsis: exists.synopsis,
                             isFavorite: exists.isFavorite,
+                            importSource: exists.importSource,
+                            isManualImport: exists.isManualImport,
                             type: exists.type,
                             publishDate: exists.publishDate
                         };
@@ -946,14 +1011,14 @@ function renderLibrarySorted() {
                     }
                 });
 
-                const scannedPaths = new Set(scannedBooks.map(b => b.path.replace(/[\\/]+/g, '/').toLowerCase()));
+                const scannedPaths = new Set(scannedBooks.map(b => normalizeLibraryPath(b.path)));
                 libraryData = libraryData.filter(book => {
-                if (!book.structureType) return true; // Pertahankan buku yang diimpor manual
-                const normPath = book.path.replace(/[\\/]+/g, '/').toLowerCase();
+                if (isManualImportedBook(book)) return true; // Pertahankan buku yang diimpor manual
+                const normPath = normalizeLibraryPath(book.path);
                 return scannedPaths.has(normPath); // Hapus buku otomatis yang file/foldernya telah dihapus/hilang
                 });
 
-                saveData();
+                await saveData();
                 if (!silent) await customAlert(t('msg_scan_success').replace('{0}', libraryData.length));
             } else if (!silent) {
                 await customAlert(t('msg_scan_fail'));
@@ -996,6 +1061,8 @@ function renderLibrarySorted() {
             updateReaderModeUI();
 
             updateFullscreenButton(); // Set initial state for fullscreen button
+            const chapterNavigationContext = getChapterNavigationContext(filePath);
+            renderChapterNavigation(chapterNavigationContext, 'top');
 
             if (ext === '.pdf') {
                 await renderPDF(filePath, myRenderId);
@@ -1013,7 +1080,7 @@ function renderLibrarySorted() {
 
             if (myRenderId !== currentRenderId) return;
 
-            renderChapterNavigation(filePath);
+            renderChapterNavigation(chapterNavigationContext, 'bottom');
 
             if (historyItem.lastPage && historyItem.lastPage > 1) {
                 setTimeout(() => {
@@ -1141,7 +1208,42 @@ function renderLibrarySorted() {
             });
         }
 
-        function renderChapterNavigation(currentPath) {
+        function createChapterNavigation(foundBook, foundIndex, position = 'bottom') {
+            const container = document.createElement('div');
+            container.className = `chapter-navigation chapter-navigation-${position}`;
+
+            if (foundIndex > 0) {
+                const prevChapter = foundBook.chapters[foundIndex - 1];
+                const btnPrev = document.createElement('button');
+                btnPrev.className = 'btn-action btn-primary-action';
+                btnPrev.title = prevChapter.name;
+                btnPrev.innerHTML = `<svg style="width:20px;height:20px;margin-right:8px;fill:currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> ${t('msg_chapter_prev')}`;
+                btnPrev.onclick = () => {
+                    reader.scrollTop = 0;
+                    const prevTitle = `${foundBook.title} - ${prevChapter.name}`;
+                    bacaFile(prevChapter.path, prevTitle);
+                };
+                container.appendChild(btnPrev);
+            }
+
+            if (foundIndex < foundBook.chapters.length - 1) {
+                const nextChapter = foundBook.chapters[foundIndex + 1];
+                const btnNext = document.createElement('button');
+                btnNext.className = 'btn-action btn-primary-action';
+                btnNext.title = nextChapter.name;
+                btnNext.innerHTML = `${t('msg_chapter_next')} <svg style="width:20px;height:20px;margin-left:8px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>`;
+                btnNext.onclick = () => {
+                    reader.scrollTop = 0;
+                    const nextTitle = `${foundBook.title} - ${nextChapter.name}`;
+                    bacaFile(nextChapter.path, nextTitle);
+                };
+                container.appendChild(btnNext);
+            }
+
+            return container;
+        }
+
+        function getChapterNavigationContext(currentPath) {
             let foundBook = null;
             let foundIndex = -1;
             for (let b of libraryData) {
@@ -1155,53 +1257,21 @@ function renderLibrarySorted() {
                 }
             }
 
-            if (foundBook && foundIndex !== -1) {
-                const container = document.createElement('div');
-                container.style.width = '100%';
-                container.style.padding = '60px 20px';
-                container.style.display = 'flex';
-                container.style.justifyContent = 'center';
-                container.style.gap = '20px';
-                container.style.flexWrap = 'wrap';
+            return foundBook && foundIndex !== -1 ? { foundBook, foundIndex } : null;
+        }
 
-                if (foundIndex > 0) {
-                    const prevChapter = foundBook.chapters[foundIndex - 1];
-                    const btnPrev = document.createElement('button');
-                    btnPrev.className = 'btn-action btn-secondary-action';
-                    btnPrev.style.padding = '14px 28px';
-                    btnPrev.style.fontSize = '1rem';
-                    btnPrev.style.flex = '1 1 auto';
-                    btnPrev.style.maxWidth = '300px';
-                    btnPrev.style.justifyContent = 'center';
-                    btnPrev.title = prevChapter.name;
-                    btnPrev.innerHTML = `<svg style="width:20px;height:20px;margin-right:8px;fill:currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> ${t('msg_chapter_prev')}`;
-                    btnPrev.onclick = () => {
-                        reader.scrollTop = 0;
-                        const prevTitle = `${foundBook.title} - ${prevChapter.name}`;
-                        bacaFile(prevChapter.path, prevTitle);
-                    };
-                    container.appendChild(btnPrev);
-                }
+        function renderChapterNavigation(context, position = 'both') {
+            if (!context) return;
 
-                if (foundIndex < foundBook.chapters.length - 1) {
-                    const nextChapter = foundBook.chapters[foundIndex + 1];
-                    const btnNext = document.createElement('button');
-                    btnNext.className = 'btn-action btn-primary-action';
-                    btnNext.style.padding = '14px 28px';
-                    btnNext.style.fontSize = '1rem';
-                    btnNext.style.flex = '1 1 auto';
-                    btnNext.style.maxWidth = '300px';
-                    btnNext.style.justifyContent = 'center';
-                    btnNext.title = nextChapter.name;
-                    btnNext.innerHTML = `${t('msg_chapter_next')} <svg style="width:20px;height:20px;margin-left:8px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>`;
-                    btnNext.onclick = () => {
-                        reader.scrollTop = 0;
-                        const nextTitle = `${foundBook.title} - ${nextChapter.name}`;
-                        bacaFile(nextChapter.path, nextTitle);
-                    };
-                    container.appendChild(btnNext);
-                }
-                if (container.children.length > 0) reader.appendChild(container);
+            const { foundBook, foundIndex } = context;
+            if (position === 'top' || position === 'both') {
+                const topNavigation = createChapterNavigation(foundBook, foundIndex, 'top');
+                if (topNavigation.children.length > 0) reader.insertBefore(topNavigation, reader.firstChild);
+            }
+
+            if (position === 'bottom' || position === 'both') {
+                const bottomNavigation = createChapterNavigation(foundBook, foundIndex, 'bottom');
+                if (bottomNavigation.children.length > 0) reader.appendChild(bottomNavigation);
             }
         }
 
