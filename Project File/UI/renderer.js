@@ -1876,18 +1876,12 @@ function renderLibrarySorted() {
                 const result = await ipcRenderer.invoke('updater:check');
                 if (result.error) { await customAlert(t('msg_update_fail') + result.error, "Gagal"); return; }
                 if (result.updateAvailable) {
-            // Menampilkan changelog dan menawarkan instalasi otomatis
-            const msg = `${t('msg_update_available').replace('{0}', result.remoteInfo.version)}\n\nChangelog:\n${result.remoteInfo.changelog || '-'}\n\nApakah Anda ingin mengunduh dan menginstal pembaruan ini sekarang?`;
-            
-            if (await customConfirm(msg, "Pembaruan Tersedia", "Unduh & Install", "Batal")) {
-                showToast("Sedang mengunduh pembaruan di latar belakang... Aplikasi akan otomatis tertutup saat instalasi dimulai.", 6000);
-                try {
-                    await ipcRenderer.invoke('updater:downloadAndInstall', result.remoteInfo.zipUrl);
-                } catch (err) {
-                    await customAlert("Gagal mengunduh pembaruan: " + err.message + "\n\nMembuka tautan di browser...");
-                    openLink(result.remoteInfo.zipUrl); // Fallback: buka browser jika gagal otomatis
-                }
-            }
+                    const releaseUrl = result.remoteInfo.releaseUrl || `https://github.com/KeishaXD/KeiYomi/releases/tag/v${result.remoteInfo.version}`;
+                    const msg = `${t('msg_update_available').replace('{0}', result.remoteInfo.version)}\n\nChangelog:\n${result.remoteInfo.changelog || '-'}\n\n${t('msg_update_open_release')}`;
+
+                    if (await customConfirm(msg, t('title_update_available'), t('btn_open_release'), t('btn_cancel'))) {
+                        openLink(releaseUrl);
+                    }
                 } else {
                     await customAlert(t('msg_update_latest').replace('{0}', result.localInfo.version), "Pembaruan");
                 }

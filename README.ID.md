@@ -124,7 +124,7 @@ Saat menyiapkan release baru, ubah versi di file berikut:
 
 - `Project File/package.json`: `version`, `versionCode`, dan `build.extraMetadata.versionCode`.
 - `Project File/package-lock.json`: root package version.
-- `update.json`: `version`, `versionCode`, `zipUrl`, dan `changelog`.
+- `update.json`: `version`, `versionCode`, `releaseUrl`, dan `changelog`.
 
 Untuk release fitur normal, naikkan minor version, misalnya `3.1.0` ke `3.2.0`. Untuk hotfix kecil saja, naikkan patch version, misalnya `3.2.0` ke `3.2.1`.
 

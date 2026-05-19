@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, nativeTheme, net, nativeImage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { spawn } = require('child_process');
 
 const appName = 'KeiYomi';
 app.setName(appName);
@@ -18,12 +17,12 @@ const allowedImageExts = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bm
 const allowedPickedFiles = new Set();
 const allowedPickedDirs = new Set();
 
-function isAllowedUpdateUrl(downloadUrl) {
+function isAllowedReleaseUrl(releaseUrl) {
     try {
-        const parsed = new URL(downloadUrl);
+        const parsed = new URL(releaseUrl);
         return parsed.protocol === 'https:' &&
             parsed.hostname === 'github.com' &&
-            parsed.pathname.startsWith('/KeishaXD/KeiYomi/releases/download/');
+            parsed.pathname.startsWith('/KeishaXD/KeiYomi/releases');
     } catch {
         return false;
     }
@@ -775,70 +774,18 @@ ipcMain.handle('updater:check', async () => {
 
         const localCode = parseInt(localInfo.versionCode || 0);
         const remoteCode = parseInt(remoteInfo.versionCode || 0);
+        const defaultReleaseUrl = `https://github.com/KeishaXD/KeiYomi/releases/tag/v${remoteInfo.version}`;
+        const releaseUrl = isAllowedReleaseUrl(remoteInfo.releaseUrl) ? remoteInfo.releaseUrl : defaultReleaseUrl;
 
         return {
             updateAvailable: remoteCode > localCode,
             localInfo: { version: localInfo.version, versionCode: localCode },
-            remoteInfo: remoteInfo
+            remoteInfo: { ...remoteInfo, releaseUrl }
         };
     } catch (error) {
         console.error("Update check failed:", error);
         return { error: error.message };
     }
-});
-
-// --- FITUR BARU: DOWNLOAD & INSTALL UPDATE OTOMATIS ---
-ipcMain.handle('updater:downloadAndInstall', async (event, downloadUrl) => {
-    if (!isAllowedUpdateUrl(downloadUrl)) {
-        throw new Error('URL installer tidak diizinkan.');
-    }
-
-    const tempPath = app.getPath('temp');
-    const filePath = path.join(tempPath, 'KeiYomi_Update.exe');
-
-    return new Promise((resolve, reject) => {
-        const request = net.request(downloadUrl);
-        
-        // Supaya bisa mengikuti redirect otomatis dari GitHub (HTTP 302)
-        request.on('redirect', (statusCode, method, redirectUrl) => {
-            request.followRedirect();
-        });
-        
-        request.on('response', (response) => {
-            if (response.statusCode !== 200) {
-                reject(new Error(`Gagal mengunduh: HTTP ${response.statusCode}`));
-                return;
-            }
-            
-            const fileStream = fs.createWriteStream(filePath);
-            
-            response.on('data', (chunk) => {
-                fileStream.write(chunk);
-            });
-            
-            response.on('end', () => {
-                fileStream.end();
-                
-                try {
-                    // Jalankan installer yang sudah diunduh
-                    // Tambahkan argumen ['/S'] jika ingin instalasi NSIS berjalan tanpa memunculkan UI wizard
-                    const installer = spawn(filePath, [], {
-                        detached: true,
-                        stdio: 'ignore'
-                    });
-                    installer.unref(); // Lepaskan referensi agar tidak memblokir penutupan aplikasi
-                    
-                    app.quit(); // Tutup aplikasi saat ini untuk proses instalasi
-                    resolve({ success: true });
-                } catch (err) {
-                    reject(err);
-                }
-            });
-        });
-
-        request.on('error', (error) => reject(error));
-        request.end();
-    });
 });
 
 // --- FITUR BARU: KELUAR APLIKASI ---

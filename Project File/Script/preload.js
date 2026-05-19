@@ -17,8 +17,7 @@ const invokeChannels = new Set([
     'library:scanLocal',
     'shell:openExternal',
     'shell:openPath',
-    'updater:check',
-    'updater:downloadAndInstall'
+    'updater:check'
 ]);
 
 const sendChannels = new Set([

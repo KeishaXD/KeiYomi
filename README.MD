@@ -124,7 +124,7 @@ When preparing a new release, update the version in these files:
 
 - `Project File/package.json`: `version`, `versionCode`, and `build.extraMetadata.versionCode`.
 - `Project File/package-lock.json`: root package version.
-- `update.json`: `version`, `versionCode`, `zipUrl`, and `changelog`.
+- `update.json`: `version`, `versionCode`, `releaseUrl`, and `changelog`.
 
 For normal feature releases, increment the minor version, for example `3.1.0` to `3.2.0`. For small hotfixes only, increment the patch version, for example `3.2.0` to `3.2.1`.
 
