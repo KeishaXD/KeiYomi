@@ -3,6 +3,16 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 
+const appName = 'KeiYomi';
+app.setName(appName);
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+let mainWindow = null;
+
+if (!gotSingleInstanceLock) {
+    app.quit();
+}
+
 const allowedDocumentExts = new Set(['.pdf', '.epub', '.cbz', '.zip', '.txt']);
 const allowedImageExts = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.svg', '.avif', '.jfif', '.ico']);
 const allowedPickedFiles = new Set();
@@ -30,6 +40,27 @@ function isSafeExternalUrl(url) {
 
 function getUserConfigPath() {
     return path.join(app.getPath('userData'), 'user_config.json');
+}
+
+function readUserConfig() {
+    const filePath = getUserConfigPath();
+    if (!fs.existsSync(filePath)) return null;
+
+    const raw = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(raw);
+}
+
+function writeUserConfig(data) {
+    const filePath = getUserConfigPath();
+    const tempPath = `${filePath}.tmp-${process.pid}`;
+
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(tempPath, JSON.stringify(data, null, 2));
+    fs.renameSync(tempPath, filePath);
+}
+
+function getDefaultLibraryPath() {
+    return path.join(app.getPath('documents'), appName);
 }
 
 function normalizePathForAccess(targetPath) {
@@ -65,14 +96,16 @@ function isPathInside(childPath, parentPath) {
 
 function getSavedAccessRoots() {
     const roots = [
-        path.join(app.getPath('documents'), 'KeiYomi'),
+        getDefaultLibraryPath(),
         path.join(app.getPath('userData'), 'covers_cache')
     ];
 
     try {
         const configPath = getUserConfigPath();
         if (fs.existsSync(configPath)) {
-            const data = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            const data = readUserConfig();
+            if (!data || typeof data !== 'object' || Array.isArray(data)) return roots.filter(Boolean);
+
             if (Array.isArray(data.customFolders)) {
                 data.customFolders.forEach(folderPath => roots.push(folderPath));
             }
@@ -117,7 +150,7 @@ function isAllowedReadableFile(filePath, allowedExts) {
 }
 
 function createWindow() {
-    const win = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 1200,
         height: 720,
         title: "KeiYomi",
@@ -133,26 +166,36 @@ function createWindow() {
         }
     });
 
-    win.webContents.on('preload-error', (event, preloadPath, error) => {
+    mainWindow.webContents.on('preload-error', (event, preloadPath, error) => {
         console.error(`Preload error (${preloadPath}):`, error);
     });
 
-    win.webContents.on('console-message', (event, details) => {
+    mainWindow.webContents.on('console-message', (event, details) => {
         if (details.level >= 3) {
             console.error(`[renderer:${details.level}] ${details.message} (${details.sourceId}:${details.lineNumber})`);
         }
     });
 
-    win.webContents.on('render-process-gone', (event, details) => {
+    mainWindow.webContents.on('render-process-gone', (event, details) => {
         console.error('Renderer process gone:', details);
     });
 
-    win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
         console.error(`Gagal memuat ${validatedURL}: ${errorCode} ${errorDescription}`);
     });
 
-    win.loadFile(path.join(__dirname, '../UI/index.html')); // Path disesuaikan
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+
+    mainWindow.loadFile(path.join(__dirname, '../UI/index.html')); // Path disesuaikan
 }
+
+app.on('second-instance', () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+});
 
 app.whenReady().then(() => {
     nativeTheme.themeSource = 'dark'; // Memaksa elemen native (menu, scrollbar, dll) jadi gelap
@@ -254,12 +297,9 @@ ipcMain.handle('image:compressCover', async (event, sourcePath) => {
 
 // --- FITUR BARU: SAVE/LOAD DATA KE FILE TERSEMBUNYI ---
 ipcMain.handle('data:save', async (event, data) => {
-    // Menggunakan standar folder AppData bawaan OS
-    const filePath = getUserConfigPath(); 
-
     try {
-        // Simpan data ke file (tidak perlu disembunyikan manual karena folder AppData sudah tersembunyi dari user)
-        fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+        const existingData = readUserConfig() || {};
+        writeUserConfig({ ...existingData, ...data });
         return true;
     } catch (error) {
         console.error("Gagal menyimpan data:", error);
@@ -268,13 +308,8 @@ ipcMain.handle('data:save', async (event, data) => {
 });
 
 ipcMain.handle('data:load', async () => {
-    const filePath = getUserConfigPath();
-    
     try {
-        if (fs.existsSync(filePath)) {
-            const raw = fs.readFileSync(filePath, 'utf8');
-            return JSON.parse(raw);
-        }
+        return readUserConfig();
     } catch (error) {
         console.error("Gagal memuat data:", error);
     }
@@ -423,8 +458,7 @@ ipcMain.handle('data:clear', async () => {
 
 // --- FITUR BARU: BUAT FOLDER SERI ---
 ipcMain.handle('library:createFolder', async (event, data) => {
-    const docPath = app.getPath('documents');
-    const baseDir = path.join(docPath, 'KeiYomi', data.folderName);
+    const baseDir = path.join(getDefaultLibraryPath(), data.folderName);
     
     if (fs.existsSync(baseDir)) {
         return { success: false, message: "Folder dengan nama tersebut sudah ada!" };
@@ -478,8 +512,7 @@ ipcMain.handle('dialog:deleteBook', async (event, options) => {
 
 // --- FITUR BARU: SCAN LIBRARY OTOMATIS ---
 ipcMain.handle('library:scanLocal', async (event, customFolders = []) => {
-    const docPath = app.getPath('documents');
-    const baseDir = path.join(docPath, 'KeiYomi');
+    const baseDir = getDefaultLibraryPath();
     rememberAllowedDir(baseDir);
 
     // 1. Buat folder jika belum ada
