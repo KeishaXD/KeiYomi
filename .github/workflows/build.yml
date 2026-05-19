@@ -6,6 +6,9 @@ on:
     tags:
       - "v*"
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     name: Build ${{ matrix.platform }}
@@ -16,21 +19,21 @@ jobs:
       matrix:
         include:
           - platform: windows-x64
-            os: windows-latest
+            os: windows-2025
             script: build:win:x64
             artifact: |
               Project File/dist/*x64*.exe
               Project File/dist/*x64*.blockmap
               Project File/dist/*.yml
           - platform: windows-arm64
-            os: windows-latest
+            os: windows-2025
             script: build:win:arm64
             artifact: |
               Project File/dist/*arm64*.exe
               Project File/dist/*arm64*.blockmap
               Project File/dist/*.yml
           - platform: linux
-            os: ubuntu-latest
+            os: ubuntu-24.04
             script: build:linux
             artifact: |
               Project File/dist/*.AppImage
@@ -38,7 +41,7 @@ jobs:
               Project File/dist/*.blockmap
               Project File/dist/*.yml
           - platform: mac
-            os: macos-latest
+            os: macos-15
             script: build:mac
             artifact: |
               Project File/dist/*.dmg
@@ -60,6 +63,12 @@ jobs:
       - name: Install dependencies
         working-directory: Project File
         run: npm ci
+
+      - name: Install Linux packaging tools
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libarchive-tools rpm libfuse2t64
 
       - name: Check syntax
         working-directory: Project File
