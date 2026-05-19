@@ -41,6 +41,10 @@ function getUserConfigPath() {
     return path.join(app.getPath('userData'), 'user_config.json');
 }
 
+function getInstallerPreferencesPath() {
+    return path.join(app.getPath('userData'), 'installer_preferences.ini');
+}
+
 function readUserConfig() {
     const filePath = getUserConfigPath();
     if (!fs.existsSync(filePath)) return null;
@@ -60,6 +64,130 @@ function writeUserConfig(data) {
 
 function getDefaultLibraryPath() {
     return path.join(app.getPath('documents'), appName);
+}
+
+function normalizeInstallerPreferences(preferences) {
+    if (!preferences || typeof preferences !== 'object' || Array.isArray(preferences)) {
+        return {};
+    }
+
+    const normalized = {};
+
+    if (typeof preferences.username === 'string' && preferences.username.trim() !== '') {
+        normalized.username = preferences.username.trim().slice(0, 80);
+    }
+
+    if (preferences.theme === 'dark' || preferences.theme === 'light') {
+        normalized.theme = preferences.theme;
+    }
+
+    if (preferences.language === 'id' || preferences.language === 'en') {
+        normalized.language = preferences.language;
+    }
+
+    if (preferences.mode === 'webtoon' || preferences.mode === 'normal') {
+        normalized.mode = preferences.mode;
+    }
+
+    if (preferences.pdfQualityMode === 'light' || preferences.pdfQualityMode === 'original') {
+        normalized.pdfQualityMode = preferences.pdfQualityMode;
+    }
+
+    return normalized;
+}
+
+function readTextFileWithDetectedEncoding(filePath) {
+    const buffer = fs.readFileSync(filePath);
+
+    if (buffer.length >= 2) {
+        if (buffer[0] === 0xff && buffer[1] === 0xfe) {
+            return buffer.slice(2).toString('utf16le');
+        }
+
+        if (buffer[0] === 0xfe && buffer[1] === 0xff) {
+            return buffer.slice(2).swap16().toString('utf16le');
+        }
+    }
+
+    for (let index = 1; index < Math.min(buffer.length, 64); index += 2) {
+        if (buffer[index] === 0) {
+            return buffer.toString('utf16le').replace(/^\uFEFF/, '');
+        }
+    }
+
+    return buffer.toString('utf8').replace(/^\uFEFF/, '');
+}
+
+function parseInstallerPreferences(rawPreferences) {
+    const preferences = {};
+
+    rawPreferences.split(/\r?\n/).forEach(line => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine || trimmedLine.startsWith('[') || trimmedLine.startsWith(';')) return;
+
+        const separatorIndex = trimmedLine.indexOf('=');
+        if (separatorIndex === -1) return;
+
+        const key = trimmedLine.slice(0, separatorIndex).trim();
+        const value = trimmedLine.slice(separatorIndex + 1).trim();
+        preferences[key] = value;
+    });
+
+    return preferences;
+}
+
+function applyInstallerPreferences() {
+    const preferencesPath = getInstallerPreferencesPath();
+    if (!fs.existsSync(preferencesPath)) return;
+
+    try {
+        const preferences = normalizeInstallerPreferences(
+            parseInstallerPreferences(readTextFileWithDetectedEncoding(preferencesPath))
+        );
+
+        const currentConfig = readUserConfig();
+        if (currentConfig) return;
+
+        const initialConfig = {
+            library: [],
+            history: [],
+            customFolders: [],
+            ignoredPaths: []
+        };
+
+        writeUserConfig({
+            ...initialConfig,
+            ...preferences
+        });
+    } catch (error) {
+        console.error('Gagal menerapkan preferensi installer:', error);
+    } finally {
+        try {
+            fs.unlinkSync(preferencesPath);
+        } catch (error) {
+            if (error.code !== 'ENOENT') {
+                console.error('Gagal menghapus preferensi installer:', error);
+            }
+        }
+    }
+}
+
+function isSafeNewFolderName(folderName) {
+    if (typeof folderName !== 'string') return false;
+
+    const trimmedName = folderName.trim();
+    if (!trimmedName || trimmedName === '.' || trimmedName === '..') return false;
+    if (path.isAbsolute(trimmedName)) return false;
+    if (/[\\/]/.test(trimmedName)) return false;
+    if (/[<>:"|?*\x00-\x1F]/.test(trimmedName)) return false;
+    if (/[. ]$/.test(trimmedName)) return false;
+
+    const reservedWindowsNames = new Set([
+        'con', 'prn', 'aux', 'nul',
+        'com1', 'com2', 'com3', 'com4', 'com5', 'com6', 'com7', 'com8', 'com9',
+        'lpt1', 'lpt2', 'lpt3', 'lpt4', 'lpt5', 'lpt6', 'lpt7', 'lpt8', 'lpt9'
+    ]);
+    return !reservedWindowsNames.has(trimmedName.toLowerCase());
 }
 
 function normalizePathForAccess(targetPath) {
@@ -197,6 +325,7 @@ app.on('second-instance', () => {
 });
 
 app.whenReady().then(() => {
+    applyInstallerPreferences();
     nativeTheme.themeSource = 'dark'; // Memaksa elemen native (menu, scrollbar, dll) jadi gelap
     createWindow();
 
@@ -457,7 +586,12 @@ ipcMain.handle('data:clear', async () => {
 
 // --- FITUR BARU: BUAT FOLDER SERI ---
 ipcMain.handle('library:createFolder', async (event, data) => {
-    const baseDir = path.join(getDefaultLibraryPath(), data.folderName);
+    if (!data || !isSafeNewFolderName(data.folderName)) {
+        return { success: false, message: "Nama folder tidak valid." };
+    }
+
+    const folderName = data.folderName.trim();
+    const baseDir = path.join(getDefaultLibraryPath(), folderName);
     
     if (fs.existsSync(baseDir)) {
         return { success: false, message: "Folder dengan nama tersebut sudah ada!" };
@@ -480,7 +614,7 @@ ipcMain.handle('library:createFolder', async (event, data) => {
 
         const infoPath = path.join(baseDir, 'info.json');
         const infoContent = {
-            title: data.title || data.folderName,
+            title: data.title || folderName,
             author: data.author || "Unknown",
             cover: coverFileName,
             genre: data.genre || "",

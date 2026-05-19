@@ -16,7 +16,7 @@
     "check": "node --check Script/main.js && node --check Script/preload.js && node --check UI/app-core.js && node --check UI/renderer.js && node --check UI/app-startup.js",
     "build": "npm run build:all",
     "build:local": "npm run build:win && npm run build:linux:portable",
-    "build:win": "electron-builder --win --publish never",
+    "build:win": "electron-builder --win --x64 --arm64 --publish never",
     "build:win:x64": "electron-builder --win --x64 --publish never",
     "build:win:arm64": "electron-builder --win --arm64 --publish never",
     "build:linux": "electron-builder --linux --publish never",
@@ -65,12 +65,7 @@
     "win": {
       "icon": "assets/logo.ico",
       "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64", "arm64"]
-        }
-      ]
+      "target": "nsis"
     },
 
     "linux": {
@@ -112,7 +107,8 @@
       "allowToChangeInstallationDirectory": true,
       "perMachine": false,
       "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
+      "createStartMenuShortcut": true,
+      "buildUniversalInstaller": false
     }
   }
 }
