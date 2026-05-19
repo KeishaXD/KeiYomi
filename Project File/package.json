@@ -5,19 +5,24 @@
   "description": "KeiYomi Desktop Manga & Document Reader",
   "main": "Script/main.js",
   "updateJson": "https://raw.githubusercontent.com/KeishaXD/KeiYomi/main/update.json",
+  "homepage": "https://keishaxd.github.io/KeiYomi/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KeishaXD/KeiYomi.git"
+  },
 
   "scripts": {
     "start": "electron .",
     "check": "node --check Script/main.js && node --check Script/preload.js && node --check UI/app-core.js && node --check UI/renderer.js && node --check UI/app-startup.js",
     "build": "npm run build:all",
     "build:local": "npm run build:win && npm run build:linux:portable",
-    "build:win": "electron-builder --win",
-    "build:win:x64": "electron-builder --win --x64",
-    "build:win:arm64": "electron-builder --win --arm64",
-    "build:linux": "electron-builder --linux",
-    "build:linux:portable": "electron-builder --linux tar.gz",
-    "build:mac": "electron-builder --mac",
-    "build:all": "electron-builder --win --linux --mac"
+    "build:win": "electron-builder --win --publish never",
+    "build:win:x64": "electron-builder --win --x64 --publish never",
+    "build:win:arm64": "electron-builder --win --arm64 --publish never",
+    "build:linux": "electron-builder --linux --publish never",
+    "build:linux:portable": "electron-builder --linux tar.gz --publish never",
+    "build:mac": "electron-builder --mac --publish never",
+    "build:all": "electron-builder --win --linux --mac --publish never"
   },
 
   "author": "KeishaXD",
