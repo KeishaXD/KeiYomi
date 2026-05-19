@@ -73,13 +73,13 @@ This checks JavaScript syntax for the main process, preload, and UI scripts.
 
 ### Local Builds
 
-Windows installers:
+Windows x64 and ARM64 installers together:
 
 ```bash
 npm run build:win
 ```
 
-This builds both Windows targets configured in `package.json`:
+This creates two Windows installers:
 
 - Windows x64: regular 64-bit Intel/AMD Windows.
 - Windows ARM64: native Windows on ARM devices.
@@ -99,17 +99,32 @@ npm run build:linux:portable
 
 This creates a `.tar.gz` package. Full Linux installers such as AppImage and `.deb` should be built on Linux or through GitHub Actions.
 
+Recommended local development build flow:
+
+```bash
+npm run check
+npm run build:win:x64
+```
+
+Use `npm run build:win` only when you want to create both Windows installers at once.
+
 ### Full Multi-Platform Builds
 
 ```bash
 npm run build
 ```
 
-This maps to `npm run build:all` and asks electron-builder to build Windows, Linux, and macOS targets. For reliable release artifacts, use GitHub Actions because each platform is built on the correct OS:
+This maps to `npm run build:all` and asks electron-builder to build Windows, Linux, and macOS targets. This is not recommended for release builds from local Windows because full Linux packaging and macOS packaging need the matching OS environment. For reliable release artifacts, use GitHub Actions:
 
-- Windows x64 and Windows ARM64 on `windows-latest`.
-- Linux AppImage and `.deb` on `ubuntu-latest`.
-- macOS universal `.dmg` and `.zip` on `macos-latest`.
+- Windows x64 and Windows ARM64 on `windows-2025`.
+- Linux AppImage and `.deb` on `ubuntu-24.04`.
+- macOS universal `.dmg` and `.zip` on `macos-15`.
+
+Notes:
+
+- The installer preference page is available only in the Windows NSIS installer.
+- Linux and macOS use the app's first-run/default settings instead.
+- macOS builds without Apple Developer signing/notarization may show a Gatekeeper warning.
 
 The workflow can be started manually from GitHub Actions, or automatically by pushing a version tag such as:
 

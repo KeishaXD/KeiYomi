@@ -73,13 +73,13 @@ Command ini mengecek syntax JavaScript untuk main process, preload, dan script U
 
 ### Build Lokal
 
-Installer Windows:
+Installer Windows x64 dan ARM64 sekaligus:
 
 ```bash
 npm run build:win
 ```
 
-Command ini membuat dua target Windows yang dikonfigurasi di `package.json`:
+Command ini membuat dua installer Windows:
 
 - Windows x64: Windows 64-bit Intel/AMD biasa.
 - Windows ARM64: Windows native untuk perangkat ARM.
@@ -99,17 +99,32 @@ npm run build:linux:portable
 
 Command ini membuat paket `.tar.gz`. Installer Linux penuh seperti AppImage dan `.deb` sebaiknya dibuild di Linux atau lewat GitHub Actions.
 
+Command lokal yang disarankan untuk development sehari-hari:
+
+```bash
+npm run check
+npm run build:win:x64
+```
+
+Gunakan `npm run build:win` hanya saat ingin membuat dua installer Windows sekaligus.
+
 ### Build Multi-Platform Lengkap
 
 ```bash
 npm run build
 ```
 
-Command ini menjalankan `npm run build:all` dan meminta electron-builder membangun target Windows, Linux, dan macOS. Untuk artifact release yang stabil, gunakan GitHub Actions karena setiap platform dibuild di OS yang sesuai:
+Command ini menjalankan `npm run build:all` dan meminta electron-builder membangun target Windows, Linux, dan macOS. Command ini tidak direkomendasikan untuk release dari Windows lokal karena build Linux penuh dan macOS butuh environment OS yang sesuai. Untuk artifact release yang stabil, gunakan GitHub Actions:
 
-- Windows x64 dan Windows ARM64 di `windows-latest`.
-- Linux AppImage dan `.deb` di `ubuntu-latest`.
-- macOS universal `.dmg` dan `.zip` di `macos-latest`.
+- Windows x64 dan Windows ARM64 di `windows-2025`.
+- Linux AppImage dan `.deb` di `ubuntu-24.04`.
+- macOS universal `.dmg` dan `.zip` di `macos-15`.
+
+Catatan:
+
+- Halaman preferensi installer hanya tersedia di installer Windows NSIS.
+- Linux dan macOS memakai pengaturan awal dari aplikasi saat pertama kali dibuka.
+- macOS build tanpa Apple Developer signing/notarization masih bisa memunculkan peringatan Gatekeeper.
 
 Workflow bisa dijalankan manual dari tab GitHub Actions, atau otomatis dengan push tag versi seperti:
 
