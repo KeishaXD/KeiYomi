@@ -1,0 +1,79 @@
+name: Build KeiYomi
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-x64
+            os: windows-latest
+            script: build:win:x64
+            artifact: |
+              Project File/dist/*x64*.exe
+              Project File/dist/*x64*.blockmap
+              Project File/dist/*.yml
+          - platform: windows-arm64
+            os: windows-latest
+            script: build:win:arm64
+            artifact: |
+              Project File/dist/*arm64*.exe
+              Project File/dist/*arm64*.blockmap
+              Project File/dist/*.yml
+          - platform: linux
+            os: ubuntu-latest
+            script: build:linux
+            artifact: |
+              Project File/dist/*.AppImage
+              Project File/dist/*.deb
+              Project File/dist/*.blockmap
+              Project File/dist/*.yml
+          - platform: mac
+            os: macos-latest
+            script: build:mac
+            artifact: |
+              Project File/dist/*.dmg
+              Project File/dist/*.zip
+              Project File/dist/*.blockmap
+              Project File/dist/*.yml
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Project File/package-lock.json
+
+      - name: Install dependencies
+        working-directory: Project File
+        run: npm ci
+
+      - name: Check syntax
+        working-directory: Project File
+        run: npm run check
+
+      - name: Build
+        working-directory: Project File
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npm run ${{ matrix.script }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: KeiYomi-${{ matrix.platform }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error

@@ -1,6 +1,6 @@
 {
-  "versionCode": 3,
-  "version": "3.1.0",
-  "zipUrl": "https://github.com/KeishaXD/KeiYomi/releases/download/v3.1.0/KeiYomi.Setup.3.1.0.exe",
-  "changelog": "Pembaruan besar dengan fitur kustomisasi instalasi dan performa yang lebih baik."
+  "versionCode": 4,
+  "version": "3.2.0",
+  "zipUrl": "https://github.com/KeishaXD/KeiYomi/releases/download/v3.2.0/KeiYomi-Setup-3.2.0-x64.exe",
+  "changelog": "Fix cache conflict antara debug dan release, tambah mode baca ringan/asli, perbaikan tambah chapter, EPUB, IPC, metadata, backup/restore, pengaturan, dan startup Electron."
 }
