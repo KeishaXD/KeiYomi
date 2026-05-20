@@ -260,6 +260,8 @@ function renderLibrarySorted() {
                         const isRead = readPaths.has(chap.path);
                         const readClass = isRead ? 'chapter-read' : '';
                         const checkColor = isRead ? '#3b82f6' : '#94a3b8';
+                        const editChapterTitle = escapeHtml(t('msg_edit_chapter') || 'Edit Chapter');
+                        const deleteChapterTitle = escapeHtml(t('msg_delete_chapter') || 'Hapus Chapter');
                         chapterListHtml += `
                         <div class="chapter-row ${readClass}" onclick="bacaFile(${safePath}, ${safeTitle})" style="cursor: pointer;">
                             <div style="flex-grow: 1;"><span class="chapter-name">${safeChapterName}</span></div>
@@ -269,6 +271,12 @@ function renderLibrarySorted() {
                                 </div>
                                 <button class="btn-icon" onclick="event.stopPropagation(); toggleChapterFavorite(${safeBookId}, ${index})" title="${escapeHtml(isChapFav ? t('msg_unmark_fav') : t('msg_mark_fav'))}">
                                     <svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:${starColor};fill:${starFill};stroke-width:2"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                                </button>
+                                <button class="btn-icon" onclick="event.stopPropagation(); editChapterName(${safeBookId}, ${index})" title="${editChapterTitle}">
+                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM5 19l.75-2.75 1.5 1.5L5 19zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.13 1.13 3.75 3.75 1.13-1.13z"/></svg>
+                                </button>
+                                <button class="btn-icon btn-icon-danger" onclick="event.stopPropagation(); deleteChapter(${safeBookId}, ${index})" title="${deleteChapterTitle}">
+                                    <svg viewBox="0 0 24 24" style="width:18px;height:18px;fill:currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4h-3.5z"/></svg>
                                 </button>
                             </div>
                         </div>`;
@@ -618,6 +626,74 @@ function renderLibrarySorted() {
             }
             
             saveData();
+            showBookDetail(book);
+        };
+
+        window.editChapterName = async function(bookId, chapterIndex) {
+            const book = libraryData.find(b => b.id == bookId);
+            if (!book || !book.chapters || !book.chapters[chapterIndex]) return;
+
+            const chapter = book.chapters[chapterIndex];
+            const oldName = chapter.name;
+            const newName = await customPrompt(
+                t('msg_edit_chapter_name') || 'Masukkan nama chapter baru:',
+                oldName,
+                t('modal_edit_chapter_title') || 'Edit Chapter',
+                t('btn_save') || 'Simpan',
+                t('btn_cancel') || 'Batal'
+            );
+
+            if (newName === null) return;
+            const trimmedName = newName.trim();
+            if (!trimmedName) {
+                await customAlert(t('msg_fill_chapter_name') || 'Nama chapter harus diisi.');
+                return;
+            }
+            if (trimmedName === oldName) return;
+
+            chapter.name = trimmedName;
+            riwayatBacaan = riwayatBacaan.map(item => {
+                if (item.path !== chapter.path) return item;
+                return { ...item, title: `${book.title} - ${trimmedName}` };
+            });
+
+            const saved = await saveData();
+            if (!saved) {
+                chapter.name = oldName;
+                riwayatBacaan = riwayatBacaan.map(item => {
+                    if (item.path !== chapter.path) return item;
+                    return { ...item, title: `${book.title} - ${oldName}` };
+                });
+                await customAlert(t('msg_edit_chapter_fail') || 'Gagal menyimpan nama chapter. Coba lagi setelah menjalankan ulang aplikasi.', 'Error');
+                return;
+            }
+
+            showBookDetail(book);
+        };
+
+        window.deleteChapter = async function(bookId, chapterIndex) {
+            const book = libraryData.find(b => b.id == bookId);
+            if (!book || !book.chapters || !book.chapters[chapterIndex]) return;
+
+            const chapter = book.chapters[chapterIndex];
+            const confirmed = await customConfirm(
+                (t('msg_delete_chapter_confirm') || 'Hapus chapter ini dari daftar aplikasi? File asli di komputer Anda tetap aman.') + `\n\n${chapter.name}`,
+                t('modal_delete_chapter_title') || 'Hapus Chapter',
+                t('btn_delete') || 'Hapus',
+                t('btn_cancel') || 'Batal'
+            );
+            if (!confirmed) return;
+
+            const removedChapter = book.chapters.splice(chapterIndex, 1)[0];
+            riwayatBacaan = riwayatBacaan.filter(r => r.path !== removedChapter.path);
+
+            const saved = await saveData();
+            if (!saved) {
+                book.chapters.splice(chapterIndex, 0, removedChapter);
+                await customAlert(t('msg_delete_chapter_fail') || 'Gagal menghapus chapter. Coba lagi setelah menjalankan ulang aplikasi.', 'Error');
+                return;
+            }
+
             showBookDetail(book);
         };
 

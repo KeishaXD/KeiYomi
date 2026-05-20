@@ -149,6 +149,43 @@ function customConfirm(message, title = "Konfirmasi", okText = "Ya", cancelText 
     });
 }
 
+function customPrompt(message, defaultValue = "", title = "Edit", okText = "Simpan", cancelText = "Batal") {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('custom-prompt-modal');
+        const input = document.getElementById('custom-prompt-input');
+        const btnOk = document.getElementById('btn-custom-prompt-ok');
+        const btnCancel = document.getElementById('btn-custom-prompt-cancel');
+
+        document.getElementById('custom-prompt-title').innerText = title;
+        document.getElementById('custom-prompt-message').innerText = message;
+        input.value = defaultValue;
+        btnOk.innerText = okText;
+        btnCancel.innerText = cancelText;
+
+        modal.classList.add('show');
+        input.focus();
+        input.select();
+
+        const cleanUp = () => {
+            btnOk.removeEventListener('click', okHandler);
+            btnCancel.removeEventListener('click', cancelHandler);
+            input.removeEventListener('keydown', keyHandler);
+            modal.classList.remove('show');
+        };
+
+        const okHandler = () => { const value = input.value; cleanUp(); resolve(value); };
+        const cancelHandler = () => { cleanUp(); resolve(null); };
+        const keyHandler = (event) => {
+            if (event.key === 'Enter') okHandler();
+            if (event.key === 'Escape') cancelHandler();
+        };
+
+        btnOk.addEventListener('click', okHandler);
+        btnCancel.addEventListener('click', cancelHandler);
+        input.addEventListener('keydown', keyHandler);
+    });
+}
+
 // --- TOAST NOTIFICATION ---
 function showToast(message, duration = 4000) {
     const container = document.getElementById('toast-container');

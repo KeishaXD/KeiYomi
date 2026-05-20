@@ -304,6 +304,7 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 
 .btn-icon { background: none; border: none; cursor: pointer; padding: 6px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s; color: var(--text-secondary); }
 .btn-icon:hover { background-color: var(--bg-tertiary); color: var(--text-primary); }
+.btn-icon-danger:hover { background-color: #fee2e2; color: #dc2626; }
 
 /* Mockup for pages */
 .page-placeholder { width: 100%; max-width: 800px; height: 1000px; background: white; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); display: flex; justify-content: center; align-items: center; font-size: 1.5rem; color: #cbd5e1; border-radius: 4px; position: relative; }
