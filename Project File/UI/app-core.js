@@ -45,6 +45,13 @@ const readerSearchStatus = document.getElementById('reader-search-status');
 const btnResetNightIntensity = document.getElementById('btn-reset-night-intensity');
 const btnPreviewNightIntensity = document.getElementById('btn-preview-night-intensity');
 const scrollProgressIndicator = document.getElementById('scroll-progress-indicator');
+const pageJumpControl = document.getElementById('page-jump-control');
+const pageJumpSlider = document.getElementById('page-jump-slider');
+const pageJumpInput = document.getElementById('page-jump-input');
+const pageJumpCurrent = document.getElementById('page-jump-current');
+const pageJumpTotal = document.getElementById('page-jump-total');
+const pageJumpPrev = document.getElementById('page-jump-prev');
+const pageJumpNext = document.getElementById('page-jump-next');
 
 // Modal Elements
 const modalAddBook = document.getElementById('add-book-modal');

@@ -21,6 +21,7 @@ function switchTab(tabName) {
     readerSettingsContainer.style.display = 'none';
     if (readerSearchPanel) readerSearchPanel.classList.remove('show');
     scrollProgressIndicator.classList.remove('visible');
+    if (pageJumpControl) pageJumpControl.classList.remove('visible');
     btnRefresh.style.display = 'none';
     searchInput.value = ''; 
 
@@ -74,6 +75,7 @@ function restoreReaderFromSettings() {
     searchInput.style.display = 'none';
     readerSettingsContainer.style.display = 'block';
     scrollProgressIndicator.classList.add('visible');
+    updatePageJumpControl();
     btnRefresh.style.display = 'none';
     currentView = previousViewBeforeSettings || 'library';
 }
@@ -306,6 +308,7 @@ function renderLibrarySorted() {
             searchInput.style.display = 'none';
             readerSettingsContainer.style.display = 'none';
     scrollProgressIndicator.classList.remove('visible');
+            if (pageJumpControl) pageJumpControl.classList.remove('visible');
             btnRefresh.style.display = 'none';
 
             let coverSrc = '';
@@ -1221,6 +1224,7 @@ function renderLibrarySorted() {
             searchInput.style.display = 'none';
             readerSettingsContainer.style.display = 'block';
     scrollProgressIndicator.classList.add('visible');
+            updatePageJumpControl();
             btnRefresh.style.display = 'none';
 
             currentBookPath = filePath;
@@ -1239,6 +1243,7 @@ function renderLibrarySorted() {
 
             cleanupObjectUrls();
             reader.innerHTML = '';
+            updatePageJumpControl();
             showReaderLoadingMessage(fileName);
             reader.scrollTop = 0;
             isReaderLoading = true;
@@ -1267,6 +1272,7 @@ function renderLibrarySorted() {
                 if (myRenderId !== currentRenderId) return;
 
                 renderChapterNavigation(chapterNavigationContext, 'bottom');
+                updatePageJumpControl();
 
                 if (historyItem.lastPage && historyItem.lastPage > 1) {
                     await new Promise(resolve => setTimeout(resolve, 200));
@@ -1276,6 +1282,7 @@ function renderLibrarySorted() {
                         // Menggunakan scrollTop manual agar tidak menggeser seluruh UI
                         const readerPaddingTop = parseInt(window.getComputedStyle(reader).paddingTop, 10) || 0;
                         reader.scrollTop = pageElement.offsetTop - readerPaddingTop;
+                        updatePageJumpControl(historyItem.lastPage);
                     }
                 }
             } finally {
@@ -1287,6 +1294,7 @@ function renderLibrarySorted() {
                         reader.classList.remove('reader-loading');
                         reader.style.overflowY = '';
                         updateScrollProgress();
+                        updatePageJumpControl();
                     }, 250);
                 }
             }
@@ -2031,6 +2039,7 @@ function renderLibrarySorted() {
 
                 const div = document.createElement('div');
                 div.className = 'page-placeholder';
+                div.setAttribute('data-page', 1);
                 div.style.height = 'auto';
                 div.style.background = 'white';
                 div.style.padding = '40px';
@@ -2057,6 +2066,83 @@ function renderLibrarySorted() {
             }
         }
 
+        function getReaderPages() {
+            return Array.from(reader.querySelectorAll('.page-placeholder'))
+                .filter(page => Number.isFinite(parseInt(page.getAttribute('data-page'), 10)));
+        }
+
+        function getCurrentReaderPage() {
+            const pages = getReaderPages();
+            if (pages.length === 0) return 1;
+
+            const readerRect = reader.getBoundingClientRect();
+            let closestPage = pages[0];
+            let minDistance = Infinity;
+
+            for (const page of pages) {
+                const rect = page.getBoundingClientRect();
+                if (rect.bottom > readerRect.top && rect.top < readerRect.bottom) {
+                    const distance = Math.abs(rect.top - readerRect.top);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestPage = page;
+                    }
+                }
+            }
+
+            return parseInt(closestPage.getAttribute('data-page'), 10) || 1;
+        }
+
+        function updatePageJumpControl(forcedPage = null) {
+            if (!pageJumpControl || !pageJumpSlider || !pageJumpInput || !pageJumpCurrent || !pageJumpTotal) return;
+
+            const pages = getReaderPages();
+            const totalPages = pages.length;
+            if (reader.style.display !== 'flex' || totalPages === 0) {
+                pageJumpControl.classList.remove('visible');
+                return;
+            }
+
+            const currentPage = Math.min(Math.max(parseInt(forcedPage || getCurrentReaderPage(), 10) || 1, 1), totalPages);
+            pageJumpSlider.max = totalPages;
+            pageJumpSlider.value = currentPage;
+            pageJumpInput.max = totalPages;
+            if (document.activeElement !== pageJumpInput) {
+                pageJumpInput.value = currentPage;
+            }
+            pageJumpCurrent.innerText = String(currentPage);
+            pageJumpTotal.innerText = String(totalPages);
+            pageJumpSlider.disabled = totalPages <= 1;
+            pageJumpInput.disabled = totalPages <= 1;
+            if (pageJumpPrev) pageJumpPrev.disabled = currentPage <= 1;
+            if (pageJumpNext) pageJumpNext.disabled = currentPage >= totalPages;
+            pageJumpControl.classList.add('visible');
+        }
+
+        function goToPage(pageNumber, behavior = 'auto') {
+            const pages = getReaderPages();
+            if (pages.length === 0) return;
+
+            const targetPage = Math.min(Math.max(parseInt(pageNumber, 10) || 1, 1), pages.length);
+            const pageElement = pages.find(page => parseInt(page.getAttribute('data-page'), 10) === targetPage) || pages[targetPage - 1];
+            if (!pageElement) return;
+
+            const readerPaddingTop = parseInt(window.getComputedStyle(reader).paddingTop, 10) || 0;
+            reader.scrollTo({
+                top: pageElement.offsetTop - readerPaddingTop,
+                behavior
+            });
+            if (pageJumpInput) pageJumpInput.value = targetPage;
+            updatePageJumpControl(targetPage);
+
+            const historyItem = riwayatBacaan.find(r => r.path === currentBookPath);
+            if (historyItem && historyItem.lastPage !== targetPage) {
+                historyItem.lastPage = targetPage;
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(saveData, 500);
+            }
+        }
+
         function updateScrollProgress() {
             const { scrollTop, scrollHeight, clientHeight } = reader;
             if (scrollHeight > clientHeight) {
@@ -2069,38 +2155,57 @@ function renderLibrarySorted() {
 
         reader.addEventListener('scroll', () => {
             updateScrollProgress();
+            updatePageJumpControl();
 
             if (isReaderLoading) return;
             if (!currentBookPath) return;
 
-            // --- FIX: More robust page detection to prevent off-by-one errors ---
-            const pages = document.querySelectorAll('.page-placeholder');
-            let closestPage = null;
-            let minDistance = Infinity;
-
-            // Find the page whose top is closest to the top of the viewport
-            for (const page of pages) {
-                const rect = page.getBoundingClientRect();
-                // Consider pages that are at least partially visible
-                if (rect.bottom > 0 && rect.top < window.innerHeight) {
-                    const distance = Math.abs(rect.top);
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        closestPage = page;
-                    }
-                }
-            }
-
-            if (closestPage) {
-                const pageNum = parseInt(closestPage.getAttribute('data-page'));
-                const historyItem = riwayatBacaan.find(r => r.path === currentBookPath);
-                if (historyItem && historyItem.lastPage !== pageNum) {
-                    historyItem.lastPage = pageNum;
-                    clearTimeout(saveTimeout);
-                    saveTimeout = setTimeout(saveData, 1000);
-                }
+            const pageNum = getCurrentReaderPage();
+            const historyItem = riwayatBacaan.find(r => r.path === currentBookPath);
+            if (historyItem && historyItem.lastPage !== pageNum) {
+                historyItem.lastPage = pageNum;
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(saveData, 1000);
             }
         });
+
+        if (pageJumpSlider) {
+            pageJumpSlider.addEventListener('input', () => {
+                goToPage(pageJumpSlider.value, 'auto');
+            });
+        }
+
+        if (pageJumpInput) {
+            pageJumpInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    goToPage(pageJumpInput.value);
+                    pageJumpInput.blur();
+                }
+            });
+            pageJumpInput.addEventListener('change', () => {
+                goToPage(pageJumpInput.value);
+            });
+            pageJumpInput.addEventListener('blur', () => {
+                updatePageJumpControl();
+            });
+            pageJumpInput.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                pageJumpInput.blur();
+            });
+        }
+
+        if (pageJumpPrev) {
+            pageJumpPrev.addEventListener('click', () => {
+                goToPage(getCurrentReaderPage() - 1);
+            });
+        }
+
+        if (pageJumpNext) {
+            pageJumpNext.addEventListener('click', () => {
+                goToPage(getCurrentReaderPage() + 1);
+            });
+        }
 
         function renderExplore() {
             const genres = new Set();
