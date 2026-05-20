@@ -13,6 +13,8 @@
     "page_explore": "Jelajah Pustaka",
     "page_settings": "Pengaturan",
     "page_detail": "Informasi Buku",
+    "history_last_page": "Halaman terakhir",
+    "history_last_page_unknown": "Halaman terakhir belum tersimpan",
     "search_placeholder": "Cari buku...",
     "settings_title": "Pengaturan Aplikasi",
     "settings_username": "Nama Pengguna",
@@ -148,5 +150,9 @@
     "reader_fullscreen_exit": "Keluar Layar Penuh",
     "settings_night_mode_intensity": "Intensitas Cahaya Malam (Cold - Warm)",
     "reader_night_mode_enter": "Aktifkan Mode Malam",
-    "reader_night_mode_exit": "Matikan Mode Malam"
+    "reader_night_mode_exit": "Matikan Mode Malam",
+    "reader_search": "Cari Kalimat",
+    "reader_search_placeholder": "Cari kalimat...",
+    "reader_search_unavailable": "Pencarian teks hanya tersedia untuk PDF yang punya lapisan teks.",
+    "reader_search_no_result": "Kalimat tidak ditemukan."
 }

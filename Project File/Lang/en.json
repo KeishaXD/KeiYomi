@@ -13,6 +13,8 @@
     "page_explore": "Explore Library",
     "page_settings": "Settings",
     "page_detail": "Book Information",
+    "history_last_page": "Last page",
+    "history_last_page_unknown": "Last page not saved yet",
     "search_placeholder": "Search books...",
     "settings_title": "App Settings",
     "settings_username": "Username",
@@ -156,5 +158,9 @@
     "reader_fullscreen_exit": "Exit Fullscreen",
     "settings_night_mode_intensity": "Night Light Intensity (Cold - Warm)",
     "reader_night_mode_enter": "Enable Night Mode",
-    "reader_night_mode_exit": "Disable Night Mode"
+    "reader_night_mode_exit": "Disable Night Mode",
+    "reader_search": "Find Sentence",
+    "reader_search_placeholder": "Find a sentence...",
+    "reader_search_unavailable": "Text search is only available for PDFs with a text layer.",
+    "reader_search_no_result": "Sentence not found."
 }

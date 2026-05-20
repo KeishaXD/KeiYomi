@@ -134,7 +134,7 @@
 
         <!-- VIEW: HISTORY (Riwayat) -->
         <div id="view-history" class="view-section">
-            <div class="book-grid" id="history-grid"></div>
+            <div class="history-list" id="history-list"></div>
         </div>
 
         <!-- VIEW: FAVORITES (Buku Favorit) -->
@@ -303,6 +303,22 @@
 
         <!-- VIEW: READER (Baca Buku) -->
         <div class="reader-container" id="reader"></div>
+        <div id="reader-search-panel" class="reader-search-panel">
+            <input type="text" id="reader-search-input" data-i18n-placeholder="reader_search_placeholder" placeholder="Cari kalimat...">
+            <button id="btn-reader-search" class="reader-search-btn" title="Cari">
+                <svg viewBox="0 0 24 24"><path d="M9.5 3a6.5 6.5 0 0 1 5.17 10.44l4.44 4.45-1.42 1.41-4.44-4.44A6.5 6.5 0 1 1 9.5 3zm0 2a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z"/></svg>
+            </button>
+            <button id="btn-reader-search-prev" class="reader-search-btn" title="Sebelumnya">
+                <svg viewBox="0 0 24 24"><path d="M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z"/></svg>
+            </button>
+            <button id="btn-reader-search-next" class="reader-search-btn" title="Berikutnya">
+                <svg viewBox="0 0 24 24"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+            </button>
+            <span id="reader-search-status" class="reader-search-status">0/0</span>
+            <button id="btn-reader-search-close" class="reader-search-btn" title="Tutup">
+                <svg viewBox="0 0 24 24"><path d="m18.3 5.71-1.41-1.42L12 9.17 7.11 4.29 5.7 5.7 10.59 10.6 5.7 15.49l1.41 1.41L12 12l4.89 4.9 1.41-1.41-4.89-4.9z"/></svg>
+            </button>
+        </div>
 
         <!-- Floating Settings Button -->
         <div id="reader-settings-container" style="display: none;">
@@ -324,6 +340,10 @@
                 <button id="btn-toggle-nightmode" class="setting-button">
                     <svg viewBox="0 0 24 24" width="16" height="16"><path d="M9.37 5.51A7.35 7.35 0 0 0 9.1 7.5c0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27A7.014 7.014 0 0 1 12 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 0 1-4.4 2.26 5.403 5.403 0 0 1-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
                     <span data-i18n="reader_night_mode_enter">Aktifkan Mode Malam</span>
+                </button>
+                <button id="btn-reader-search-toggle" class="setting-button">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path d="M9.5 3a6.5 6.5 0 0 1 5.17 10.44l4.44 4.45-1.42 1.41-4.44-4.44A6.5 6.5 0 1 1 9.5 3zm0 2a4.5 4.5 0 1 0 0 9 4.5 4.5 0 0 0 0-9z"/></svg>
+                    <span data-i18n="reader_search">Cari Kalimat</span>
                 </button>
             </div>
             <div id="scroll-progress-indicator" class="scroll-progress">0%</div>

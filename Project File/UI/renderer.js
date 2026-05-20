@@ -9,6 +9,7 @@ function switchTab(tabName) {
     btnBack.style.display = 'none';
     searchInput.style.display = 'block';
     readerSettingsContainer.style.display = 'none';
+    if (readerSearchPanel) readerSearchPanel.classList.remove('show');
     scrollProgressIndicator.classList.remove('visible');
     btnRefresh.style.display = 'none';
     searchInput.value = ''; 
@@ -23,7 +24,7 @@ function switchTab(tabName) {
         document.getElementById('view-history').style.display = 'block';
         document.querySelector('.nav-item:nth-child(2)').classList.add('active');
         pageTitle.innerText = t('page_history');
-        renderGrid(riwayatBacaan, 'history-grid');
+        renderHistoryList(riwayatBacaan);
     } else if (tabName === 'favorites') {
         document.getElementById('view-favorites').style.display = 'block';
         document.querySelector('.nav-item:nth-child(3)').classList.add('active');
@@ -90,8 +91,11 @@ function renderLibrarySorted() {
             if (currentView === 'library') {
                 renderLibrarySorted();
             } else if (currentView === 'history') {
-                const filtered = riwayatBacaan.filter(b => b.title.toLowerCase().includes(keyword));
-                renderGrid(filtered, 'history-grid');
+                const filtered = riwayatBacaan.filter(b => 
+                    String(b.title || '').toLowerCase().includes(keyword) ||
+                    String(b.path || '').toLowerCase().includes(keyword)
+                );
+                renderHistoryList(filtered);
             } else if (currentView === 'favorites') {
                 const filtered = libraryData.filter(b => b.isFavorite && b.title.toLowerCase().includes(keyword));
                 renderGrid(filtered, 'favorites-grid');
@@ -211,6 +215,51 @@ function renderLibrarySorted() {
                 showContextMenu(e.pageX, e.pageY, book);
             });
             return div;
+        }
+
+        function renderHistoryList(data) {
+            const list = document.getElementById('history-list');
+            if (!list) return;
+
+            list.innerHTML = '';
+            if (data.length === 0) {
+                list.innerHTML = `<p style="color:#94a3b8; text-align:center; padding-top: 20px;">${escapeHtml(t('msg_empty_library'))}</p>`;
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            data.forEach(item => {
+                const row = createHistoryRow(item);
+                fragment.appendChild(row);
+            });
+            list.appendChild(fragment);
+        }
+
+        function createHistoryRow(item) {
+            const row = document.createElement('div');
+            row.className = 'history-row';
+
+            const ext = path.extname(item.path || '').replace('.', '').toUpperCase() || 'FILE';
+            const fileName = item.path ? path.basename(item.path) : '-';
+            const lastPageText = item.lastPage ? `${escapeHtml(t('history_last_page') || 'Halaman terakhir')}: ${escapeHtml(item.lastPage)}` : escapeHtml(t('history_last_page_unknown') || 'Halaman terakhir belum tersimpan');
+
+            row.innerHTML = `
+                <div class="history-filetype">${escapeHtml(ext)}</div>
+                <div class="history-main">
+                    <div class="history-title">${escapeHtml(item.title || fileName)}</div>
+                    <div class="history-path">${escapeHtml(fileName)}</div>
+                </div>
+                <div class="history-meta">${lastPageText}</div>
+            `;
+
+            row.addEventListener('click', () => {
+                if (item.path) bacaFile(item.path, item.title || fileName);
+            });
+            row.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                showContextMenu(e.pageX, e.pageY, item);
+            });
+            return row;
         }
 
         function showBookDetail(book) {
@@ -753,7 +802,7 @@ function renderLibrarySorted() {
             if (currentView === 'history') {
                 riwayatBacaan = riwayatBacaan.filter(r => r.path !== contextMenuBook.path);
                 saveData();
-                renderGrid(riwayatBacaan, 'history-grid');
+                renderHistoryList(riwayatBacaan);
             } else if (currentView === 'favorites') {
                 const book = libraryData.find(b => b.id === contextMenuBook.id);
                 if (book) book.isFavorite = false;
@@ -1156,6 +1205,7 @@ function renderLibrarySorted() {
 
             cleanupObjectUrls();
             reader.innerHTML = '';
+            resetReaderSearch();
             updateReaderModeUI();
 
             updateFullscreenButton(); // Set initial state for fullscreen button
@@ -1197,6 +1247,169 @@ function renderLibrarySorted() {
                     showToast(t('msg_reader_tips') || "Tip: Tekan F1 untuk Layar Penuh, dan F2 untuk Mode Cahaya Malam (Eye Comfort).", 5000);
                 }, 800); // Munculkan pop up setelah buku termuat
             }
+        }
+
+        function resetReaderSearch() {
+            readerSearchIndex = [];
+            readerSearchMatches = [];
+            readerSearchMatchIndex = -1;
+            if (readerSearchInput) readerSearchInput.value = '';
+            if (readerSearchStatus) readerSearchStatus.innerText = '0/0';
+            if (readerSearchPanel) readerSearchPanel.classList.remove('show');
+            document.querySelectorAll('.page-placeholder.search-hit').forEach(page => page.classList.remove('search-hit'));
+            clearPdfSearchHighlights();
+        }
+
+        function openReaderSearch() {
+            if (!readerSearchPanel || !readerSearchInput) return;
+            if (reader.style.display !== 'flex') return;
+
+            if (readerSearchIndex.length === 0) {
+                showToast(t('reader_search_unavailable') || 'Pencarian teks hanya tersedia untuk PDF yang punya lapisan teks.', 3500);
+                return;
+            }
+
+            readerSearchPanel.classList.add('show');
+            settingsPopup.classList.remove('show');
+            readerSearchInput.focus();
+            readerSearchInput.select();
+        }
+
+        function updateReaderSearchStatus() {
+            if (!readerSearchStatus) return;
+            if (readerSearchMatches.length === 0) {
+                readerSearchStatus.innerText = '0/0';
+                return;
+            }
+            readerSearchStatus.innerText = `${readerSearchMatchIndex + 1}/${readerSearchMatches.length}`;
+        }
+
+        function goToReaderSearchMatch(direction = 0) {
+            if (readerSearchMatches.length === 0) {
+                updateReaderSearchStatus();
+                showToast(t('reader_search_no_result') || 'Kalimat tidak ditemukan.', 2500);
+                return;
+            }
+
+            if (direction !== 0) {
+                readerSearchMatchIndex = (readerSearchMatchIndex + direction + readerSearchMatches.length) % readerSearchMatches.length;
+            }
+
+            const match = readerSearchMatches[readerSearchMatchIndex];
+            const pageElement = document.querySelector(`.page-placeholder[data-page="${match.page}"]`);
+            if (!pageElement) return;
+
+            document.querySelectorAll('.page-placeholder.search-hit').forEach(page => page.classList.remove('search-hit'));
+            renderPdfSearchHighlight(match);
+
+            const readerPaddingTop = parseInt(window.getComputedStyle(reader).paddingTop, 10) || 0;
+            reader.scrollTo({
+                top: pageElement.offsetTop - readerPaddingTop - 12,
+                behavior: 'smooth'
+            });
+            updateReaderSearchStatus();
+        }
+
+        function runReaderSearch() {
+            if (!readerSearchInput) return;
+            const query = readerSearchInput.value.trim().toLowerCase();
+            document.querySelectorAll('.page-placeholder.search-hit').forEach(page => page.classList.remove('search-hit'));
+            clearPdfSearchHighlights();
+
+            if (!query) {
+                readerSearchMatches = [];
+                readerSearchMatchIndex = -1;
+                updateReaderSearchStatus();
+                return;
+            }
+
+            readerSearchMatches = readerSearchIndex
+                .flatMap(item => findPdfTextMatches(item, query));
+            readerSearchMatchIndex = readerSearchMatches.length > 0 ? 0 : -1;
+            goToReaderSearchMatch(0);
+        }
+
+        function clearPdfSearchHighlights() {
+            document.querySelectorAll('.pdf-search-highlight').forEach(highlight => highlight.remove());
+        }
+
+        function findPdfTextMatches(pageIndex, query) {
+            const matches = [];
+            let startIndex = pageIndex.text.indexOf(query);
+
+            while (startIndex !== -1) {
+                const endIndex = startIndex + query.length;
+                const highlights = pageIndex.items
+                    .filter(item => item.end > startIndex && item.start < endIndex)
+                    .map(item => clipPdfHighlightToMatch(item, startIndex, endIndex))
+                    .filter(Boolean);
+                if (highlights.length > 0) {
+                    matches.push({ page: pageIndex.page, highlights });
+                }
+                startIndex = pageIndex.text.indexOf(query, startIndex + Math.max(1, query.length));
+            }
+
+            return matches;
+        }
+
+        function clipPdfHighlightToMatch(item, matchStart, matchEnd) {
+            const itemLength = Math.max(1, item.end - item.start);
+            const overlapStart = Math.max(item.start, matchStart);
+            const overlapEnd = Math.min(item.end, matchEnd);
+            if (overlapEnd <= overlapStart) return null;
+
+            const localStartRatio = (overlapStart - item.start) / itemLength;
+            const localEndRatio = (overlapEnd - item.start) / itemLength;
+
+            return {
+                left: item.left + (item.width * localStartRatio),
+                top: item.top,
+                width: Math.max(0.35, item.width * (localEndRatio - localStartRatio)),
+                height: item.height
+            };
+        }
+
+        function renderPdfSearchHighlight(match) {
+            clearPdfSearchHighlights();
+
+            const pageElement = document.querySelector(`.page-placeholder[data-page="${match.page}"]`);
+            const layer = pageElement && pageElement.querySelector('.pdf-highlight-layer');
+            if (!layer) return;
+
+            match.highlights.forEach(item => {
+                const highlight = document.createElement('span');
+                highlight.className = 'pdf-search-highlight';
+                highlight.style.left = `${item.left}%`;
+                highlight.style.top = `${item.top}%`;
+                highlight.style.width = `${item.width}%`;
+                highlight.style.height = `${item.height}%`;
+                layer.appendChild(highlight);
+            });
+        }
+
+        if (btnReaderSearchToggle) btnReaderSearchToggle.addEventListener('click', openReaderSearch);
+        if (btnReaderSearch) btnReaderSearch.addEventListener('click', runReaderSearch);
+        if (btnReaderSearchPrev) btnReaderSearchPrev.addEventListener('click', () => goToReaderSearchMatch(-1));
+        if (btnReaderSearchNext) btnReaderSearchNext.addEventListener('click', () => goToReaderSearchMatch(1));
+        if (btnReaderSearchClose) {
+            btnReaderSearchClose.addEventListener('click', () => {
+                readerSearchPanel.classList.remove('show');
+                document.querySelectorAll('.page-placeholder.search-hit').forEach(page => page.classList.remove('search-hit'));
+                clearPdfSearchHighlights();
+            });
+        }
+        if (readerSearchInput) {
+            readerSearchInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    if (event.shiftKey) goToReaderSearchMatch(-1);
+                    else if (readerSearchMatches.length > 0) goToReaderSearchMatch(1);
+                    else runReaderSearch();
+                }
+                if (event.key === 'Escape') {
+                    readerSearchPanel.classList.remove('show');
+                    clearPdfSearchHighlights();
+                }
+            });
         }
 
         // --- NIGHT LIGHT / EYE COMFORT LOGIC ---
@@ -1429,18 +1642,26 @@ function renderLibrarySorted() {
         btnToggleFullscreen.addEventListener('click', toggleFullscreen);
         document.addEventListener('fullscreenchange', updateFullscreenButton);
 
-        async function renderPDF(filePath) {
+        async function renderPDF(filePath, renderId) {
             try {
                 const data = await fs.readFile(filePath);
+                if (renderId !== currentRenderId) return;
+
                 const loadingTask = pdfjsLib.getDocument(new Uint8Array(data));
                 const pdf = await loadingTask.promise;
                 const isOriginalQuality = userSettings.pdfQualityMode === 'original';
                 const baseScale = isOriginalQuality ? 1.75 : 1.5;
                 const outputScale = isOriginalQuality ? Math.min(window.devicePixelRatio || 1, 2) : 1;
+                const textIndex = [];
                 
                 for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    if (renderId !== currentRenderId) return;
+
                     const page = await pdf.getPage(pageNum);
                     const viewport = page.getViewport({ scale: baseScale });
+                    const textContentPromise = page.getTextContent()
+                        .then(textContent => buildPdfPageSearchIndex(textContent, viewport, pageNum))
+                        .catch(() => null);
 
                     const div = document.createElement('div');
                     div.className = 'page-placeholder';
@@ -1450,6 +1671,10 @@ function renderLibrarySorted() {
                     div.style.boxShadow = 'none';
                     div.innerText = '';
 
+                    const surface = document.createElement('div');
+                    surface.className = 'pdf-page-surface';
+                    surface.style.width = `${Math.floor(viewport.width)}px`;
+
                     const canvas = document.createElement('canvas');
                     const context = canvas.getContext('2d');
                     canvas.width = Math.floor(viewport.width * outputScale);
@@ -1458,8 +1683,13 @@ function renderLibrarySorted() {
                     canvas.style.height = 'auto';
                     canvas.style.maxWidth = '100%';
                     canvas.style.display = 'block'; 
+
+                    const highlightLayer = document.createElement('div');
+                    highlightLayer.className = 'pdf-highlight-layer';
                     
-                    div.appendChild(canvas);
+                    surface.appendChild(canvas);
+                    surface.appendChild(highlightLayer);
+                    div.appendChild(surface);
                     reader.appendChild(div);
 
                     const renderContext = {
@@ -1468,10 +1698,53 @@ function renderLibrarySorted() {
                         transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null
                     };
                     await page.render(renderContext).promise;
+
+                    const pageIndex = await textContentPromise;
+                    if (pageIndex && pageIndex.text) {
+                        textIndex.push(pageIndex);
+                    }
+                }
+
+                if (renderId === currentRenderId) {
+                    readerSearchIndex = textIndex;
                 }
             } catch (error) {
                 reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat PDF: ${escapeHtml(error.message)}</div>`;
             }
+        }
+
+        function buildPdfPageSearchIndex(textContent, viewport, pageNum) {
+            const items = [];
+            let pageText = '';
+
+            textContent.items.forEach(textItem => {
+                const rawText = String(textItem.str || '').replace(/\s+/g, ' ').trim();
+                if (!rawText) return;
+
+                if (pageText) pageText += ' ';
+                const start = pageText.length;
+                pageText += rawText.toLowerCase();
+                const end = pageText.length;
+
+                const transform = pdfjsLib.Util.transform(viewport.transform, textItem.transform);
+                const fontHeight = Math.hypot(transform[2], transform[3]) || Math.abs(transform[3]) || 10;
+                const x = transform[4];
+                const y = transform[5];
+                const itemWidth = Math.max(2, (textItem.width || rawText.length * fontHeight * 0.45) * viewport.scale);
+                const itemHeight = Math.max(8, fontHeight * 1.15);
+
+                items.push({
+                    start,
+                    end,
+                    text: rawText.toLowerCase(),
+                    left: Math.max(0, (x / viewport.width) * 100),
+                    top: Math.max(0, ((y - itemHeight) / viewport.height) * 100),
+                    width: Math.min(100, (itemWidth / viewport.width) * 100),
+                    height: Math.min(100, (itemHeight / viewport.height) * 100)
+                });
+            });
+
+            return { page: pageNum, text: pageText, items };
         }
 
         async function renderCBZ(filePath, renderId) {
@@ -1994,6 +2267,12 @@ function renderLibrarySorted() {
         };
 
         document.addEventListener('keydown', async (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f' && reader.style.display === 'flex') {
+                e.preventDefault();
+                openReaderSearch();
+                return;
+            }
+
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
             
             // Shortcut Fullscreen F1 (Toggle Hidup / Mati)
@@ -2028,6 +2307,11 @@ function renderLibrarySorted() {
                     return; 
                 }
                 if (settingsPopup.classList.contains('show')) { settingsPopup.classList.remove('show'); return; }
+                if (readerSearchPanel && readerSearchPanel.classList.contains('show')) {
+                    readerSearchPanel.classList.remove('show');
+                    clearPdfSearchHighlights();
+                    return;
+                }
                 if (btnBack.style.display !== 'none') { btnBack.click(); return; }
                 if (await customConfirm(t('msg_exit_confirm'), "Keluar Aplikasi", "Ya, Keluar")) ipcRenderer.send('app:quit');
             }
