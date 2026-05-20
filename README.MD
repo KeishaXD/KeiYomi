@@ -9,7 +9,7 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
 
 ## Key Features
 
-- **Format Support:** Read **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, and **MD** files.
+- **Format Support:** Read **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, **MD**, and **DOCX** files.
 - **Flexible Reading Modes:**
   - **Webtoon Mode:** Continuous vertical scroll, suitable for Manhwa/Webtoon.
   - **Normal Mode:** Page-by-page view, suitable for PDF/documents.
@@ -36,6 +36,7 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
 - JSZip for CBZ/ZIP/EPUB extraction
 - node-unrar-js for CBR/RAR extraction
 - Marked for Markdown rendering
+- Mammoth for DOCX rendering
 
 ## How to Run (Development)
 
@@ -163,6 +164,7 @@ KeiYomi/
     +-- Chapter 1.pdf
     +-- Chapter 2.cbz
     +-- Chapter 3.cbr
+    +-- Notes.docx
     +-- ...
 ```
 

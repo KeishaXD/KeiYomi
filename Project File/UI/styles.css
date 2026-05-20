@@ -465,6 +465,61 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
     display: block;
     margin: 16px auto;
 }
+.docx-page {
+    display: block;
+    width: min(860px, 100%);
+    height: auto;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 44px;
+    line-height: 1.75;
+    font-size: 1.02rem;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+.docx-page h1,
+.docx-page h2,
+.docx-page h3,
+.docx-page h4,
+.docx-page h5,
+.docx-page h6 {
+    margin: 1.25em 0 0.55em;
+    line-height: 1.25;
+    color: var(--text-primary);
+}
+.docx-page h1:first-child,
+.docx-page h2:first-child,
+.docx-page h3:first-child { margin-top: 0; }
+.docx-page p,
+.docx-page ul,
+.docx-page ol,
+.docx-page table,
+.docx-page blockquote { margin: 0 0 1em; }
+.docx-page ul,
+.docx-page ol { padding-left: 1.5em; }
+.docx-page table {
+    width: 100%;
+    border-collapse: collapse;
+    overflow-wrap: normal;
+}
+.docx-page th,
+.docx-page td {
+    border: 1px solid var(--border-primary);
+    padding: 8px 10px;
+    vertical-align: top;
+}
+.docx-page blockquote {
+    padding-left: 14px;
+    border-left: 3px solid var(--accent);
+    color: var(--text-secondary);
+}
+.docx-page a { color: var(--accent); }
+.docx-page img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 16px auto;
+}
 [data-theme="dark"] .epub-page {
     background: #f8fafc;
     color: #1f2937;

@@ -863,7 +863,7 @@ function renderLibrarySorted() {
 
         function inferManualBookType(filePath) {
             const ext = path.extname(filePath).toLowerCase();
-            if (ext === '.txt' || ext === '.md' || ext === '.epub') return 'Novel';
+            if (ext === '.txt' || ext === '.md' || ext === '.docx' || ext === '.epub') return 'Novel';
             if (ext === '.cbz' || ext === '.zip' || ext === '.cbr') return 'Manga';
             return 'Artikel';
         }
@@ -1267,6 +1267,8 @@ function renderLibrarySorted() {
                     await renderEPUB(filePath, myRenderId);
                 } else if (ext === '.md') {
                     await renderMD(filePath, myRenderId);
+                } else if (ext === '.docx') {
+                    await renderDOCX(filePath, myRenderId);
                 } else if (ext === '.txt') {
                     await renderTXT(filePath, myRenderId);
                 } else {
@@ -2185,6 +2187,72 @@ function renderLibrarySorted() {
                 reader.appendChild(div);
             } catch (error) {
                 reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat MD: ${escapeHtml(error.message)}</div>`;
+            }
+        }
+
+        function sanitizeDocxContent(root) {
+            const blockedTags = new Set(['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta']);
+            const allowedAttrs = new Set(['href', 'src', 'alt', 'title', 'colspan', 'rowspan']);
+
+            Array.from(root.querySelectorAll('*')).forEach(el => {
+                const tagName = el.tagName.toLowerCase();
+                if (blockedTags.has(tagName)) {
+                    el.remove();
+                    return;
+                }
+
+                Array.from(el.attributes).forEach(attr => {
+                    const name = attr.name.toLowerCase();
+                    if (name.startsWith('on') || !allowedAttrs.has(name)) {
+                        el.removeAttribute(attr.name);
+                    }
+                });
+
+                if (tagName === 'a') {
+                    const href = el.getAttribute('href') || '';
+                    if (/^javascript:/i.test(href)) {
+                        el.removeAttribute('href');
+                    } else if (href) {
+                        el.setAttribute('target', '_blank');
+                        el.setAttribute('rel', 'noopener noreferrer');
+                    }
+                }
+
+                if (tagName === 'img' && /^javascript:/i.test(el.getAttribute('src') || '')) {
+                    el.removeAttribute('src');
+                }
+            });
+        }
+
+        async function renderDOCX(filePath, renderId) {
+            try {
+                if (!window.mammoth || typeof window.mammoth.convertToHtml !== 'function') {
+                    throw new Error('Vendor Mammoth belum dimuat.');
+                }
+
+                const data = await fs.readFile(filePath);
+                if (renderId !== currentRenderId) return;
+
+                const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+                const result = await window.mammoth.convertToHtml({ arrayBuffer });
+                if (renderId !== currentRenderId) return;
+
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(result.value || '', 'text/html');
+                sanitizeDocxContent(doc.body);
+
+                const div = document.createElement('div');
+                div.className = 'page-placeholder docx-page';
+                div.setAttribute('data-page', 1);
+                div.style.height = 'auto';
+                div.innerHTML = doc.body.innerHTML || '<p>Dokumen DOCX kosong.</p>';
+                reader.appendChild(div);
+
+                if (Array.isArray(result.messages) && result.messages.length > 0) {
+                    console.warn('Mammoth DOCX warnings:', result.messages);
+                }
+            } catch (error) {
+                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat DOCX: ${escapeHtml(error.message)}</div>`;
             }
         }
 
