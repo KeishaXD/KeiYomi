@@ -79,6 +79,7 @@ let currentEditingBookId = null;
 // Create Folder Modal Elements
 const modalCreateFolder = document.getElementById('create-folder-modal');
 const inputCfFolder = document.getElementById('input-cf-folder');
+const inputCfLocation = document.getElementById('input-cf-location');
 const inputCfAuthor = document.getElementById('input-cf-author');
 const inputCfCover = document.getElementById('input-cf-cover');
 const btnBrowseCfCover = document.getElementById('btn-browse-cf-cover');

@@ -923,6 +923,7 @@ function renderLibrarySorted() {
     if (btnCreateFolder) {
         btnCreateFolder.addEventListener('click', () => {
             inputCfFolder.value = '';
+            populateCreateFolderLocations();
             inputCfAuthor.value = '';
             inputCfCover.value = '';
             inputCfType.value = '';
@@ -930,6 +931,25 @@ function renderLibrarySorted() {
             inputCfSynopsis.value = '';
             updateCfGenreOptions();
             modalCreateFolder.classList.add('show');
+        });
+    }
+
+    function populateCreateFolderLocations() {
+        if (!inputCfLocation) return;
+
+        inputCfLocation.innerHTML = '';
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.innerText = t('folder_location_default') || 'KeiYomi Library (Default)';
+        inputCfLocation.appendChild(defaultOption);
+
+        const uniqueFolders = [...new Set((userSettings.customFolders || []).filter(Boolean))];
+        uniqueFolders.forEach(folderPath => {
+            const option = document.createElement('option');
+            option.value = folderPath;
+            option.innerText = folderPath;
+            inputCfLocation.appendChild(option);
         });
     }
     
@@ -995,6 +1015,7 @@ function renderLibrarySorted() {
         
         const folderData = {
             folderName: folderName,
+            basePath: inputCfLocation ? inputCfLocation.value : '',
             title: folderName,
             author: inputCfAuthor.value.trim(),
             cover: inputCfCover.value,

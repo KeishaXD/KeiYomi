@@ -75,6 +75,8 @@
     "lbl_title": "Title",
     "lbl_folder_name": "Folder Name / Series Title",
     "ph_folder_name": "Example: Naruto",
+    "lbl_folder_location": "Location",
+    "folder_location_default": "KeiYomi Library (Default)",
     "lbl_author": "Author",
     "lbl_cover": "Cover Image (Optional)",
     "lbl_cover_edit": "Cover Image",

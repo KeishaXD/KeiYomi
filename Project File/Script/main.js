@@ -276,6 +276,35 @@ function isAllowedReadableFile(filePath, allowedExts) {
     return allowedExts.has(ext) && isKnownAllowedPath(normalized);
 }
 
+function getCreateFolderBasePath(requestedBasePath) {
+    if (!requestedBasePath) return getDefaultLibraryPath();
+
+    const normalizedBasePath = normalizePathForAccess(requestedBasePath);
+    if (!normalizedBasePath) return null;
+
+    try {
+        const data = readUserConfig();
+        const customFolders = Array.isArray(data?.customFolders) ? data.customFolders : [];
+        const allowedRoots = [getDefaultLibraryPath(), ...customFolders]
+            .map(rootPath => normalizePathForAccess(rootPath))
+            .filter(Boolean);
+
+        return allowedRoots.some(rootPath => rootPath.toLowerCase() === normalizedBasePath.toLowerCase())
+            ? normalizedBasePath
+            : null;
+    } catch {
+        return null;
+    }
+}
+
+function getSafeChildPath(parentPath, childName) {
+    const parent = normalizePathForAccess(parentPath);
+    if (!parent) return null;
+
+    const child = path.resolve(parent, childName);
+    return isPathInside(child, parent) ? child : null;
+}
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
@@ -591,7 +620,15 @@ ipcMain.handle('library:createFolder', async (event, data) => {
     }
 
     const folderName = data.folderName.trim();
-    const baseDir = path.join(getDefaultLibraryPath(), folderName);
+    const targetRoot = getCreateFolderBasePath(data.basePath);
+    if (!targetRoot) {
+        return { success: false, message: "Lokasi folder tidak diizinkan." };
+    }
+
+    const baseDir = getSafeChildPath(targetRoot, folderName);
+    if (!baseDir) {
+        return { success: false, message: "Lokasi folder tidak valid." };
+    }
     
     if (fs.existsSync(baseDir)) {
         return { success: false, message: "Folder dengan nama tersebut sudah ada!" };

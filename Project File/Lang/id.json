@@ -67,6 +67,8 @@
     "lbl_title": "Judul",
     "lbl_folder_name": "Nama Folder / Judul Seri",
     "ph_folder_name": "Misal: Naruto",
+    "lbl_folder_location": "Lokasi",
+    "folder_location_default": "Pustaka KeiYomi (Default)",
     "lbl_author": "Penulis",
     "lbl_cover": "Sampul Buku (Opsional)",
     "lbl_cover_edit": "Sampul Buku",
