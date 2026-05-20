@@ -1300,6 +1300,7 @@ function renderLibrarySorted() {
         }
 
         function showReaderLoadingMessage(fileName) {
+            hideReaderLoadingMessage();
             const loading = document.createElement('div');
             loading.className = 'reader-loading-message';
             loading.id = 'reader-loading-message';
@@ -1310,7 +1311,8 @@ function renderLibrarySorted() {
                     <div class="reader-loading-subtitle">${escapeHtml(fileName)}</div>
                 </div>
             `;
-            reader.appendChild(loading);
+            const mainContent = document.querySelector('.main-content');
+            (mainContent || document.body).appendChild(loading);
         }
 
         function hideReaderLoadingMessage() {
@@ -1371,12 +1373,27 @@ function renderLibrarySorted() {
             document.querySelectorAll('.page-placeholder.search-hit').forEach(page => page.classList.remove('search-hit'));
             renderPdfSearchHighlight(match);
 
-            const readerPaddingTop = parseInt(window.getComputedStyle(reader).paddingTop, 10) || 0;
             reader.scrollTo({
-                top: pageElement.offsetTop - readerPaddingTop - 12,
+                top: getReaderSearchScrollTop(match, pageElement),
                 behavior: 'smooth'
             });
             updateReaderSearchStatus();
+        }
+
+        function getReaderSearchScrollTop(match, pageElement) {
+            const readerPaddingTop = parseInt(window.getComputedStyle(reader).paddingTop, 10) || 0;
+            const surface = pageElement.querySelector('.pdf-page-surface');
+            const firstHighlightTop = match.highlights.length > 0
+                ? Math.min(...match.highlights.map(item => item.top))
+                : 0;
+
+            if (!surface) {
+                return pageElement.offsetTop - readerPaddingTop - 12;
+            }
+
+            const highlightOffset = (firstHighlightTop / 100) * surface.offsetHeight;
+            const preferredViewportPosition = Math.max(90, reader.clientHeight * 0.38);
+            return pageElement.offsetTop + surface.offsetTop + highlightOffset - preferredViewportPosition;
         }
 
         function runReaderSearch() {

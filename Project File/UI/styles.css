@@ -192,11 +192,11 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 .reader-container { flex-grow: 1; overflow-y: auto; display: none; flex-direction: column; align-items: center; padding: 40px; background-color: var(--bg-primary); scroll-behavior: smooth; animation: fadeIn 0.3s ease-out; position: relative; }
 .reader-container.reader-loading { overflow: hidden !important; cursor: progress; }
 .reader-loading-message {
-    position: fixed;
-    top: 50%;
+    position: absolute;
+    top: calc(64px + ((100% - 64px) * 0.87));
     left: 50%;
     transform: translate(-50%, -50%);
-    z-index: 40;
+    z-index: 120;
     width: min(360px, 86%);
     min-height: 0;
     margin: 0;
