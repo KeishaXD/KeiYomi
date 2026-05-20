@@ -190,6 +190,47 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 
 /* Reader Area (Webtoon Style) */
 .reader-container { flex-grow: 1; overflow-y: auto; display: none; flex-direction: column; align-items: center; padding: 40px; background-color: var(--bg-primary); scroll-behavior: smooth; animation: fadeIn 0.3s ease-out; position: relative; }
+.reader-container.reader-loading { overflow: hidden !important; cursor: progress; }
+.reader-loading-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 40;
+    width: min(360px, 86%);
+    min-height: 0;
+    margin: 0;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.74);
+    border: 1px solid rgba(226, 232, 240, 0.68);
+    border-radius: 999px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: var(--text-primary);
+    pointer-events: none;
+}
+.reader-loading-spinner {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    border: 3px solid rgba(148, 163, 184, 0.45);
+    border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+}
+.reader-loading-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 2px; }
+.reader-loading-subtitle { color: var(--text-secondary); font-size: 0.76rem; max-width: 230px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-theme="dark"] .reader-loading-message {
+    background: rgba(30, 41, 59, 0.72);
+    border-color: rgba(71, 85, 105, 0.72);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 .reader-container::-webkit-scrollbar { width: 10px; }
 .reader-container::-webkit-scrollbar-track { background: var(--bg-primary); }
 .reader-container::-webkit-scrollbar-thumb { background-color: var(--text-secondary); border-radius: 5px; border: 2px solid var(--bg-primary); }

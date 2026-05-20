@@ -151,6 +151,7 @@
     "settings_night_mode_intensity": "Intensitas Cahaya Malam (Cold - Warm)",
     "reader_night_mode_enter": "Aktifkan Mode Malam",
     "reader_night_mode_exit": "Matikan Mode Malam",
+    "reader_loading_title": "Sedang memuat bacaan...",
     "reader_search": "Cari Kalimat",
     "reader_search_placeholder": "Cari kalimat...",
     "reader_search_unavailable": "Pencarian teks hanya tersedia untuk PDF yang punya lapisan teks.",

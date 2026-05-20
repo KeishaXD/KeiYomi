@@ -1239,40 +1239,56 @@ function renderLibrarySorted() {
 
             cleanupObjectUrls();
             reader.innerHTML = '';
+            showReaderLoadingMessage(fileName);
+            reader.scrollTop = 0;
+            isReaderLoading = true;
+            reader.classList.add('reader-loading');
+            reader.style.overflowY = 'hidden';
             resetReaderSearch();
             updateReaderModeUI();
 
             updateFullscreenButton(); // Set initial state for fullscreen button
             const chapterNavigationContext = getChapterNavigationContext(filePath);
-            renderChapterNavigation(chapterNavigationContext, 'top');
+            try {
+                renderChapterNavigation(chapterNavigationContext, 'top');
 
-            if (ext === '.pdf') {
-                await renderPDF(filePath, myRenderId);
-            } else if (ext === '.cbz' || ext === '.zip') {
-                await renderCBZ(filePath, myRenderId);
-            } else if (ext === '.epub') {
-                await renderEPUB(filePath, myRenderId);
-            } else if (ext === '.txt') {
-                await renderTXT(filePath, myRenderId);
-            } else {
-                renderSimulasiWebtoon(ext, myRenderId);
-            }
-            
-            reader.style.overflowY = '';
+                if (ext === '.pdf') {
+                    await renderPDF(filePath, myRenderId);
+                } else if (ext === '.cbz' || ext === '.zip') {
+                    await renderCBZ(filePath, myRenderId);
+                } else if (ext === '.epub') {
+                    await renderEPUB(filePath, myRenderId);
+                } else if (ext === '.txt') {
+                    await renderTXT(filePath, myRenderId);
+                } else {
+                    renderSimulasiWebtoon(ext, myRenderId);
+                }
 
-            if (myRenderId !== currentRenderId) return;
+                if (myRenderId !== currentRenderId) return;
 
-            renderChapterNavigation(chapterNavigationContext, 'bottom');
+                renderChapterNavigation(chapterNavigationContext, 'bottom');
 
-            if (historyItem.lastPage && historyItem.lastPage > 1) {
-                setTimeout(() => {
+                if (historyItem.lastPage && historyItem.lastPage > 1) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    if (myRenderId !== currentRenderId) return;
                     const pageElement = document.querySelector(`.page-placeholder[data-page="${historyItem.lastPage}"]`);
                     if (pageElement) {
                         // Menggunakan scrollTop manual agar tidak menggeser seluruh UI
                         const readerPaddingTop = parseInt(window.getComputedStyle(reader).paddingTop, 10) || 0;
                         reader.scrollTop = pageElement.offsetTop - readerPaddingTop;
                     }
-                }, 200); // Beri sedikit jeda lebih lama agar layout stabil
+                }
+            } finally {
+                if (myRenderId === currentRenderId) {
+                    hideReaderLoadingMessage();
+                    setTimeout(() => {
+                        if (myRenderId !== currentRenderId) return;
+                        isReaderLoading = false;
+                        reader.classList.remove('reader-loading');
+                        reader.style.overflowY = '';
+                        updateScrollProgress();
+                    }, 250);
+                }
             }
 
             if (!hasSeenFullscreenTip) {
@@ -1281,6 +1297,25 @@ function renderLibrarySorted() {
                     showToast(t('msg_reader_tips') || "Tip: Tekan F1 untuk Layar Penuh, dan F2 untuk Mode Cahaya Malam (Eye Comfort).", 5000);
                 }, 800); // Munculkan pop up setelah buku termuat
             }
+        }
+
+        function showReaderLoadingMessage(fileName) {
+            const loading = document.createElement('div');
+            loading.className = 'reader-loading-message';
+            loading.id = 'reader-loading-message';
+            loading.innerHTML = `
+                <div class="reader-loading-spinner"></div>
+                <div>
+                    <div class="reader-loading-title">${escapeHtml(t('reader_loading_title') || 'Sedang memuat bacaan...')}</div>
+                    <div class="reader-loading-subtitle">${escapeHtml(fileName)}</div>
+                </div>
+            `;
+            reader.appendChild(loading);
+        }
+
+        function hideReaderLoadingMessage() {
+            const loading = document.getElementById('reader-loading-message');
+            if (loading) loading.remove();
         }
 
         function resetReaderSearch() {
@@ -2018,6 +2053,7 @@ function renderLibrarySorted() {
         reader.addEventListener('scroll', () => {
             updateScrollProgress();
 
+            if (isReaderLoading) return;
             if (!currentBookPath) return;
 
             // --- FIX: More robust page detection to prevent off-by-one errors ---
@@ -2351,6 +2387,7 @@ function renderLibrarySorted() {
             }
 
             if (reader.style.display === 'flex') {
+                if (isReaderLoading) return;
                 const scrollAmount = 400;
                 if (e.key === 'ArrowDown') reader.scrollBy({ top: scrollAmount, behavior: 'smooth' });
                 else if (e.key === 'ArrowUp') reader.scrollBy({ top: -scrollAmount, behavior: 'smooth' });

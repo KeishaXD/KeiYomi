@@ -112,6 +112,7 @@ let saveTimeout;
 let nightModeSaveTimeout;
 let nightModeSettingsPreview = false;
 let currentRenderId = 0;
+let isReaderLoading = false;
 let activeObjectUrls = [];
 let hasSeenFullscreenTip = false;
 
