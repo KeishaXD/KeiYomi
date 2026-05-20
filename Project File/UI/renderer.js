@@ -1,7 +1,17 @@
 // --- NAVIGATION LOGIC ---
 let currentView = 'library'; 
+let previousViewBeforeSettings = 'library';
+let returnToReaderFromSettings = false;
+let currentReaderTitle = '';
 
 function switchTab(tabName) {
+    if (tabName === 'settings') {
+        previousViewBeforeSettings = currentView === 'settings' ? previousViewBeforeSettings : currentView;
+        returnToReaderFromSettings = reader.style.display === 'flex';
+    } else {
+        returnToReaderFromSettings = false;
+    }
+
     currentView = tabName;
     document.querySelectorAll('.view-section, .reader-container').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -42,6 +52,7 @@ function switchTab(tabName) {
         document.querySelector('.nav-item:nth-child(5)').classList.add('active');
         pageTitle.innerText = t('page_settings');
         searchInput.style.display = 'none';
+        btnBack.style.display = 'block';
         
         document.getElementById('setting-username').value = userSettings.username;
         document.getElementById('setting-theme').value = userSettings.theme;
@@ -52,6 +63,19 @@ function switchTab(tabName) {
         renderCustomFolders();
         renderIgnoredPaths();
     }
+}
+
+function restoreReaderFromSettings() {
+    document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    reader.style.display = 'flex';
+    pageTitle.innerText = currentReaderTitle || path.basename(currentBookPath || '');
+    btnBack.style.display = 'block';
+    searchInput.style.display = 'none';
+    readerSettingsContainer.style.display = 'block';
+    scrollProgressIndicator.classList.add('visible');
+    btnRefresh.style.display = 'none';
+    currentView = previousViewBeforeSettings || 'library';
 }
 
 // --- SORTING LOGIC ---
@@ -110,6 +134,15 @@ function renderLibrarySorted() {
 
         // --- BACK BUTTON LOGIC ---
         btnBack.addEventListener('click', () => {
+            if (currentView === 'settings') {
+                if (returnToReaderFromSettings && currentBookPath) {
+                    restoreReaderFromSettings();
+                } else {
+                    switchTab(previousViewBeforeSettings || 'library');
+                }
+                return;
+            }
+
             if (reader.style.display === 'flex') {
                 let book = libraryData.find(b => {
                     if (b.path === currentBookPath) return true;
@@ -1182,6 +1215,7 @@ function renderLibrarySorted() {
             document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
             reader.style.display = 'flex';
             pageTitle.innerText = fileName;
+            currentReaderTitle = fileName;
             
             btnBack.style.display = 'block';
             searchInput.style.display = 'none';
