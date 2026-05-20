@@ -864,7 +864,7 @@ function renderLibrarySorted() {
         function inferManualBookType(filePath) {
             const ext = path.extname(filePath).toLowerCase();
             if (ext === '.txt' || ext === '.md' || ext === '.epub') return 'Novel';
-            if (ext === '.cbz' || ext === '.zip') return 'Manga';
+            if (ext === '.cbz' || ext === '.zip' || ext === '.cbr') return 'Manga';
             return 'Artikel';
         }
 
@@ -1261,6 +1261,8 @@ function renderLibrarySorted() {
                     await renderPDF(filePath, myRenderId);
                 } else if (ext === '.cbz' || ext === '.zip') {
                     await renderCBZ(filePath, myRenderId);
+                } else if (ext === '.cbr') {
+                    await renderCBR(filePath, myRenderId);
                 } else if (ext === '.epub') {
                     await renderEPUB(filePath, myRenderId);
                 } else if (ext === '.md') {
@@ -1885,6 +1887,46 @@ function renderLibrarySorted() {
                 }
             } catch (error) {
                 reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat CBZ/ZIP: ${escapeHtml(error.message)}</div>`;
+            }
+        }
+
+        async function renderCBR(filePath, renderId) {
+            try {
+                const imageFiles = await ipcRenderer.invoke('cbr:extract', filePath);
+                if (renderId !== currentRenderId) return;
+
+                if (!Array.isArray(imageFiles) || imageFiles.length === 0) {
+                    reader.innerHTML = '<div style="padding:20px; color:red;">Tidak ada gambar ditemukan di CBR.</div>';
+                    return;
+                }
+
+                for (let i = 0; i < imageFiles.length; i++) {
+                    if (renderId !== currentRenderId) return;
+
+                    const item = imageFiles[i];
+                    const bytes = item.data instanceof Uint8Array ? item.data : new Uint8Array(item.data);
+                    const imageUrl = rememberObjectUrl(URL.createObjectURL(new Blob([bytes], { type: item.mime || 'application/octet-stream' })));
+
+                    const div = document.createElement('div');
+                    div.className = 'page-placeholder';
+                    div.setAttribute('data-page', i + 1);
+                    div.style.height = 'auto';
+                    div.style.background = 'transparent';
+                    div.style.boxShadow = 'none';
+                    div.innerText = '';
+
+                    const img = document.createElement('img');
+                    img.src = imageUrl;
+                    img.alt = path.basename(item.name || `Halaman ${i + 1}`);
+                    img.style.maxWidth = '100%';
+                    img.style.height = 'auto';
+                    img.style.display = 'block';
+
+                    div.appendChild(img);
+                    reader.appendChild(div);
+                }
+            } catch (error) {
+                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat CBR: ${escapeHtml(error.message)}</div>`;
             }
         }
 

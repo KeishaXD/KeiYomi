@@ -11,6 +11,7 @@ const invokeChannels = new Set([
     'data:backup',
     'data:restore',
     'file:read',
+    'cbr:extract',
     'lang:load',
     'library:createFolder',
     'dialog:deleteBook',

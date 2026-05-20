@@ -9,7 +9,7 @@ KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, 
 
 ## Fitur Utama
 
-- **Dukungan Format:** Membaca file **PDF**, **EPUB**, **CBZ**, **ZIP**, dan **TXT**.
+- **Dukungan Format:** Membaca file **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, dan **MD**.
 - **Mode Baca Fleksibel:**
   - **Mode Webtoon:** Scroll vertikal tanpa putus, cocok untuk Manhwa/Webtoon.
   - **Mode Normal:** Tampilan per halaman, cocok untuk PDF/dokumen.
@@ -34,6 +34,8 @@ KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, 
 - HTML5, CSS3, JavaScript
 - PDF.js untuk render PDF
 - JSZip untuk ekstraksi CBZ/ZIP/EPUB
+- node-unrar-js untuk ekstraksi CBR/RAR
+- Marked untuk render Markdown
 
 ## Cara Menjalankan (Development)
 
@@ -160,6 +162,7 @@ KeiYomi/
     +-- cover.jpg       (Gambar sampul)
     +-- Chapter 1.pdf
     +-- Chapter 2.cbz
+    +-- Chapter 3.cbr
     +-- ...
 ```
 

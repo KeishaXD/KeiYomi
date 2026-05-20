@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, nativeTheme, net, nativeImage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { createExtractorFromData } = require('../vendor/node-unrar-js');
 
 const appName = 'KeiYomi';
 app.setName(appName);
@@ -12,7 +13,8 @@ if (!gotSingleInstanceLock) {
     app.quit();
 }
 
-const allowedDocumentExts = new Set(['.pdf', '.epub', '.cbz', '.zip', '.txt', '.md']);
+const allowedDocumentExts = new Set(['.pdf', '.epub', '.cbz', '.zip', '.cbr', '.txt', '.md']);
+const cbrImageExts = new Set(['.jpg', '.jpeg', '.png', '.gif', '.webp']);
 const allowedImageExts = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.svg', '.avif', '.jfif', '.ico']);
 const allowedPickedFiles = new Set();
 const allowedPickedDirs = new Set();
@@ -35,6 +37,19 @@ function isSafeExternalUrl(url) {
     } catch {
         return false;
     }
+}
+
+function toArrayBuffer(buffer) {
+    return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+}
+
+function getImageMimeType(filePath) {
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+    if (ext === '.png') return 'image/png';
+    if (ext === '.gif') return 'image/gif';
+    if (ext === '.webp') return 'image/webp';
+    return 'application/octet-stream';
 }
 
 function getUserConfigPath() {
@@ -376,7 +391,7 @@ ipcMain.handle('dialog:openFile', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
         properties: ['openFile'],
         filters: [
-            { name: 'Documents', extensions: ['pdf', 'epub', 'cbz', 'zip', 'txt', 'md'] }
+            { name: 'Documents', extensions: ['pdf', 'epub', 'cbz', 'zip', 'cbr', 'txt', 'md'] }
         ]
     });
     if (canceled) {
@@ -558,6 +573,41 @@ ipcMain.handle('file:read', async (event, filePath, encoding) => {
     return fs.promises.readFile(normalized, encoding);
 });
 
+ipcMain.handle('cbr:extract', async (event, filePath) => {
+    if (!isAllowedReadableFile(filePath, allowedDocumentExts) || path.extname(filePath).toLowerCase() !== '.cbr') {
+        throw new Error('Akses file CBR tidak diizinkan.');
+    }
+
+    const normalized = normalizePathForAccess(filePath);
+    const [archiveBuffer, wasmBuffer] = await Promise.all([
+        fs.promises.readFile(normalized),
+        fs.promises.readFile(path.join(__dirname, '../vendor/node-unrar-js/js/unrar.wasm'))
+    ]);
+
+    const extractor = await createExtractorFromData({
+        data: toArrayBuffer(archiveBuffer),
+        wasmBinary: toArrayBuffer(wasmBuffer)
+    });
+
+    const extracted = extractor.extract({
+        files: fileHeader => {
+            if (fileHeader.flags && (fileHeader.flags.directory || fileHeader.flags.encrypted)) return false;
+            return cbrImageExts.has(path.extname(fileHeader.name || '').toLowerCase());
+        }
+    });
+
+    const images = Array.from(extracted.files)
+        .filter(file => file.extraction && cbrImageExts.has(path.extname(file.fileHeader.name || '').toLowerCase()))
+        .map(file => ({
+            name: file.fileHeader.name,
+            mime: getImageMimeType(file.fileHeader.name),
+            data: file.extraction
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+
+    return images;
+});
+
 ipcMain.handle('lang:load', async () => {
     const idPath = path.join(__dirname, '../Lang/id.json');
     const enPath = path.join(__dirname, '../Lang/en.json');
@@ -717,7 +767,7 @@ ipcMain.handle('library:scanLocal', async (event, customFolders = []) => {
                 author: "Developer (KeishaXD)",
                 cover: usedCoverName,
                 genre: "Guide",
-                synopsis: "(English) This is an example of a folder format. Place the info.json, cover.svg, and book files (PDF/ZIP) in one folder to be detected automatically.\n\n (Indonesia) Ini adalah contoh format folder. Letakkan file info.json, cover.svg, dan file buku (PDF/ZIP) di dalam satu folder agar terdeteksi otomatis.",
+                synopsis: "(English) This is an example of a folder format. Place the info.json, cover.svg, and book files (PDF/CBZ/CBR/ZIP) in one folder to be detected automatically.\n\n (Indonesia) Ini adalah contoh format folder. Letakkan file info.json, cover.svg, dan file buku (PDF/CBZ/CBR/ZIP) di dalam satu folder agar terdeteksi otomatis.",
                 type: "Artikel",
                 date: "2024-06-01"
         };
@@ -752,7 +802,8 @@ KeiYomi/
     ├── cover.svg              <-- OPTIONAL: Cover image (can be .png/.jpeg)
     ├── Chapter 1.pdf          <-- Book content file (Chapter 1)
     ├── Chapter 2.cbz          <-- Book content file (Chapter 2)
-    └── Vol 3.zip              <-- Book content file (Chapter 3)
+    ├── Chapter 3.cbr          <-- Book content file (Chapter 3)
+    └── Vol 4.zip              <-- Book content file (Chapter 4)
 
 -------------------------------------------------------
 EXAMPLE CONTENT OF info.json:
@@ -785,7 +836,8 @@ KeiYomi/
     ├── cover.svg              <-- OPSIONAL: Gambar sampul (bisa .png/.jpeg)
     ├── Chapter 1.pdf          <-- File isi buku (Chapter 1)
     ├── Chapter 2.cbz          <-- File isi buku (Chapter 2)
-    └── Vol 3.zip              <-- File isi buku (Chapter 3)
+    ├── Chapter 3.cbr          <-- File isi buku (Chapter 3)
+    └── Vol 4.zip              <-- File isi buku (Chapter 4)
 
 -------------------------------------------------------
 CONTOH ISI FILE info.json:
@@ -811,7 +863,7 @@ Catatan:
     }
 
     const results = [];
-    const supportedExts = ['.pdf', '.epub', '.cbz', '.zip', '.txt', '.md'];
+    const supportedExts = ['.pdf', '.epub', '.cbz', '.zip', '.cbr', '.txt', '.md'];
 
     const safeCustomFolders = Array.isArray(customFolders)
         ? customFolders.filter(folderPath => isKnownAllowedPath(folderPath))
