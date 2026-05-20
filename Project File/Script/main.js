@@ -341,9 +341,9 @@ function createWindow() {
         console.error(`Preload error (${preloadPath}):`, error);
     });
 
-    mainWindow.webContents.on('console-message', (event, details) => {
-        if (details.level >= 3) {
-            console.error(`[renderer:${details.level}] ${details.message} (${details.sourceId}:${details.lineNumber})`);
+    mainWindow.webContents.on('console-message', (event) => {
+        if (event.level >= 3) {
+            console.error(`[renderer:${event.level}] ${event.message} (${event.sourceId}:${event.lineNumber})`);
         }
     });
 
