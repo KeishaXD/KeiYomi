@@ -74,7 +74,7 @@ function restoreReaderFromSettings() {
     btnBack.style.display = 'block';
     searchInput.style.display = 'none';
     readerSettingsContainer.style.display = 'block';
-    scrollProgressIndicator.classList.add('visible');
+    updateReadingProgressVisibility();
     updatePageJumpControl();
     btnRefresh.style.display = 'none';
     currentView = previousViewBeforeSettings || 'library';
@@ -1223,7 +1223,7 @@ function renderLibrarySorted() {
             btnBack.style.display = 'block';
             searchInput.style.display = 'none';
             readerSettingsContainer.style.display = 'block';
-    scrollProgressIndicator.classList.add('visible');
+            updateReadingProgressVisibility();
             updatePageJumpControl();
             btnRefresh.style.display = 'none';
 
@@ -2098,7 +2098,7 @@ function renderLibrarySorted() {
 
             const pages = getReaderPages();
             const totalPages = pages.length;
-            if (reader.style.display !== 'flex' || totalPages === 0) {
+            if (!userSettings.showPageSlider || reader.style.display !== 'flex' || totalPages === 0) {
                 pageJumpControl.classList.remove('visible');
                 return;
             }
@@ -2117,6 +2117,32 @@ function renderLibrarySorted() {
             if (pageJumpPrev) pageJumpPrev.disabled = currentPage <= 1;
             if (pageJumpNext) pageJumpNext.disabled = currentPage >= totalPages;
             pageJumpControl.classList.add('visible');
+        }
+
+        function updateReadingProgressVisibility() {
+            if (!scrollProgressIndicator) return;
+            const shouldShow = userSettings.showReadingProgress && reader.style.display === 'flex';
+            scrollProgressIndicator.classList.toggle('visible', shouldShow);
+        }
+
+        function updateReaderControlButtons() {
+            if (togglePageSlider) {
+                const span = togglePageSlider.querySelector('span');
+                togglePageSlider.classList.toggle('active', userSettings.showPageSlider);
+                togglePageSlider.setAttribute('aria-pressed', String(userSettings.showPageSlider));
+                if (span) {
+                    span.innerText = userSettings.showPageSlider ? 'Sembunyikan slider halaman' : 'Tampilkan slider halaman';
+                }
+            }
+
+            if (toggleReadingProgress) {
+                const span = toggleReadingProgress.querySelector('span');
+                toggleReadingProgress.classList.toggle('active', userSettings.showReadingProgress);
+                toggleReadingProgress.setAttribute('aria-pressed', String(userSettings.showReadingProgress));
+                if (span) {
+                    span.innerText = userSettings.showReadingProgress ? 'Sembunyikan persentase baca' : 'Tampilkan persentase baca';
+                }
+            }
         }
 
         function goToPage(pageNumber, behavior = 'auto') {
@@ -2144,6 +2170,9 @@ function renderLibrarySorted() {
         }
 
         function updateScrollProgress() {
+            updateReadingProgressVisibility();
+            if (!userSettings.showReadingProgress) return;
+
             const { scrollTop, scrollHeight, clientHeight } = reader;
             if (scrollHeight > clientHeight) {
                 const scrollPercent = Math.round((scrollTop / (scrollHeight - clientHeight)) * 100);
@@ -2206,6 +2235,27 @@ function renderLibrarySorted() {
                 goToPage(getCurrentReaderPage() + 1);
             });
         }
+
+        if (togglePageSlider) {
+            togglePageSlider.addEventListener('click', () => {
+                userSettings.showPageSlider = !userSettings.showPageSlider;
+                updateReaderControlButtons();
+                updatePageJumpControl();
+                saveData();
+            });
+        }
+
+        if (toggleReadingProgress) {
+            toggleReadingProgress.addEventListener('click', () => {
+                userSettings.showReadingProgress = !userSettings.showReadingProgress;
+                updateReaderControlButtons();
+                updateReadingProgressVisibility();
+                updateScrollProgress();
+                saveData();
+            });
+        }
+
+        updateReaderControlButtons();
 
         function renderExplore() {
             const genres = new Set();
@@ -2366,7 +2416,7 @@ function renderLibrarySorted() {
             // 2. Kosongkan memori sementara agar data lama tidak ter-save ulang
             libraryData = [];
             riwayatBacaan = [];
-            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light' };
+            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light', showPageSlider: true, showReadingProgress: true };
 
             const success = await ipcRenderer.invoke('data:clear');
             if (success) {

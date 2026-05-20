@@ -52,6 +52,8 @@ const pageJumpCurrent = document.getElementById('page-jump-current');
 const pageJumpTotal = document.getElementById('page-jump-total');
 const pageJumpPrev = document.getElementById('page-jump-prev');
 const pageJumpNext = document.getElementById('page-jump-next');
+const togglePageSlider = document.getElementById('toggle-page-slider');
+const toggleReadingProgress = document.getElementById('toggle-reading-progress');
 
 // Modal Elements
 const modalAddBook = document.getElementById('add-book-modal');
@@ -227,7 +229,7 @@ function showToast(message, duration = 4000) {
 let libraryData = [];
 let riwayatBacaan = [];
 let isWebtoonMode = true;
-let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light' };
+let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light', showPageSlider: true, showReadingProgress: true };
 
 function isManualImportedBook(book) {
     return book && (book.importSource === 'manual' || book.isManualImport === true || !book.structureType);
@@ -258,6 +260,8 @@ async function loadData() {
         userSettings.nightModeEnabled = data.nightModeEnabled || false;
         userSettings.nightModeIntensity = data.nightModeIntensity !== undefined ? data.nightModeIntensity : 50;
         userSettings.pdfQualityMode = data.pdfQualityMode === 'original' ? 'original' : 'light';
+        userSettings.showPageSlider = data.showPageSlider !== false;
+        userSettings.showReadingProgress = data.showReadingProgress !== false;
     } else {
         libraryData = [];
         riwayatBacaan = [];
@@ -268,6 +272,7 @@ async function loadData() {
     if (settingPdfQuality) settingPdfQuality.value = userSettings.pdfQualityMode;
     applyNightMode();
     updateNightModeButton();
+    updateReaderControlButtons();
 }
 
 async function saveData() {
@@ -282,7 +287,9 @@ async function saveData() {
         ignoredPaths: userSettings.ignoredPaths,
         nightModeEnabled: userSettings.nightModeEnabled,
         nightModeIntensity: userSettings.nightModeIntensity,
-        pdfQualityMode: userSettings.pdfQualityMode
+        pdfQualityMode: userSettings.pdfQualityMode,
+        showPageSlider: userSettings.showPageSlider,
+        showReadingProgress: userSettings.showReadingProgress
     };
     return await ipcRenderer.invoke('data:save', data);
 }
