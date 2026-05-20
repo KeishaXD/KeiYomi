@@ -12,7 +12,7 @@ if (!gotSingleInstanceLock) {
     app.quit();
 }
 
-const allowedDocumentExts = new Set(['.pdf', '.epub', '.cbz', '.zip', '.txt']);
+const allowedDocumentExts = new Set(['.pdf', '.epub', '.cbz', '.zip', '.txt', '.md']);
 const allowedImageExts = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.svg', '.avif', '.jfif', '.ico']);
 const allowedPickedFiles = new Set();
 const allowedPickedDirs = new Set();
@@ -376,7 +376,7 @@ ipcMain.handle('dialog:openFile', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
         properties: ['openFile'],
         filters: [
-            { name: 'Documents', extensions: ['pdf', 'epub', 'cbz', 'zip', 'txt'] }
+            { name: 'Documents', extensions: ['pdf', 'epub', 'cbz', 'zip', 'txt', 'md'] }
         ]
     });
     if (canceled) {
@@ -811,7 +811,7 @@ Catatan:
     }
 
     const results = [];
-    const supportedExts = ['.pdf', '.epub', '.cbz', '.zip', '.txt'];
+    const supportedExts = ['.pdf', '.epub', '.cbz', '.zip', '.txt', '.md'];
 
     const safeCustomFolders = Array.isArray(customFolders)
         ? customFolders.filter(folderPath => isKnownAllowedPath(folderPath))

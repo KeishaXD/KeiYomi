@@ -863,7 +863,7 @@ function renderLibrarySorted() {
 
         function inferManualBookType(filePath) {
             const ext = path.extname(filePath).toLowerCase();
-            if (ext === '.txt' || ext === '.epub') return 'Novel';
+            if (ext === '.txt' || ext === '.md' || ext === '.epub') return 'Novel';
             if (ext === '.cbz' || ext === '.zip') return 'Manga';
             return 'Artikel';
         }
@@ -1263,6 +1263,8 @@ function renderLibrarySorted() {
                     await renderCBZ(filePath, myRenderId);
                 } else if (ext === '.epub') {
                     await renderEPUB(filePath, myRenderId);
+                } else if (ext === '.md') {
+                    await renderMD(filePath, myRenderId);
                 } else if (ext === '.txt') {
                     await renderTXT(filePath, myRenderId);
                 } else {
@@ -2052,6 +2054,95 @@ function renderLibrarySorted() {
                 reader.appendChild(div);
             } catch (error) {
                 reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat TXT: ${escapeHtml(error.message)}</div>`;
+            }
+        }
+
+        function getDirectoryName(filePath) {
+            const text = String(filePath || '');
+            const separatorIndex = Math.max(text.lastIndexOf('\\'), text.lastIndexOf('/'));
+            return separatorIndex >= 0 ? text.slice(0, separatorIndex) : '';
+        }
+
+        function toFileUrl(filePath) {
+            const normalized = String(filePath || '').replace(/\\/g, '/');
+            const prefix = normalized.startsWith('/') ? 'file://' : 'file:///';
+            return prefix + normalized.split('/').map(part => encodeURIComponent(part)).join('/');
+        }
+
+        function resolveMarkdownResource(baseDir, resourcePath) {
+            const value = String(resourcePath || '').trim();
+            if (!value || /^(https?:|data:|file:|mailto:|#)/i.test(value)) return value;
+            const normalized = value.split('#')[0].replace(/\\/g, '/');
+            const hash = value.includes('#') ? value.slice(value.indexOf('#')) : '';
+            const resolved = path.isAbsolute(normalized) ? normalized : path.join(baseDir, normalized);
+            return toFileUrl(resolved) + hash;
+        }
+
+        function sanitizeMarkdownContent(root, baseDir) {
+            const blockedTags = new Set(['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta']);
+            const allowedAttrs = new Set(['href', 'src', 'alt', 'title', 'colspan', 'rowspan', 'class']);
+
+            Array.from(root.querySelectorAll('*')).forEach(el => {
+                const tagName = el.tagName.toLowerCase();
+                if (blockedTags.has(tagName)) {
+                    el.remove();
+                    return;
+                }
+
+                Array.from(el.attributes).forEach(attr => {
+                    const name = attr.name.toLowerCase();
+                    if (name.startsWith('on') || !allowedAttrs.has(name)) {
+                        el.removeAttribute(attr.name);
+                    }
+                });
+
+                if (tagName === 'img') {
+                    const src = el.getAttribute('src') || '';
+                    if (/^javascript:/i.test(src)) {
+                        el.removeAttribute('src');
+                    } else {
+                        el.setAttribute('src', resolveMarkdownResource(baseDir, src));
+                    }
+                }
+
+                if (tagName === 'a') {
+                    const href = el.getAttribute('href') || '';
+                    if (/^javascript:/i.test(href)) {
+                        el.removeAttribute('href');
+                    } else if (href) {
+                        el.setAttribute('href', resolveMarkdownResource(baseDir, href));
+                        el.setAttribute('target', '_blank');
+                        el.setAttribute('rel', 'noopener noreferrer');
+                    }
+                }
+            });
+        }
+
+        function markdownToHtml(markdown, filePath) {
+            const markedParser = window.marked && (window.marked.marked || window.marked);
+            const source = String(markdown || '');
+            const rawHtml = markedParser && typeof markedParser.parse === 'function'
+                ? markedParser.parse(source, { breaks: false, gfm: true })
+                : `<pre><code>${escapeHtml(source)}</code></pre>`;
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(rawHtml, 'text/html');
+            sanitizeMarkdownContent(doc.body, getDirectoryName(filePath));
+            return doc.body.innerHTML;
+        }
+
+        async function renderMD(filePath, renderId) {
+            try {
+                const data = await fs.readFile(filePath, 'utf8');
+                if (renderId !== currentRenderId) return;
+
+                const div = document.createElement('div');
+                div.className = 'page-placeholder markdown-page';
+                div.setAttribute('data-page', 1);
+                div.style.height = 'auto';
+                div.innerHTML = markdownToHtml(data, filePath);
+                reader.appendChild(div);
+            } catch (error) {
+                reader.innerHTML = `<div style="padding:20px; color:red;">Gagal memuat MD: ${escapeHtml(error.message)}</div>`;
             }
         }
 
