@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, nativeTheme, net, nativeImage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { createExtractorFromData } = require('../vendor/node-unrar-js');
 
 const appName = 'KeiYomi';
@@ -430,6 +431,36 @@ ipcMain.handle('dialog:openDirectory', async () => {
     }
 });
 
+function writeOptimizedCover(sourcePath, destPath) {
+    let image = nativeImage.createFromPath(sourcePath);
+    const size = image.getSize();
+
+    if (image.isEmpty() || !size.width || !size.height) {
+        return false;
+    }
+
+    if (size.width > 320) {
+        image = image.resize({ width: 320 });
+    }
+
+    fs.writeFileSync(destPath, image.toJPEG(72));
+    return true;
+}
+
+function getCoverThumbnailPath(sourcePath) {
+    const stats = fs.statSync(sourcePath);
+    const hash = crypto
+        .createHash('sha1')
+        .update(`${sourcePath}|${stats.size}|${stats.mtimeMs}`)
+        .digest('hex');
+
+    return path.join(app.getPath('userData'), 'covers_cache', 'thumbs', `${hash}.jpg`);
+}
+
+function toFileUrl(filePath) {
+    return `file://${filePath.replace(/\\/g, '/')}`;
+}
+
 // --- FITUR BARU: KOMPRESI GAMBAR SAMPUL ---
 ipcMain.handle('image:compressCover', async (event, sourcePath) => {
     try {
@@ -445,25 +476,43 @@ ipcMain.handle('image:compressCover', async (event, sourcePath) => {
             fs.mkdirSync(coversDir, { recursive: true });
         }
 
-        // Gunakan nativeImage bawaan Electron untuk resize & kompresi
-        let image = nativeImage.createFromPath(sourcePath);
-        const size = image.getSize();
-        
-        // Resize ke lebar maksimal 400px agar ringan tapi tetap tajam
-        if (size.width > 400) {
-            image = image.resize({ width: 400 });
-        }
-
-        const buffer = image.toJPEG(80); // Kompresi kualitas 80%
         const fileName = `cover_${Date.now()}.jpg`;
         const destPath = path.join(coversDir, fileName);
-        
-        fs.writeFileSync(destPath, buffer);
+
+        const optimized = writeOptimizedCover(sourcePath, destPath);
+        if (!optimized) return sourcePath;
+
         rememberAllowedFile(destPath);
         return destPath;
     } catch (error) {
         console.error('Gagal mengkompresi gambar:', error);
         return sourcePath; // Fallback ke gambar asli jika gagal
+    }
+});
+
+ipcMain.handle('image:getCoverThumbnail', async (event, sourcePath) => {
+    try {
+        if (!sourcePath || !isAllowedReadableFile(sourcePath, allowedImageExts)) {
+            return null;
+        }
+
+        const ext = path.extname(sourcePath).toLowerCase();
+        if (ext === '.gif' || ext === '.svg') {
+            return toFileUrl(sourcePath);
+        }
+
+        const thumbPath = getCoverThumbnailPath(sourcePath);
+        if (!fs.existsSync(thumbPath)) {
+            fs.mkdirSync(path.dirname(thumbPath), { recursive: true });
+            const optimized = writeOptimizedCover(sourcePath, thumbPath);
+            if (!optimized) return toFileUrl(sourcePath);
+        }
+
+        rememberAllowedFile(thumbPath);
+        return toFileUrl(thumbPath);
+    } catch (error) {
+        console.error('Gagal membuat thumbnail sampul:', error);
+        return null;
     }
 });
 
@@ -695,8 +744,13 @@ ipcMain.handle('library:createFolder', async (event, data) => {
             }
 
             const ext = path.extname(data.cover);
-            coverFileName = `cover${ext}`;
-            fs.copyFileSync(data.cover, path.join(baseDir, coverFileName));
+            const optimizedCoverPath = path.join(baseDir, 'cover.jpg');
+            if (writeOptimizedCover(data.cover, optimizedCoverPath)) {
+                coverFileName = 'cover.jpg';
+            } else {
+                coverFileName = `cover${ext}`;
+                fs.copyFileSync(data.cover, path.join(baseDir, coverFileName));
+            }
         }
 
         const infoPath = path.join(baseDir, 'info.json');

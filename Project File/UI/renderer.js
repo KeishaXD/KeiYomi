@@ -3,6 +3,17 @@ let currentView = 'library';
 let previousViewBeforeSettings = 'library';
 let returnToReaderFromSettings = false;
 let currentReaderTitle = '';
+const bookCoverSrcCache = new WeakMap();
+const bookCoverThumbCache = new WeakMap();
+const gridHandlerState = new WeakSet();
+let searchRenderTimeout = null;
+let readerScrollFrame = null;
+let coverImageObserver = null;
+const coverThumbnailQueue = [];
+let activeCoverThumbnailJobs = 0;
+const GRID_BATCH_SIZE = 24;
+const BLANK_COVER_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+const MAX_COVER_THUMBNAIL_JOBS = 2;
 
 function switchTab(tabName) {
     if (tabName === 'settings') {
@@ -113,25 +124,28 @@ function renderLibrarySorted() {
 
         // --- SEARCH LOGIC ---
         searchInput.addEventListener('input', (e) => {
-            const keyword = e.target.value.toLowerCase();
-            if (currentView === 'library') {
-                renderLibrarySorted();
-            } else if (currentView === 'history') {
-                const filtered = riwayatBacaan.filter(b => 
-                    String(b.title || '').toLowerCase().includes(keyword) ||
-                    String(b.path || '').toLowerCase().includes(keyword)
-                );
-                renderHistoryList(filtered);
-            } else if (currentView === 'favorites') {
-                const filtered = libraryData.filter(b => b.isFavorite && b.title.toLowerCase().includes(keyword));
-                renderGrid(filtered, 'favorites-grid');
-            } else if (currentView === 'explore') {
-                const filtered = libraryData.filter(b => 
-                    b.title.toLowerCase().includes(keyword) || 
-                    (b.genre && b.genre.toLowerCase().includes(keyword))
-                );
-                renderGrid(filtered, 'explore-grid');
-            }
+            clearTimeout(searchRenderTimeout);
+            searchRenderTimeout = setTimeout(() => {
+                const keyword = e.target.value.toLowerCase();
+                if (currentView === 'library') {
+                    renderLibrarySorted();
+                } else if (currentView === 'history') {
+                    const filtered = riwayatBacaan.filter(b => 
+                        String(b.title || '').toLowerCase().includes(keyword) ||
+                        String(b.path || '').toLowerCase().includes(keyword)
+                    );
+                    renderHistoryList(filtered);
+                } else if (currentView === 'favorites') {
+                    const filtered = libraryData.filter(b => b.isFavorite && b.title.toLowerCase().includes(keyword));
+                    renderGrid(filtered, 'favorites-grid');
+                } else if (currentView === 'explore') {
+                    const filtered = libraryData.filter(b => 
+                        b.title.toLowerCase().includes(keyword) || 
+                        (b.genre && b.genre.toLowerCase().includes(keyword))
+                    );
+                    renderGrid(filtered, 'explore-grid');
+                }
+            }, 120);
         });
 
         // --- BACK BUTTON LOGIC ---
@@ -192,6 +206,101 @@ function renderLibrarySorted() {
             return Number.isFinite(numberValue) ? numberValue : 0;
         }
 
+        function getBookCoverInfo(book) {
+            const cache = bookCoverSrcCache.get(book);
+            if (cache && cache.cover === book.cover && cache.path === book.path) {
+                return cache;
+            }
+
+            let coverSrc = '';
+            let sourcePath = '';
+            if (book.cover) {
+                if (path.isAbsolute(book.cover)) {
+                    sourcePath = book.cover;
+                } else {
+                    sourcePath = path.join(book.path, book.cover);
+                }
+                coverSrc = sourcePath;
+                coverSrc = coverSrc.replace(/\\/g, '/');
+                if (!coverSrc.startsWith('file://')) coverSrc = `file://${coverSrc}`;
+                coverSrc = escapeHtml(coverSrc);
+            }
+
+            const info = { cover: book.cover, path: book.path, src: coverSrc, sourcePath };
+            bookCoverSrcCache.set(book, info);
+            return info;
+        }
+
+        function queueBookCoverThumbnailLoad(img, book) {
+            coverThumbnailQueue.push({ img, book });
+            runNextCoverThumbnailJob();
+        }
+
+        function runNextCoverThumbnailJob() {
+            while (activeCoverThumbnailJobs < MAX_COVER_THUMBNAIL_JOBS && coverThumbnailQueue.length > 0) {
+                const job = coverThumbnailQueue.shift();
+                if (!job.img.isConnected) continue;
+
+                activeCoverThumbnailJobs += 1;
+                loadBookCoverThumbnail(job.img, job.book)
+                    .finally(() => {
+                        activeCoverThumbnailJobs -= 1;
+                        runNextCoverThumbnailJob();
+                    });
+            }
+        }
+
+        function loadBookCoverThumbnail(img, book) {
+            const coverInfo = getBookCoverInfo(book);
+            if (!coverInfo.sourcePath) return Promise.resolve();
+
+            const cached = bookCoverThumbCache.get(book);
+            if (cached && cached.cover === book.cover && cached.path === book.path) {
+                if (cached.src) img.src = cached.src;
+                return Promise.resolve();
+            }
+
+            const token = `${Date.now()}-${Math.random()}`;
+            img.dataset.coverToken = token;
+
+            const request = ipcRenderer.invoke('image:getCoverThumbnail', coverInfo.sourcePath)
+                .then(src => {
+                    const finalSrc = src || coverInfo.src;
+                    bookCoverThumbCache.set(book, { cover: book.cover, path: book.path, src: finalSrc });
+                    if (img.isConnected && img.dataset.coverToken === token) {
+                        img.src = finalSrc;
+                    }
+                })
+                .catch(() => {
+                    bookCoverThumbCache.set(book, { cover: book.cover, path: book.path, src: coverInfo.src });
+                    if (img.isConnected && img.dataset.coverToken === token) {
+                        img.src = coverInfo.src;
+                    }
+                });
+
+            bookCoverThumbCache.set(book, { cover: book.cover, path: book.path, src: '', request });
+            return request;
+        }
+
+        function observeBookCoverImage(img, book) {
+            if (!coverImageObserver) {
+                coverImageObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (!entry.isIntersecting) return;
+                        const image = entry.target;
+                        coverImageObserver.unobserve(image);
+                        if (image.__book) {
+                            queueBookCoverThumbnailLoad(image, image.__book);
+                        }
+                    });
+                }, { root: null, rootMargin: '500px 0px', threshold: 0.01 });
+            }
+
+            img.__book = book;
+            coverImageObserver.observe(img);
+        }
+
+
         function rememberObjectUrl(url) {
             activeObjectUrls.push(url);
             return url;
@@ -205,37 +314,89 @@ function renderLibrarySorted() {
         function renderGrid(data, elementId) {
             const grid = document.getElementById(elementId);
             grid.innerHTML = '';
+            grid.__books = data;
+            grid.__renderedCount = 0;
+
+            if (!gridHandlerState.has(grid)) {
+                grid.addEventListener('click', (e) => {
+                    const card = e.target.closest('.book-card');
+                    if (!card || !grid.contains(card)) return;
+                    const book = grid.__books && grid.__books[Number(card.dataset.bookIndex)];
+                    if (book) showBookDetail(book);
+                });
+
+                grid.addEventListener('contextmenu', (e) => {
+                    const card = e.target.closest('.book-card');
+                    if (!card || !grid.contains(card)) return;
+                    const book = grid.__books && grid.__books[Number(card.dataset.bookIndex)];
+                    if (!book) return;
+                    e.preventDefault();
+                    showContextMenu(e.pageX, e.pageY, book);
+                });
+
+                const scrollParent = grid.closest('.view-section');
+                if (scrollParent) {
+                    let loadFrame = null;
+                    scrollParent.addEventListener('scroll', () => {
+                        if (loadFrame) return;
+                        loadFrame = requestAnimationFrame(() => {
+                            loadFrame = null;
+                            if (scrollParent.scrollTop + scrollParent.clientHeight >= scrollParent.scrollHeight - 700) {
+                                appendGridBatch(grid);
+                            }
+                        });
+                    }, { passive: true });
+                }
+
+                gridHandlerState.add(grid);
+            }
             
             if(data.length === 0) {
                 grid.innerHTML = `<p style="color:#94a3b8; grid-column: 1/-1; text-align:center; padding-top: 20px;">${t('msg_empty_library')}</p>`;
                 return;
             }
 
-            const fragment = document.createDocumentFragment();
-            data.forEach(book => {
-                const card = createBookCard(book);
-                fragment.appendChild(card);
-            });
-            grid.appendChild(fragment);
+            appendGridBatch(grid);
+            requestAnimationFrame(() => fillGridViewport(grid));
         }
 
-        function createBookCard(book) {
+        function fillGridViewport(grid) {
+            const scrollParent = grid.closest('.view-section');
+            if (!scrollParent) return;
+
+            let guard = 0;
+            while (
+                grid.__renderedCount < grid.__books.length &&
+                scrollParent.scrollHeight <= scrollParent.clientHeight + 80 &&
+                guard < 4
+            ) {
+                appendGridBatch(grid);
+                guard += 1;
+            }
+        }
+
+        function appendGridBatch(grid) {
+            if (!grid.__books || grid.__renderedCount >= grid.__books.length) return;
+
+            const start = grid.__renderedCount;
+            const end = Math.min(start + GRID_BATCH_SIZE, grid.__books.length);
+            const fragment = document.createDocumentFragment();
+            for (let index = start; index < end; index += 1) {
+                const card = createBookCard(grid.__books[index], index);
+                fragment.appendChild(card);
+            }
+            grid.appendChild(fragment);
+            grid.__renderedCount = end;
+        }
+
+        function createBookCard(book, index) {
             const div = document.createElement('div');
             div.className = 'book-card';
+            div.dataset.bookIndex = String(index);
+
+            const coverInfo = getBookCoverInfo(book);
             
-            let coverSrc = '';
-            if (book.cover) {
-                if (path.isAbsolute(book.cover)) {
-                    coverSrc = book.cover;
-                } else {
-                    coverSrc = path.join(book.path, book.cover);
-                }
-                coverSrc = coverSrc.replace(/\\/g, '/');
-                if (!coverSrc.startsWith('file://')) coverSrc = `file://${coverSrc}`;
-                coverSrc = escapeHtml(coverSrc);
-            }
-            
-            const coverHtml = coverSrc ? `<img src="${coverSrc}" class="book-cover" style="object-fit:cover;" loading="lazy" decoding="async">` : `<div class="book-cover">📖</div>`;
+            const coverHtml = coverInfo.src ? `<img class="book-cover" width="160" height="220" loading="lazy" decoding="async" fetchpriority="low" alt="">` : `<div class="book-cover">📖</div>`;
 
             div.innerHTML = `
                 ${coverHtml}
@@ -244,11 +405,14 @@ function renderLibrarySorted() {
                     <div class="book-meta">${escapeHtml(book.genre || t('msg_unknown_genre'))}</div>
                 </div>
             `;
-            div.addEventListener('click', () => showBookDetail(book));
-            div.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                showContextMenu(e.pageX, e.pageY, book);
-            });
+            if (coverInfo.src) {
+                const image = div.querySelector('img.book-cover');
+                const cached = bookCoverThumbCache.get(book);
+                image.src = cached && cached.src ? cached.src : BLANK_COVER_SRC;
+                if (!cached || !cached.src) {
+                    observeBookCoverImage(image, book);
+                }
+            }
             return div;
         }
 
@@ -2384,19 +2548,24 @@ function renderLibrarySorted() {
         }
 
         reader.addEventListener('scroll', () => {
-            updateScrollProgress();
-            updatePageJumpControl();
+            if (readerScrollFrame) return;
 
-            if (isReaderLoading) return;
-            if (!currentBookPath) return;
+            readerScrollFrame = requestAnimationFrame(() => {
+                readerScrollFrame = null;
+                updateScrollProgress();
+                updatePageJumpControl();
 
-            const pageNum = getCurrentReaderPage();
-            const historyItem = riwayatBacaan.find(r => r.path === currentBookPath);
-            if (historyItem && historyItem.lastPage !== pageNum) {
-                historyItem.lastPage = pageNum;
-                clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(saveData, 1000);
-            }
+                if (isReaderLoading) return;
+                if (!currentBookPath) return;
+
+                const pageNum = getCurrentReaderPage();
+                const historyItem = riwayatBacaan.find(r => r.path === currentBookPath);
+                if (historyItem && historyItem.lastPage !== pageNum) {
+                    historyItem.lastPage = pageNum;
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(saveData, 1000);
+                }
+            });
         });
 
         if (pageJumpSlider) {

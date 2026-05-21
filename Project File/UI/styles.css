@@ -245,10 +245,11 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 .view-section.active { display: block; }
 
 /* Grid Layout for Library & Explore */
-.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 24px; }
-.book-card { background: var(--bg-secondary); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s; display: flex; flex-direction: column; }
-.book-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-.book-cover { height: 220px; background-color: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 3rem; object-fit: cover; }
+.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 24px; align-items: start; }
+.book-card { background: var(--bg-secondary); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.16s, box-shadow 0.16s; display: flex; flex-direction: column; contain: layout paint style; content-visibility: auto; contain-intrinsic-size: 184px 292px; }
+.book-card:hover { transform: translateY(-3px); box-shadow: 0 8px 12px -4px rgba(0, 0, 0, 0.12); }
+.book-cover { width: 100%; height: 220px; background-color: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 3rem; object-fit: cover; }
+img.book-cover { display: block; }
 .book-info { padding: 12px; }
 .book-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
 .book-meta { font-size: 0.8rem; color: var(--text-secondary); }

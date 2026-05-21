@@ -5,6 +5,7 @@ const invokeChannels = new Set([
     'dialog:openCover',
     'dialog:openDirectory',
     'image:compressCover',
+    'image:getCoverThumbnail',
     'data:save',
     'data:load',
     'data:clear',
