@@ -3,8 +3,8 @@ let currentView = 'library';
 let previousViewBeforeSettings = 'library';
 let returnToReaderFromSettings = false;
 let currentReaderTitle = '';
-const bookCoverSrcCache = new WeakMap();
-const bookCoverThumbCache = new WeakMap();
+let bookCoverSrcCache = new WeakMap();
+let bookCoverThumbCache = new WeakMap();
 const gridHandlerState = new WeakSet();
 let searchRenderTimeout = null;
 let readerScrollFrame = null;
@@ -72,6 +72,7 @@ function switchTab(tabName) {
         document.getElementById('setting-mode').value = isWebtoonMode ? 'webtoon' : 'normal';
         if (settingPdfQuality) settingPdfQuality.value = userSettings.pdfQualityMode || 'light';
         document.getElementById('setting-language').value = userSettings.language;
+        if (settingAutoCover) settingAutoCover.checked = userSettings.autoCoverEnabled === true;
         settingNightIntensity.value = userSettings.nightModeIntensity;
         renderCustomFolders();
         renderIgnoredPaths();
@@ -549,6 +550,7 @@ function renderLibrarySorted() {
         }
 
         async function ensureAutoCoverForBook(book) {
+            if (userSettings.autoCoverEnabled === false) return false;
             if (!book || book.cover || !book.path) return false;
 
             const firstChapter = Array.isArray(book.chapters)
@@ -3079,23 +3081,62 @@ function renderLibrarySorted() {
         });
     }
 
+    function isCoverCachePath(coverPath) {
+        return String(coverPath || '').replace(/\\/g, '/').toLowerCase().includes('/covers_cache/');
+    }
+
     document.getElementById('btn-clear-cache').addEventListener('click', async () => {
-        if (await customConfirm(t('msg_clear_cache_confirm'), "Hapus Cache Data", "Hapus Cache")) {
+        if (await customConfirm('Hapus data pustaka, riwayat, dan pengaturan aplikasi? Cache sampul tidak akan ikut dihapus.', "Hapus Data/Pengaturan", "Hapus Data")) {
             // 1. Batalkan semua proses auto-save yang mungkin sedang berjalan
             clearTimeout(saveTimeout);
             
             // 2. Kosongkan memori sementara agar data lama tidak ter-save ulang
             libraryData = [];
             riwayatBacaan = [];
-            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light', showPageSlider: true, showReadingProgress: true };
+            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light', autoCoverEnabled: false, showPageSlider: true, showReadingProgress: true };
 
             const success = await ipcRenderer.invoke('data:clear');
             if (success) {
-                await customAlert(t('msg_clear_cache_success'));
+                await customAlert('Data dan pengaturan aplikasi berhasil dihapus.');
                 ipcRenderer.send('app:relaunch'); // Restart aplikasi secara native
             }
         }
     });
+
+    const btnClearCoverCache = document.getElementById('btn-clear-cover-cache');
+    if (btnClearCoverCache) {
+        btnClearCoverCache.addEventListener('click', async () => {
+            const confirmed = await customConfirm(
+                'Hapus cache sampul? Sampul yang tersimpan di cache aplikasi akan dikosongkan dari pustaka, tetapi data/pengaturan lain tetap aman.',
+                'Hapus Cache Sampul',
+                'Hapus Sampul',
+                'Batal'
+            );
+            if (!confirmed) return;
+
+            const success = await ipcRenderer.invoke('cover:clearCache');
+            if (!success) {
+                await customAlert('Gagal menghapus cache sampul.', 'Error');
+                return;
+            }
+
+            libraryData.forEach(book => {
+                if (isCoverCachePath(book.cover)) book.cover = null;
+            });
+            riwayatBacaan.forEach(item => {
+                if (isCoverCachePath(item.cover)) item.cover = null;
+            });
+            bookCoverSrcCache = new WeakMap();
+            bookCoverThumbCache = new WeakMap();
+
+            await saveData();
+            if (currentView === 'library') renderLibrarySorted();
+            if (currentView === 'favorites') renderGrid(libraryData.filter(b => b.isFavorite), 'favorites-grid');
+            if (currentView === 'explore') renderExplore();
+
+            await customAlert('Cache sampul berhasil dihapus.', 'Hapus Cache Sampul');
+        });
+    }
 
     // --- FITUR BARU: BACKUP & RESTORE DATA ---
     const btnBackup = document.getElementById('btn-backup');
@@ -3200,6 +3241,7 @@ function renderLibrarySorted() {
             userSettings.theme = document.getElementById('setting-theme').value;
             userSettings.language = document.getElementById('setting-language').value;
             userSettings.pdfQualityMode = settingPdfQuality ? settingPdfQuality.value : 'light';
+            userSettings.autoCoverEnabled = settingAutoCover ? settingAutoCover.checked : false;
             const selectedMode = document.getElementById('setting-mode').value;
             
             isWebtoonMode = (selectedMode === 'webtoon');

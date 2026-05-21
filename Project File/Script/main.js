@@ -729,21 +729,29 @@ ipcMain.handle('shell:openPath', async (event, targetPath) => {
 
 // --- FITUR BARU: HAPUS CACHE ---
 ipcMain.handle('data:clear', async () => {
-    const userDataPath = app.getPath('userData');
     const filePath = getUserConfigPath();
     
     try {
         if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath); // Menghapus file cache
+            fs.unlinkSync(filePath);
         }
-        // Hapus juga folder cache cover jika ada
-        const coversDir = path.join(userDataPath, 'covers_cache');
+        return true;
+    } catch (error) {
+        console.error("Gagal menghapus data/pengaturan:", error);
+        return false;
+    }
+});
+
+ipcMain.handle('cover:clearCache', async () => {
+    const coversDir = path.join(app.getPath('userData'), 'covers_cache');
+
+    try {
         if (fs.existsSync(coversDir)) {
             fs.rmSync(coversDir, { recursive: true, force: true });
         }
         return true;
     } catch (error) {
-        console.error("Gagal menghapus cache:", error);
+        console.error("Gagal menghapus cache sampul:", error);
         return false;
     }
 });

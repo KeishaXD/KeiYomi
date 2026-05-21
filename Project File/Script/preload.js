@@ -10,6 +10,7 @@ const invokeChannels = new Set([
     'data:save',
     'data:load',
     'data:clear',
+    'cover:clearCache',
     'data:backup',
     'data:restore',
     'file:read',

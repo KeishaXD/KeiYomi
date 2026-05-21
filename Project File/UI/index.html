@@ -189,14 +189,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="setting-auto-cover">Auto Cover</label>
-                    <label class="toggle-row" style="margin-top: 8px;">
-                        <input type="checkbox" id="setting-auto-cover">
-                        <span>Buat sampul otomatis dari halaman/gambar pertama jika belum ada sampul</span>
-                    </label>
-                </div>
-
-                <div class="form-group">
                     <label data-i18n="settings_language">Bahasa / Language</label>
                     <select id="setting-language">
                         <option value="id">Indonesia</option>
@@ -246,7 +238,7 @@
             <div class="settings-container" style="margin-top: 24px;">
                 <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;" data-i18n="settings_backup_title">Backup & Pemulihan Data</h2>
                 <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem; line-height: 1.5;" data-i18n="msg_backup_desc">Amankan riwayat bacaan dan daftar pustaka Anda, atau pindahkan ke perangkat lain.</p>
-                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div class="settings-action-row">
                     <button class="btn-action btn-primary-action" id="btn-backup">
                         <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
                         <span data-i18n="btn_backup">Export Data (Backup)</span>
@@ -255,13 +247,39 @@
                         <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
                         <span data-i18n="btn_restore">Import Data (Restore)</span>
                     </button>
-                    <button class="btn-action btn-secondary-action" id="btn-optimize-covers">
-                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 11.5l2.5 3.01L14.5 10l4.5 6H5l3.5-4.5z"/></svg>
-                        <span>Optimalkan Sampul</span>
-                    </button>
                     <button class="btn-action btn-danger-action" id="btn-clear-cache">
                         <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        <span data-i18n="btn_clear_cache">Hapus Cache Data</span>
+                        <span>Hapus Data/Pengaturan</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="settings-container" style="margin-top: 24px;">
+                <h2 style="margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px;">Sampul & Cache Sampul</h2>
+                <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem; line-height: 1.5;">Kelola sampul buku secara terpisah dari data dan pengaturan aplikasi.</p>
+                <div class="cover-settings-row">
+                    <label class="setting-label-with-help" for="setting-auto-cover">
+                        <span>Auto Cover</span>
+                        <button type="button" class="help-tooltip" aria-label="Buat sampul otomatis dari halaman/gambar pertama jika belum ada sampul" data-tooltip="Buat sampul otomatis dari halaman/gambar pertama jika belum ada sampul">?</button>
+                    </label>
+                    <label class="checkbox-setting-row compact">
+                        <input type="checkbox" id="setting-auto-cover">
+                        <span>Aktifkan</span>
+                    </label>
+                </div>
+                <div class="cover-settings-row">
+                    <label class="setting-label-with-help" for="btn-optimize-covers">
+                        <span>Optimalkan Sampul</span>
+                        <button type="button" class="help-tooltip" aria-label="Kompres sampul yang sudah ada agar beranda lebih ringan saat digulir" data-tooltip="Kompres sampul yang sudah ada agar beranda lebih ringan saat digulir">?</button>
+                    </label>
+                    <button class="btn-action btn-secondary-action compact-action" id="btn-optimize-covers">
+                        <span>Mulai</span>
+                    </button>
+                </div>
+                <div class="settings-action-row">
+                    <button class="btn-action btn-danger-action" id="btn-clear-cover-cache">
+                        <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM5 5h14v9.5l-3.5-4.5-4.5 5.5-2.5-3L5 17V5z"/></svg>
+                        <span>Hapus Cache Sampul</span>
                     </button>
                 </div>
             </div>

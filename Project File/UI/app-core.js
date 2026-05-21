@@ -33,6 +33,7 @@ const reader = document.getElementById('reader');
 const nightLightOverlay = document.getElementById('night-light-overlay');
 const settingNightIntensity = document.getElementById('setting-night-intensity');
 const settingPdfQuality = document.getElementById('setting-pdf-quality');
+const settingAutoCover = document.getElementById('setting-auto-cover');
 const btnToggleNightmode = document.getElementById('btn-toggle-nightmode');
 const btnReaderSearchToggle = document.getElementById('btn-reader-search-toggle');
 const readerSearchPanel = document.getElementById('reader-search-panel');
@@ -230,7 +231,7 @@ function showToast(message, duration = 4000) {
 let libraryData = [];
 let riwayatBacaan = [];
 let isWebtoonMode = true;
-let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light', showPageSlider: true, showReadingProgress: true };
+let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light', autoCoverEnabled: false, showPageSlider: true, showReadingProgress: true };
 
 function isManualImportedBook(book) {
     return book && (book.importSource === 'manual' || book.isManualImport === true || !book.structureType);
@@ -261,6 +262,7 @@ async function loadData() {
         userSettings.nightModeEnabled = data.nightModeEnabled || false;
         userSettings.nightModeIntensity = data.nightModeIntensity !== undefined ? data.nightModeIntensity : 50;
         userSettings.pdfQualityMode = data.pdfQualityMode === 'original' ? 'original' : 'light';
+        userSettings.autoCoverEnabled = data.autoCoverEnabled === true;
         userSettings.showPageSlider = data.showPageSlider !== false;
         userSettings.showReadingProgress = data.showReadingProgress !== false;
     } else {
@@ -271,6 +273,7 @@ async function loadData() {
     applyLanguage(userSettings.language);
     settingNightIntensity.value = userSettings.nightModeIntensity;
     if (settingPdfQuality) settingPdfQuality.value = userSettings.pdfQualityMode;
+    if (settingAutoCover) settingAutoCover.checked = userSettings.autoCoverEnabled === true;
     applyNightMode();
     updateNightModeButton();
     updateReaderControlButtons();
@@ -289,6 +292,7 @@ async function saveData() {
         nightModeEnabled: userSettings.nightModeEnabled,
         nightModeIntensity: userSettings.nightModeIntensity,
         pdfQualityMode: userSettings.pdfQualityMode,
+        autoCoverEnabled: userSettings.autoCoverEnabled === true,
         showPageSlider: userSettings.showPageSlider,
         showReadingProgress: userSettings.showReadingProgress
     };
