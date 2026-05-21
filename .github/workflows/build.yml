@@ -17,6 +17,7 @@ on:
           - windows-all
           - linux
           - linux-portable
+          - linux-tarxz
           - mac
   push:
     tags:
@@ -97,6 +98,16 @@ jobs:
               script: 'build:linux:portable',
               artifact: [
                 'Project File/dist/*.tar.gz',
+                'Project File/dist/*.blockmap',
+                'Project File/dist/*.yml'
+              ].join('\n')
+            },
+            'linux-tarxz': {
+              platform: 'linux-tarxz',
+              os: 'ubuntu-24.04',
+              script: 'build:linux:tarxz',
+              artifact: [
+                'Project File/dist/*.tar.xz',
                 'Project File/dist/*.blockmap',
                 'Project File/dist/*.yml'
               ].join('\n')
