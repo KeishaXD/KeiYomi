@@ -9,6 +9,10 @@ const gridHandlerState = new WeakSet();
 let searchRenderTimeout = null;
 let readerScrollFrame = null;
 let coverImageObserver = null;
+let isPageSliderDragging = false;
+let pageSliderPendingValue = null;
+let isPageJumpAnimating = false;
+let pageJumpAnimatingTarget = null;
 const coverThumbnailQueue = [];
 let activeCoverThumbnailJobs = 0;
 const scrollIdleTimers = new WeakMap();
@@ -2789,15 +2793,22 @@ function renderLibrarySorted() {
                 return;
             }
 
-            const currentPage = Math.min(Math.max(parseInt(forcedPage || getCurrentReaderPage(), 10) || 1, 1), totalPages);
+            const displayPage = isPageJumpAnimating && pageJumpAnimatingTarget
+                ? pageJumpAnimatingTarget
+                : forcedPage || getCurrentReaderPage();
+            const currentPage = Math.min(Math.max(parseInt(displayPage, 10) || 1, 1), totalPages);
             pageJumpSlider.max = totalPages;
-            pageJumpSlider.value = currentPage;
+            if (!isPageSliderDragging) {
+                pageJumpSlider.value = currentPage;
+            }
             pageJumpInput.max = totalPages;
-            if (document.activeElement !== pageJumpInput) {
+            if (document.activeElement !== pageJumpInput && !isPageSliderDragging) {
                 pageJumpInput.value = currentPage;
             }
-            pageJumpCurrent.innerText = String(currentPage);
-            pageJumpTotal.innerText = String(totalPages);
+            const currentText = String(currentPage);
+            const totalText = String(totalPages);
+            if (pageJumpCurrent.innerText !== currentText) pageJumpCurrent.innerText = currentText;
+            if (pageJumpTotal.innerText !== totalText) pageJumpTotal.innerText = totalText;
             pageJumpSlider.disabled = totalPages <= 1;
             pageJumpInput.disabled = totalPages <= 1;
             if (pageJumpPrev) pageJumpPrev.disabled = currentPage <= 1;
@@ -2840,10 +2851,21 @@ function renderLibrarySorted() {
             if (!pageElement) return;
 
             const readerPaddingTop = parseInt(window.getComputedStyle(reader).paddingTop, 10) || 0;
+            isPageJumpAnimating = behavior === 'smooth';
+            pageJumpAnimatingTarget = isPageJumpAnimating ? targetPage : null;
+            reader.classList.add('page-jump-scrolling');
             reader.scrollTo({
                 top: pageElement.offsetTop - readerPaddingTop,
                 behavior
             });
+            setTimeout(() => {
+                reader.classList.remove('page-jump-scrolling');
+                if (isPageJumpAnimating && pageJumpAnimatingTarget === targetPage) {
+                    isPageJumpAnimating = false;
+                    pageJumpAnimatingTarget = null;
+                    updatePageJumpControl(targetPage);
+                }
+            }, behavior === 'smooth' ? 420 : 80);
             if (pageJumpInput) pageJumpInput.value = targetPage;
             updatePageJumpControl(targetPage);
 
@@ -2891,7 +2913,33 @@ function renderLibrarySorted() {
 
         if (pageJumpSlider) {
             pageJumpSlider.addEventListener('input', () => {
-                goToPage(pageJumpSlider.value, 'auto');
+                pageSliderPendingValue = pageJumpSlider.value;
+                if (pageJumpCurrent) pageJumpCurrent.innerText = String(pageSliderPendingValue);
+                if (pageJumpInput) pageJumpInput.value = pageSliderPendingValue;
+            });
+            pageJumpSlider.addEventListener('pointerdown', () => {
+                isPageSliderDragging = true;
+                pageSliderPendingValue = pageJumpSlider.value;
+            });
+            pageJumpSlider.addEventListener('pointerup', () => {
+                const target = pageSliderPendingValue || pageJumpSlider.value;
+                isPageSliderDragging = false;
+                pageSliderPendingValue = null;
+                goToPage(target, 'smooth');
+            });
+            pageJumpSlider.addEventListener('pointercancel', () => {
+                isPageSliderDragging = false;
+                pageSliderPendingValue = null;
+                updatePageJumpControl();
+            });
+            pageJumpSlider.addEventListener('change', () => {
+                if (isPageSliderDragging) return;
+                goToPage(pageJumpSlider.value, 'smooth');
+            });
+            pageJumpSlider.addEventListener('keydown', (e) => {
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) {
+                    requestAnimationFrame(() => goToPage(pageJumpSlider.value, 'smooth'));
+                }
             });
         }
 
