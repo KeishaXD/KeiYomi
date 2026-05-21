@@ -14,6 +14,7 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
   - **Webtoon Mode:** Continuous vertical scroll, suitable for Manhwa/Webtoon.
   - **Normal Mode:** Page-by-page view, suitable for PDF/documents.
   - **PDF Quality Mode:** Choose light rendering or original quality.
+  - **Reader Controls:** Toggle the page slider and reading percentage indicator from the reading settings menu.
 - **Library Management:**
   - **Auto Scan:** Detects books and comic folders from the local folder (`Documents/KeiYomi`).
   - **Reading History:** Automatically saves reading progress.
@@ -25,6 +26,7 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
   - **Language:** Indonesian and English.
   - **Edit Metadata:** Change title, author, cover, and synopsis directly from the app.
 - **Data Tools:** Backup, restore, and clear local app data.
+- **Offline Vendor Runtime:** PDF, EPUB/CBZ/ZIP, CBR/RAR, Markdown, and DOCX support use bundled local vendor files.
 - **High Performance:** Uses lazy loading to load images/pages only when needed.
 
 ## Technologies
@@ -66,6 +68,16 @@ Do not run the installed release and `npm start` at the same time. The app uses 
 
 Run all commands from the `Project File` directory.
 
+### Developer Build Menu
+
+Windows developers can use the batch menu:
+
+```bat
+build.bat
+```
+
+The menu includes Windows x64, Windows ARM64, Windows portable x64, Windows portable ARM64, Linux builds, Linux portable, macOS builds, all-platform builds, and a check-only option.
+
 ### Validation
 
 ```bash
@@ -94,6 +106,13 @@ npm run build:win:x64
 npm run build:win:arm64
 ```
 
+Windows portable targets:
+
+```bash
+npm run build:win:portable:x64
+npm run build:win:portable:arm64
+```
+
 Linux portable package from Windows:
 
 ```bash
@@ -101,6 +120,15 @@ npm run build:linux:portable
 ```
 
 This creates a `.tar.gz` package. Full Linux installers such as AppImage and `.deb` should be built on Linux or through GitHub Actions.
+
+Linux and macOS targets:
+
+```bash
+npm run build:linux
+npm run build:mac
+```
+
+Windows builds are safe to compile locally on Windows. Linux portable can also be created from Windows, while full Linux installers are more reliable on Linux or CI. macOS release builds should be created on macOS or a macOS CI runner, especially for signing/notarization.
 
 Recommended local development build flow:
 

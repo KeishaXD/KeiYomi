@@ -14,6 +14,7 @@ KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, 
   - **Mode Webtoon:** Scroll vertikal tanpa putus, cocok untuk Manhwa/Webtoon.
   - **Mode Normal:** Tampilan per halaman, cocok untuk PDF/dokumen.
   - **Mode Kualitas PDF:** Pilih render ringan atau kualitas asli.
+  - **Kontrol Reader:** Aktif/nonaktifkan slider halaman dan indikator persentase baca dari menu pengaturan baca.
 - **Manajemen Pustaka:**
   - **Scan Otomatis:** Mendeteksi buku dan folder komik dari folder lokal (`Documents/KeiYomi`).
   - **Riwayat Bacaan:** Menyimpan progres bacaan secara otomatis.
@@ -25,6 +26,7 @@ KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, 
   - **Bahasa:** Dukungan Bahasa Indonesia dan Inggris.
   - **Edit Metadata:** Ubah judul, penulis, sampul, dan sinopsis langsung dari aplikasi.
 - **Alat Data:** Backup, restore, dan hapus data lokal aplikasi.
+- **Vendor Offline Lokal:** Dukungan PDF, EPUB/CBZ/ZIP, CBR/RAR, Markdown, dan DOCX memakai file vendor lokal yang ikut dibundle.
 - **Performa Tinggi:** Menggunakan lazy loading untuk memuat gambar/halaman hanya saat dibutuhkan.
 
 ## Teknologi
@@ -66,6 +68,16 @@ Jangan jalankan release terinstall dan `npm start` secara bersamaan. Aplikasi me
 
 Jalankan semua command dari folder `Project File`.
 
+### Menu Build Developer
+
+Developer Windows bisa memakai menu batch:
+
+```bat
+build.bat
+```
+
+Menu ini menyediakan build Windows x64, Windows ARM64, Windows portable x64, Windows portable ARM64, Linux, Linux portable, macOS, semua platform, dan opsi check-only.
+
 ### Validasi
 
 ```bash
@@ -94,6 +106,13 @@ npm run build:win:x64
 npm run build:win:arm64
 ```
 
+Target Windows portable:
+
+```bash
+npm run build:win:portable:x64
+npm run build:win:portable:arm64
+```
+
 Paket Linux portable dari Windows:
 
 ```bash
@@ -101,6 +120,15 @@ npm run build:linux:portable
 ```
 
 Command ini membuat paket `.tar.gz`. Installer Linux penuh seperti AppImage dan `.deb` sebaiknya dibuild di Linux atau lewat GitHub Actions.
+
+Target Linux dan macOS:
+
+```bash
+npm run build:linux
+npm run build:mac
+```
+
+Build Windows aman dilakukan lokal di Windows. Linux portable juga bisa dibuat dari Windows, sedangkan installer Linux penuh lebih stabil dibuat di Linux atau CI. Build rilis macOS sebaiknya dibuat di macOS atau runner CI macOS, terutama jika membutuhkan signing/notarization.
 
 Command lokal yang disarankan untuk development sehari-hari:
 

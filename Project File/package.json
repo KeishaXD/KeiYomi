@@ -18,6 +18,9 @@
     "build:win": "electron-builder --win --x64 --arm64 --publish never",
     "build:win:x64": "electron-builder --win --x64 --publish never",
     "build:win:arm64": "electron-builder --win --arm64 --publish never",
+    "build:win:portable": "electron-builder --win portable --x64 --publish never",
+    "build:win:portable:x64": "electron-builder --win portable --x64 --publish never",
+    "build:win:portable:arm64": "electron-builder --win portable --arm64 --publish never",
     "build:linux": "electron-builder --linux --publish never",
     "build:linux:portable": "electron-builder --linux tar.gz --publish never",
     "build:mac": "electron-builder --mac --publish never",
@@ -108,6 +111,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "buildUniversalInstaller": false
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}-${arch}.${ext}"
     }
   }
 }
