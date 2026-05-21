@@ -196,6 +196,7 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 /* Reader Area (Webtoon Style) */
 .reader-container { flex-grow: 1; overflow-y: auto; display: none; flex-direction: column; align-items: center; padding: 40px; background-color: var(--bg-primary); scroll-behavior: smooth; animation: fadeIn 0.3s ease-out; position: relative; }
 .reader-container.reader-loading { overflow: hidden !important; cursor: progress; }
+.fab-btn:disabled, .fab-btn.disabled, .chapter-navigation button:disabled { opacity: 0.5; cursor: wait; pointer-events: none; }
 .reader-loading-message {
     position: absolute;
     top: calc(64px + ((100% - 64px) * 0.87));

@@ -1715,6 +1715,7 @@ function renderLibrarySorted() {
             reader.scrollTop = 0;
             isReaderLoading = true;
             reader.classList.add('reader-loading');
+            setReaderControlsLoading(true);
             reader.style.overflowY = 'hidden';
             resetReaderSearch();
             updateReaderModeUI();
@@ -1765,6 +1766,7 @@ function renderLibrarySorted() {
                         if (myRenderId !== currentRenderId) return;
                         isReaderLoading = false;
                         reader.classList.remove('reader-loading');
+                        setReaderControlsLoading(false);
                         reader.style.overflowY = '';
                         updateScrollProgress();
                         updatePageJumpControl();
@@ -2095,8 +2097,10 @@ function renderLibrarySorted() {
                 const btnPrev = document.createElement('button');
                 btnPrev.className = 'btn-action btn-primary-action';
                 btnPrev.title = prevChapter.name;
+                btnPrev.disabled = isReaderLoading;
                 btnPrev.innerHTML = `<svg style="width:20px;height:20px;margin-right:8px;fill:currentColor" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> ${t('msg_chapter_prev')}`;
                 btnPrev.onclick = () => {
+                    if (isReaderLoading) return;
                     reader.scrollTop = 0;
                     const prevTitle = `${foundBook.title} - ${prevChapter.name}`;
                     bacaFile(prevChapter.path, prevTitle);
@@ -2109,8 +2113,10 @@ function renderLibrarySorted() {
                 const btnNext = document.createElement('button');
                 btnNext.className = 'btn-action btn-primary-action';
                 btnNext.title = nextChapter.name;
+                btnNext.disabled = isReaderLoading;
                 btnNext.innerHTML = `${t('msg_chapter_next')} <svg style="width:20px;height:20px;margin-left:8px;fill:currentColor" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>`;
                 btnNext.onclick = () => {
+                    if (isReaderLoading) return;
                     reader.scrollTop = 0;
                     const nextTitle = `${foundBook.title} - ${nextChapter.name}`;
                     bacaFile(nextChapter.path, nextTitle);
@@ -2153,6 +2159,17 @@ function renderLibrarySorted() {
             }
         }
 
+        function setReaderControlsLoading(loading) {
+            if (btnSettingsFab) {
+                btnSettingsFab.disabled = loading;
+                btnSettingsFab.classList.toggle('disabled', loading);
+            }
+            if (settingsPopup && loading) settingsPopup.classList.remove('show');
+            document.querySelectorAll('.chapter-navigation button').forEach(button => {
+                button.disabled = loading;
+            });
+        }
+
         function updateReaderModeUI() {
             if (isWebtoonMode) {
                 reader.classList.add('webtoon-mode');
@@ -2165,6 +2182,7 @@ function renderLibrarySorted() {
 
         btnSettingsFab.addEventListener('click', (e) => {
             e.stopPropagation();
+            if (isReaderLoading) return;
             settingsPopup.classList.toggle('show');
         });
 
