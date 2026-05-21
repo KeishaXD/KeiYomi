@@ -84,6 +84,7 @@ const inputEditTitle = document.getElementById('input-edit-title');
 const inputEditAuthor = document.getElementById('input-edit-author');
 const inputEditCover = document.getElementById('input-edit-cover');
 const btnBrowseEditCover = document.getElementById('btn-browse-edit-cover');
+const btnRemoveEditCover = document.getElementById('btn-remove-edit-cover');
 const inputEditType = document.getElementById('input-edit-type');
 const inputEditDate = document.getElementById('input-edit-date');
 const groupEditDate = document.getElementById('group-edit-date');

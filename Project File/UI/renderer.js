@@ -1078,6 +1078,12 @@ function renderLibrarySorted() {
             }
         });
 
+        if (btnRemoveEditCover) {
+            btnRemoveEditCover.addEventListener('click', () => {
+                inputEditCover.value = '';
+            });
+        }
+
     btnSaveEdit.addEventListener('click', async () => {
             if (!inputEditTitle.value) {
             await customAlert(t('msg_fill_title'));
@@ -1093,6 +1099,12 @@ function renderLibrarySorted() {
                 book.title = inputEditTitle.value;
                 book.author = inputEditAuthor.value;
                 book.cover = inputEditCover.value || null;
+                if (!book.cover) {
+                    await ensureAutoCoverForBook(book);
+                } else {
+                    bookCoverSrcCache.delete(book);
+                    bookCoverThumbCache.delete(book);
+                }
                 book.type = inputEditType.value;
                 book.synopsis = inputEditSynopsis.value;
                 

@@ -838,26 +838,15 @@ ipcMain.handle('library:scanLocal', async (event, customFolders = []) => {
             fs.mkdirSync(examplePath, { recursive: true });
         }
         
-            // 1. Siapkan Cover (Cari di assets: cover.svg -> logo.svg)
-            const assetCover = path.join(__dirname, '../assets', 'cover.svg'); // Path disesuaikan
-            const assetLogo = path.join(__dirname, '../assets', 'logo.svg'); // Path disesuaikan
-            let usedCoverName = 'cover.svg';
-
-            if (fs.existsSync(assetCover)) {
-                fs.copyFileSync(assetCover, path.join(examplePath, 'cover.svg'));
-            } else if (fs.existsSync(assetLogo)) {
-                fs.copyFileSync(assetLogo, path.join(examplePath, 'cover.svg'));
-            }
-
-        // 2. Cek/Update info.json
+        // 1. Cek/Update info.json
         const infoPath = path.join(examplePath, 'info.json');
         let shouldWriteInfo = !fs.existsSync(infoPath);
         let infoContent = {
                 title: "Guide Book",
                 author: "Developer (KeishaXD)",
-                cover: usedCoverName,
+                cover: "",
                 genre: "Guide",
-                synopsis: "(English) This is an example of a folder format. Place the info.json, cover.svg, and book files (PDF/CBZ/CBR/ZIP/DOCX) in one folder to be detected automatically.\n\n (Indonesia) Ini adalah contoh format folder. Letakkan file info.json, cover.svg, dan file buku (PDF/CBZ/CBR/ZIP/DOCX) di dalam satu folder agar terdeteksi otomatis.",
+                synopsis: "(English) This is an example of a folder format. Place the info.json and book files (PDF/CBZ/CBR/ZIP/DOCX) in one folder to be detected automatically. A cover file is optional.\n\n (Indonesia) Ini adalah contoh format folder. Letakkan info.json dan file buku (PDF/CBZ/CBR/ZIP/DOCX) di dalam satu folder agar terdeteksi otomatis. File sampul bersifat opsional.",
                 type: "Artikel",
                 date: "2024-06-01"
         };
@@ -865,9 +854,9 @@ ipcMain.handle('library:scanLocal', async (event, customFolders = []) => {
         if (fs.existsSync(infoPath)) {
             try {
                 const currentInfo = JSON.parse(fs.readFileSync(infoPath, 'utf8'));
-                // Jika ini adalah Guide Book default, pastikan cover-nya benar
+                // Jika ini adalah Guide Book default, jangan paksa sampul bawaan.
                 if (currentInfo.title === "Guide Book") {
-                    currentInfo.cover = "cover.svg";
+                    currentInfo.cover = "";
                     infoContent = currentInfo;
                     shouldWriteInfo = true;
                 }
@@ -878,7 +867,12 @@ ipcMain.handle('library:scanLocal', async (event, customFolders = []) => {
             fs.writeFileSync(infoPath, JSON.stringify(infoContent, null, 2));
         }
         
-        // 3. Buat panduan.txt jika belum ada
+        const oldGuideCoverPath = path.join(examplePath, 'cover.svg');
+        if (fs.existsSync(oldGuideCoverPath)) {
+            fs.rmSync(oldGuideCoverPath, { force: true });
+        }
+
+        // 2. Buat panduan.txt jika belum ada
         const panduanPath = path.join(examplePath, 'panduan.txt');
         if (!fs.existsSync(panduanPath)) {
             const panduanText = `CUSTOM FOLDER STRUCTURE GUIDE (ENGLISH)
