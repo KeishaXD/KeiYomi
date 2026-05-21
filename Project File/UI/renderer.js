@@ -11,6 +11,7 @@ let readerScrollFrame = null;
 let coverImageObserver = null;
 const coverThumbnailQueue = [];
 let activeCoverThumbnailJobs = 0;
+const scrollIdleTimers = new WeakMap();
 const GRID_BATCH_SIZE = 24;
 const BLANK_COVER_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 const MAX_COVER_THUMBNAIL_JOBS = 2;
@@ -97,6 +98,9 @@ sortSelect.addEventListener('change', () => { renderLibrarySorted(); });
 function renderLibrarySorted() {
     const criteria = sortSelect.value;
     let sortedData = [...libraryData];
+    const historyOrder = criteria === 'recent'
+        ? new Map(riwayatBacaan.map((item, index) => [item.path, index]))
+        : null;
 
     sortedData.sort((a, b) => {
         switch (criteria) {
@@ -105,8 +109,8 @@ function renderLibrarySorted() {
             case 'date_new': return new Date(b.date || 0) - new Date(a.date || 0);
             case 'date_old': return new Date(a.date || 0) - new Date(b.date || 0);
             case 'recent':
-                const indexA = riwayatBacaan.findIndex(r => r.path === a.path);
-                const indexB = riwayatBacaan.findIndex(r => r.path === b.path);
+                const indexA = historyOrder.has(a.path) ? historyOrder.get(a.path) : -1;
+                const indexB = historyOrder.has(b.path) ? historyOrder.get(b.path) : -1;
                 if (indexA !== -1 && indexB !== -1) return indexA - indexB;
                 if (indexA !== -1) return -1;
                 if (indexB !== -1) return 1;
@@ -338,6 +342,7 @@ function renderLibrarySorted() {
                 if (scrollParent) {
                     let loadFrame = null;
                     scrollParent.addEventListener('scroll', () => {
+                        markGridScrollActive(scrollParent);
                         if (loadFrame) return;
                         loadFrame = requestAnimationFrame(() => {
                             loadFrame = null;
@@ -358,6 +363,18 @@ function renderLibrarySorted() {
 
             appendGridBatch(grid);
             requestAnimationFrame(() => fillGridViewport(grid));
+        }
+
+        function markGridScrollActive(scrollParent) {
+            scrollParent.classList.add('is-scrolling');
+            const oldTimer = scrollIdleTimers.get(scrollParent);
+            if (oldTimer) clearTimeout(oldTimer);
+
+            const timer = setTimeout(() => {
+                scrollParent.classList.remove('is-scrolling');
+                scrollIdleTimers.delete(scrollParent);
+            }, 140);
+            scrollIdleTimers.set(scrollParent, timer);
         }
 
         function fillGridViewport(grid) {
@@ -2827,6 +2844,65 @@ function renderLibrarySorted() {
             } catch (error) {
             await customAlert(t('msg_restore_fail') + error.message);
             }
+        });
+    }
+
+    const btnOptimizeCovers = document.getElementById('btn-optimize-covers');
+    if (btnOptimizeCovers) {
+        btnOptimizeCovers.addEventListener('click', async () => {
+            const booksWithCovers = libraryData.filter(book => book && book.cover);
+            if (booksWithCovers.length === 0) {
+                await customAlert('Tidak ada sampul yang perlu dioptimalkan.', 'Optimalkan Sampul');
+                return;
+            }
+
+            const confirmed = await customConfirm(
+                `Optimalkan ${booksWithCovers.length} sampul buku? Proses ini membuat versi sampul yang lebih kecil agar beranda lebih ringan.`,
+                'Optimalkan Sampul',
+                'Mulai',
+                'Batal'
+            );
+            if (!confirmed) return;
+
+            const originalHtml = btnOptimizeCovers.innerHTML;
+            btnOptimizeCovers.disabled = true;
+
+            let optimizedCount = 0;
+            let skippedCount = 0;
+
+            for (let index = 0; index < booksWithCovers.length; index += 1) {
+                const book = booksWithCovers[index];
+                const coverInfo = getBookCoverInfo(book);
+                if (!coverInfo.sourcePath) {
+                    skippedCount += 1;
+                    continue;
+                }
+
+                btnOptimizeCovers.innerHTML = `<span>Optimalkan ${index + 1}/${booksWithCovers.length}</span>`;
+
+                try {
+                    const compressedPath = await ipcRenderer.invoke('image:compressCover', coverInfo.sourcePath);
+                    if (compressedPath && compressedPath !== book.cover) {
+                        book.cover = compressedPath;
+                        optimizedCount += 1;
+                    } else {
+                        skippedCount += 1;
+                    }
+                } catch {
+                    skippedCount += 1;
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+
+            await saveData();
+            if (currentView === 'library') renderLibrarySorted();
+            if (currentView === 'favorites') renderGrid(libraryData.filter(b => b.isFavorite), 'favorites-grid');
+            if (currentView === 'explore') renderExplore();
+
+            btnOptimizeCovers.disabled = false;
+            btnOptimizeCovers.innerHTML = originalHtml;
+            await customAlert(`Selesai.\nSampul dioptimalkan: ${optimizedCount}\nDilewati/gagal: ${skippedCount}`, 'Optimalkan Sampul');
         });
     }
 
