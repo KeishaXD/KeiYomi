@@ -7,6 +7,8 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
 
 > **Note:** This project is inspired by the famous Android application **Tachiyomi**. However, please note that **KeiYomi does not use any source code from Tachiyomi**. This is an independent project built from scratch using Electron and web technologies for desktop platforms.
 
+> **Windows SmartScreen Notice:** KeiYomi releases may show a blue "Windows protected your PC" warning because the installer is not code-signed yet. Only download KeiYomi from the official GitHub Releases page, and verify the file name/version before installing.
+
 ## Key Features
 
 - **Format Support:** Read **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, **MD**, and **DOCX** files.

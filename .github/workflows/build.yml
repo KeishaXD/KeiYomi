@@ -2,6 +2,22 @@ name: Build KeiYomi
 
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: "Build target"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - windows-x64
+          - windows-arm64
+          - windows-portable-x64
+          - windows-portable-arm64
+          - windows-all
+          - linux
+          - linux-portable
+          - mac
   push:
     tags:
       - "v*"
@@ -10,44 +26,118 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  prepare:
+    name: Prepare build matrix
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Select targets
+        id: matrix
+        shell: bash
+        env:
+          TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'all' }}
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const targets = {
+            'windows-x64': {
+              platform: 'windows-x64',
+              os: 'windows-2025',
+              script: 'build:win:x64',
+              artifact: [
+                'Project File/dist/KeiYomi-Setup-*-x64.exe',
+                'Project File/dist/KeiYomi-Setup-*-x64.exe.blockmap',
+                'Project File/dist/*.yml'
+              ].join('\n')
+            },
+            'windows-arm64': {
+              platform: 'windows-arm64',
+              os: 'windows-2025',
+              script: 'build:win:arm64',
+              artifact: [
+                'Project File/dist/KeiYomi-Setup-*-arm64.exe',
+                'Project File/dist/KeiYomi-Setup-*-arm64.exe.blockmap',
+                'Project File/dist/*.yml'
+              ].join('\n')
+            },
+            'windows-portable-x64': {
+              platform: 'windows-portable-x64',
+              os: 'windows-2025',
+              script: 'build:win:portable:x64',
+              artifact: [
+                'Project File/dist/KeiYomi-Portable-*-x64.exe',
+                'Project File/dist/*.yml'
+              ].join('\n')
+            },
+            'windows-portable-arm64': {
+              platform: 'windows-portable-arm64',
+              os: 'windows-2025',
+              script: 'build:win:portable:arm64',
+              artifact: [
+                'Project File/dist/KeiYomi-Portable-*-arm64.exe',
+                'Project File/dist/*.yml'
+              ].join('\n')
+            },
+            linux: {
+              platform: 'linux',
+              os: 'ubuntu-24.04',
+              script: 'build:linux',
+              artifact: [
+                'Project File/dist/*.AppImage',
+                'Project File/dist/*.deb',
+                'Project File/dist/*.blockmap',
+                'Project File/dist/*.yml'
+              ].join('\n')
+            },
+            'linux-portable': {
+              platform: 'linux-portable',
+              os: 'ubuntu-24.04',
+              script: 'build:linux:portable',
+              artifact: [
+                'Project File/dist/*.tar.gz',
+                'Project File/dist/*.blockmap',
+                'Project File/dist/*.yml'
+              ].join('\n')
+            },
+            mac: {
+              platform: 'mac',
+              os: 'macos-15',
+              script: 'build:mac',
+              artifact: [
+                'Project File/dist/*.dmg',
+                'Project File/dist/*.zip',
+                'Project File/dist/*.blockmap',
+                'Project File/dist/*.yml'
+              ].join('\n')
+            }
+          };
+
+          const groups = {
+            all: Object.keys(targets),
+            'windows-all': ['windows-x64', 'windows-arm64', 'windows-portable-x64', 'windows-portable-arm64']
+          };
+
+          const selected = process.env.TARGET || 'all';
+          const keys = groups[selected] || [selected];
+          const include = keys.map(key => targets[key]).filter(Boolean);
+
+          if (include.length === 0) {
+            throw new Error(`Unknown build target: ${selected}`);
+          }
+
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `matrix=${JSON.stringify({ include })}\n`);
+          NODE
+
   build:
     name: Build ${{ matrix.platform }}
+    needs: prepare
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - platform: windows-x64
-            os: windows-2025
-            script: build:win:x64
-            artifact: |
-              Project File/dist/*x64*.exe
-              Project File/dist/*x64*.blockmap
-              Project File/dist/*.yml
-          - platform: windows-arm64
-            os: windows-2025
-            script: build:win:arm64
-            artifact: |
-              Project File/dist/*arm64*.exe
-              Project File/dist/*arm64*.blockmap
-              Project File/dist/*.yml
-          - platform: linux
-            os: ubuntu-24.04
-            script: build:linux
-            artifact: |
-              Project File/dist/*.AppImage
-              Project File/dist/*.deb
-              Project File/dist/*.blockmap
-              Project File/dist/*.yml
-          - platform: mac
-            os: macos-15
-            script: build:mac
-            artifact: |
-              Project File/dist/*.dmg
-              Project File/dist/*.zip
-              Project File/dist/*.blockmap
-              Project File/dist/*.yml
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
 
     steps:
       - name: Checkout
@@ -65,7 +155,7 @@ jobs:
         run: npm ci
 
       - name: Install Linux packaging tools
-        if: matrix.platform == 'linux'
+        if: startsWith(matrix.platform, 'linux')
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libarchive-tools rpm libfuse2t64

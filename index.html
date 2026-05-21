@@ -102,9 +102,10 @@
         }
         .card h3 { font-size: 1.3rem; margin-bottom: 15px; color: var(--secondary); }
         .card p { color: #666; font-size: 0.95rem; }
-        .download-card { text-align: center; }
+        .download-card { text-align: center; display: flex; flex-direction: column; align-items: center; }
         .download-card .icon-box { margin-left: auto; margin-right: auto; }
-        .download-card .btn { margin-top: 18px; padding: 12px 24px; border-radius: 28px; }
+        .download-card .btn { margin-top: auto; padding: 12px 24px; border-radius: 28px; }
+        .download-card p { margin-bottom: 24px; }
         .note { color: #64748b; font-size: 0.9rem; max-width: 760px; margin: 28px auto 0; }
 
         /* --- HOW IT WORKS --- */
@@ -144,10 +145,9 @@
         <nav>
             <ul class="nav-menu">
                 <li><a href="#features">Features</a></li>
-                <li><a href="#downloads">Downloads</a></li>
                 <li><a href="#how-it-works">How it Works</a></li>
                 <li><a href="https://github.com/KeishaXD/KeiYomi" target="_blank">GitHub</a></li>
-                <li><a href="https://github.com/KeishaXD/KeiYomi/releases" target="_blank" class="btn-primary" style="padding: 8px 20px; border-radius: 20px; background: var(--text-light); color: var(--primary);">Download</a></li>
+                <li><a href="#downloads" class="btn btn-outline" style="padding: 8px 20px; border-radius: 20px; background: var(--text-light); color: var(--primary);">Download</a></li>
             </ul>
             <div class="mobile-toggle"><i class="fas fa-bars"></i></div>
         </nav>
@@ -159,8 +159,8 @@
         <p>Fast, Free, and Open Source. Read your favorite Manga, Comics, novels, Markdown notes, Office documents, and PDFs offline with a modern interface inspired by Tachiyomi.</p>
         
         <div>
-            <a href="https://github.com/KeishaXD/KeiYomi/releases" target="_blank" class="btn btn-outline">
-                <i class="fas fa-download"></i> Download Releases
+            <a href="#downloads" class="btn btn-outline">
+                <i class="fas fa-download"></i> Download Variants
             </a>
             <a href="https://github.com/KeishaXD/KeiYomi" target="_blank" class="btn btn-outline">
                 <i class="fab fa-github"></i> View Source
@@ -224,31 +224,31 @@
                 <div class="icon-box"><i class="fab fa-windows"></i></div>
                 <h3>Windows Installer x64</h3>
                 <p>Recommended for most Intel/AMD Windows PCs.</p>
-                <a href="https://github.com/KeishaXD/KeiYomi/releases" target="_blank" class="btn btn-primary">Get Installer</a>
+                <a href="https://github.com/KeishaXD/KeiYomi/releases/latest" target="_blank" class="btn btn-primary">Get Installer</a>
             </div>
             <div class="card download-card reveal">
                 <div class="icon-box"><i class="fab fa-windows"></i></div>
                 <h3>Windows Installer ARM64</h3>
                 <p>Native build for Windows on ARM devices.</p>
-                <a href="https://github.com/KeishaXD/KeiYomi/releases" target="_blank" class="btn btn-primary">Get ARM64</a>
+                <a href="https://github.com/KeishaXD/KeiYomi/releases/latest" target="_blank" class="btn btn-primary">Get ARM64</a>
             </div>
             <div class="card download-card reveal">
                 <div class="icon-box"><i class="fas fa-box-open"></i></div>
                 <h3>Windows Portable</h3>
                 <p>Portable x64 and ARM64 builds without a full installer.</p>
-                <a href="https://github.com/KeishaXD/KeiYomi/releases" target="_blank" class="btn btn-primary">Get Portable</a>
+                <a href="https://github.com/KeishaXD/KeiYomi/releases/latest" target="_blank" class="btn btn-primary">Get Portable</a>
             </div>
             <div class="card download-card reveal">
                 <div class="icon-box"><i class="fab fa-linux"></i></div>
                 <h3>Linux</h3>
                 <p>AppImage, deb, and portable tar.gz variants depending on release artifacts.</p>
-                <a href="https://github.com/KeishaXD/KeiYomi/releases" target="_blank" class="btn btn-primary">Get Linux</a>
+                <a href="https://github.com/KeishaXD/KeiYomi/releases/latest" target="_blank" class="btn btn-primary">Get Linux</a>
             </div>
             <div class="card download-card reveal">
                 <div class="icon-box"><i class="fab fa-apple"></i></div>
                 <h3>macOS</h3>
                 <p>DMG and ZIP builds are best produced on macOS for release signing and notarization.</p>
-                <a href="https://github.com/KeishaXD/KeiYomi/releases" target="_blank" class="btn btn-primary">Get macOS</a>
+                <a href="https://github.com/KeishaXD/KeiYomi/releases/latest" target="_blank" class="btn btn-primary">Get macOS</a>
             </div>
             <div class="card download-card reveal">
                 <div class="icon-box"><i class="fas fa-code"></i></div>

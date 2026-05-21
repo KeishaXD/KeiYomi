@@ -25,20 +25,31 @@ if not exist "node_modules" (
 
 :menu
 cls
-echo ========================================
-echo KeiYomi Build Menu
-echo ========================================
-echo 1. Windows Installer x64          - Aman compile di Windows Intel/AMD
-echo 2. Windows Installer ARM64        - Aman compile di Windows, target perangkat Windows ARM
-echo 3. Windows Portable x64           - Aman compile di Windows, hasil .exe portable
-echo 4. Windows Portable ARM64         - Aman compile di Windows, target portable Windows ARM
-echo 5. Windows Installer x64 + ARM64  - Aman compile di Windows, lebih lama
-echo 6. Linux Build                    - Bisa dicoba di Windows, lebih aman di Linux/CI
-echo 7. Linux Portable tar.gz          - Bisa compile dari Windows
-echo 8. macOS Build                    - Idealnya compile di macOS/CI
-echo 9. All Platforms                  - Tidak disarankan dari Windows lokal
-echo C. Check only                     - Validasi syntax, bukan compile
-echo 0. Exit
+echo.
+echo.
+echo    $$\   $$\          $$\ $$\     $$\                       $$\
+echo    $$ ^| $$  ^|         \__^|\$$\   $$  ^|                      \__^|
+echo    $$ ^|$$  / $$$$$$\  $$\  \$$\ $$  /$$$$$$\  $$$$$$\$$$$\  $$\
+echo    $$$$$  / $$  __$$\ $$ ^|  \$$$$  /$$  __$$\ $$  _$$  _$$\ $$ ^|
+echo    $$  $$^<  $$$$$$$$ ^|$$ ^|   \$$  / $$ /  $$ ^|$$ / $$ / $$ ^|$$ ^|
+echo    $$ ^|\$$\ $$   ____^|$$ ^|    $$ ^|  $$ ^|  $$ ^|$$ ^| $$ ^| $$ ^|$$ ^|
+echo    $$ ^| \$$\\$$$$$$$\ $$ ^|    $$ ^|  \$$$$$$  ^|$$ ^| $$ ^| $$ ^|$$ ^|
+echo    \__^|  \__^|\_______^|\__^|    \__^|   \______/ \__^| \__^| \__^|\__^|
+echo.
+echo    ========================================
+echo    KeiYomi Build Menu
+echo    ========================================
+echo    1. Windows Installer x64          - Aman compile di Windows Intel/AMD
+echo    2. Windows Installer ARM64        - Aman compile di Windows, target perangkat Windows ARM
+echo    3. Windows Portable x64           - Aman compile di Windows, hasil .exe portable
+echo    4. Windows Portable ARM64         - Aman compile di Windows, target portable Windows ARM
+echo    5. Windows Installer x64 + ARM64  - Aman compile di Windows, lebih lama
+echo    6. Linux Build                    - Bisa dicoba di Windows, lebih aman di Linux/CI
+echo    7. Linux Portable tar.gz          - Bisa compile dari Windows
+echo    8. macOS Build                    - Idealnya compile di macOS/CI
+echo    9. All Platforms                  - Tidak disarankan dari Windows lokal
+echo    C. Check only                     - Validasi syntax, bukan compile
+echo    0. Exit
 echo.
 set /p choice="Pilih opsi: "
 
