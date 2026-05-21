@@ -516,6 +516,33 @@ ipcMain.handle('image:getCoverThumbnail', async (event, sourcePath) => {
     }
 });
 
+ipcMain.handle('image:saveCoverDataUrl', async (event, dataUrl) => {
+    try {
+        const match = String(dataUrl || '').match(/^data:image\/(jpeg|jpg|png|webp);base64,([a-zA-Z0-9+/=]+)$/);
+        if (!match) {
+            throw new Error('Format gambar sampul tidak valid.');
+        }
+
+        const ext = match[1] === 'jpg' ? 'jpeg' : match[1];
+        const buffer = Buffer.from(match[2], 'base64');
+        if (buffer.length === 0 || buffer.length > 8 * 1024 * 1024) {
+            throw new Error('Ukuran gambar sampul tidak valid.');
+        }
+
+        const coversDir = path.join(app.getPath('userData'), 'covers_cache');
+        fs.mkdirSync(coversDir, { recursive: true });
+
+        const fileName = `cover_auto_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.${ext === 'jpeg' ? 'jpg' : ext}`;
+        const destPath = path.join(coversDir, fileName);
+        fs.writeFileSync(destPath, buffer);
+        rememberAllowedFile(destPath);
+        return destPath;
+    } catch (error) {
+        console.error('Gagal menyimpan sampul otomatis:', error);
+        return null;
+    }
+});
+
 // --- FITUR BARU: SAVE/LOAD DATA KE FILE TERSEMBUNYI ---
 ipcMain.handle('data:save', async (event, data) => {
     try {
@@ -622,7 +649,7 @@ ipcMain.handle('file:read', async (event, filePath, encoding) => {
     return fs.promises.readFile(normalized, encoding);
 });
 
-ipcMain.handle('cbr:extract', async (event, filePath) => {
+async function extractCbrImages(filePath) {
     if (!isAllowedReadableFile(filePath, allowedDocumentExts) || path.extname(filePath).toLowerCase() !== '.cbr') {
         throw new Error('Akses file CBR tidak diizinkan.');
     }
@@ -655,6 +682,15 @@ ipcMain.handle('cbr:extract', async (event, filePath) => {
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
     return images;
+}
+
+ipcMain.handle('cbr:extract', async (event, filePath) => {
+    return extractCbrImages(filePath);
+});
+
+ipcMain.handle('cbr:extractCover', async (event, filePath) => {
+    const images = await extractCbrImages(filePath);
+    return images[0] || null;
 });
 
 ipcMain.handle('lang:load', async () => {

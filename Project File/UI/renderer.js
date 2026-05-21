@@ -304,6 +304,271 @@ function renderLibrarySorted() {
             coverImageObserver.observe(img);
         }
 
+        async function generatePdfFirstPageCover(filePath) {
+            if (path.extname(filePath).toLowerCase() !== '.pdf') return null;
+
+            try {
+                const data = await fs.readFile(filePath);
+                const loadingTask = pdfjsLib.getDocument(new Uint8Array(data));
+                const pdf = await loadingTask.promise;
+                const page = await pdf.getPage(1);
+                const baseViewport = page.getViewport({ scale: 1 });
+                const targetWidth = 320;
+                const scale = targetWidth / baseViewport.width;
+                const viewport = page.getViewport({ scale });
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d', { alpha: false });
+
+                canvas.width = Math.max(1, Math.floor(viewport.width));
+                canvas.height = Math.max(1, Math.floor(viewport.height));
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+
+                await page.render({ canvasContext: context, viewport }).promise;
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+                return await ipcRenderer.invoke('image:saveCoverDataUrl', dataUrl);
+            } catch (error) {
+                console.warn('Gagal membuat sampul otomatis dari halaman pertama:', error);
+                return null;
+            }
+        }
+
+        function blobToImage(blob) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(img);
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error('Gagal membaca gambar sampul.'));
+                };
+                img.src = url;
+            });
+        }
+
+        async function saveImageBlobAsCover(blob) {
+            const img = await blobToImage(blob);
+            const targetWidth = 320;
+            const scale = targetWidth / Math.max(1, img.naturalWidth || img.width);
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d', { alpha: false });
+
+            canvas.width = targetWidth;
+            canvas.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            return ipcRenderer.invoke('image:saveCoverDataUrl', canvas.toDataURL('image/jpeg', 0.72));
+        }
+
+        function getSortedArchiveImages(zip) {
+            return Object.keys(zip.files)
+                .filter(filename => !zip.files[filename].dir && /\.(jpg|jpeg|png|gif|webp)$/i.test(filename))
+                .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+        }
+
+        async function generateArchiveImageCover(filePath) {
+            try {
+                const fileContent = await fs.readFile(filePath);
+                const zip = await JSZip.loadAsync(fileContent);
+                const imageFiles = getSortedArchiveImages(zip);
+                if (imageFiles.length === 0) return null;
+
+                const blob = await zip.files[imageFiles[0]].async('blob');
+                return saveImageBlobAsCover(blob);
+            } catch (error) {
+                console.warn('Gagal membuat sampul otomatis dari arsip gambar:', error);
+                return null;
+            }
+        }
+
+        async function generateCbrFirstImageCover(filePath) {
+            try {
+                const item = await ipcRenderer.invoke('cbr:extractCover', filePath);
+                if (!item) return null;
+
+                const bytes = item.data instanceof Uint8Array ? item.data : new Uint8Array(item.data);
+                const blob = new Blob([bytes], { type: item.mime || 'application/octet-stream' });
+                return saveImageBlobAsCover(blob);
+            } catch (error) {
+                console.warn('Gagal membuat sampul otomatis dari CBR:', error);
+                return null;
+            }
+        }
+
+        async function generateEpubCover(filePath) {
+            try {
+                const fileContent = await fs.readFile(filePath);
+                const zip = await JSZip.loadAsync(fileContent);
+                const parser = new DOMParser();
+                const containerFile = zip.file('META-INF/container.xml');
+                let preferredImagePath = '';
+
+                if (containerFile) {
+                    const containerXml = parser.parseFromString(await containerFile.async('text'), 'application/xml');
+                    const rootfile = getElementsByLocalName(containerXml, 'rootfile')[0];
+                    const opfPath = rootfile && rootfile.getAttribute('full-path');
+                    const opfFile = getZipFile(zip, opfPath);
+
+                    if (opfPath && opfFile) {
+                        const opfDir = opfPath.includes('/') ? opfPath.slice(0, opfPath.lastIndexOf('/')) : '';
+                        const opfXml = parser.parseFromString(await opfFile.async('text'), 'application/xml');
+                        const manifestById = new Map();
+
+                        getElementsByLocalName(opfXml, 'item').forEach(item => {
+                            const id = item.getAttribute('id');
+                            const href = item.getAttribute('href');
+                            if (!id || !href) return;
+                            manifestById.set(id, {
+                                href,
+                                mediaType: item.getAttribute('media-type') || '',
+                                properties: item.getAttribute('properties') || ''
+                            });
+                        });
+
+                        const coverMeta = getElementsByLocalName(opfXml, 'meta')
+                            .find(meta => (meta.getAttribute('name') || '').toLowerCase() === 'cover');
+                        const coverId = coverMeta && coverMeta.getAttribute('content');
+                        const coverItem = (coverId && manifestById.get(coverId)) ||
+                            Array.from(manifestById.values()).find(item => /\bcover-image\b/i.test(item.properties)) ||
+                            Array.from(manifestById.values()).find(item => /^image\//i.test(item.mediaType));
+
+                        if (coverItem) {
+                            preferredImagePath = resolveZipPath(opfDir, coverItem.href);
+                        }
+                    }
+                }
+
+                const fallbackImage = getSortedArchiveImages(zip)[0];
+                const imagePath = preferredImagePath || fallbackImage;
+                const imageFile = getZipFile(zip, imagePath);
+                if (!imageFile) return null;
+
+                return saveImageBlobAsCover(await imageFile.async('blob'));
+            } catch (error) {
+                console.warn('Gagal membuat sampul otomatis dari EPUB:', error);
+                return null;
+            }
+        }
+
+        function cleanPreviewText(text) {
+            return String(text || '')
+                .replace(/```[\s\S]*?```/g, ' ')
+                .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+                .replace(/\[[^\]]*]\([^)]*\)/g, ' ')
+                .replace(/[#>*_`~|-]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function wrapCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines) {
+            const words = cleanPreviewText(text).split(' ').filter(Boolean);
+            const lines = [];
+            let line = '';
+
+            words.forEach(word => {
+                const testLine = line ? `${line} ${word}` : word;
+                if (context.measureText(testLine).width > maxWidth && line) {
+                    lines.push(line);
+                    line = word;
+                } else {
+                    line = testLine;
+                }
+            });
+            if (line) lines.push(line);
+
+            lines.slice(0, maxLines).forEach((drawLine, index) => {
+                context.fillText(drawLine, x, y + (index * lineHeight));
+            });
+
+            return lines.length;
+        }
+
+        async function saveTextPreviewCover(title, body, label) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d', { alpha: false });
+            canvas.width = 320;
+            canvas.height = 460;
+
+            context.fillStyle = '#f8fafc';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = '#2563eb';
+            context.fillRect(0, 0, canvas.width, 12);
+            context.fillStyle = '#e2e8f0';
+            context.fillRect(28, 90, 264, 1);
+
+            context.fillStyle = '#0f172a';
+            context.font = '700 24px Segoe UI, Arial, sans-serif';
+            wrapCanvasText(context, title || 'Untitled', 28, 56, 264, 30, 2);
+
+            context.fillStyle = '#64748b';
+            context.font = '700 13px Segoe UI, Arial, sans-serif';
+            context.fillText(String(label || 'DOCUMENT').toUpperCase(), 28, 122);
+
+            context.fillStyle = '#334155';
+            context.font = '16px Segoe UI, Arial, sans-serif';
+            wrapCanvasText(context, body || title || '', 28, 160, 264, 24, 10);
+
+            return ipcRenderer.invoke('image:saveCoverDataUrl', canvas.toDataURL('image/jpeg', 0.76));
+        }
+
+        async function generateTextDocumentCover(filePath, title) {
+            try {
+                const ext = path.extname(filePath).toLowerCase();
+                if (ext === '.docx') {
+                    if (!window.mammoth || typeof window.mammoth.extractRawText !== 'function') {
+                        return saveTextPreviewCover(title, '', 'DOCX');
+                    }
+
+                    const data = await fs.readFile(filePath);
+                    const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+                    const result = await window.mammoth.extractRawText({ arrayBuffer });
+                    return saveTextPreviewCover(title, result.value || '', 'DOCX');
+                }
+
+                const text = await fs.readFile(filePath, 'utf8');
+                return saveTextPreviewCover(title, text, ext === '.md' ? 'MD' : 'TXT');
+            } catch (error) {
+                console.warn('Gagal membuat sampul otomatis dari dokumen teks:', error);
+                return null;
+            }
+        }
+
+        async function generateAutoCoverForFile(filePath, title) {
+            const ext = path.extname(filePath).toLowerCase();
+            if (ext === '.pdf') return generatePdfFirstPageCover(filePath);
+            if (ext === '.cbz' || ext === '.zip') return generateArchiveImageCover(filePath);
+            if (ext === '.cbr') return generateCbrFirstImageCover(filePath);
+            if (ext === '.epub') return generateEpubCover(filePath);
+            if (ext === '.txt' || ext === '.md' || ext === '.docx') return generateTextDocumentCover(filePath, title);
+            return null;
+        }
+
+        async function ensureAutoCoverForBook(book) {
+            if (!book || book.cover || !book.path) return false;
+
+            const firstChapter = Array.isArray(book.chapters)
+                ? book.chapters.find(chapter => chapter && ['.pdf', '.cbz', '.zip', '.cbr', '.epub', '.txt', '.md', '.docx'].includes(path.extname(chapter.path || '').toLowerCase()))
+                : null;
+            const sourcePath = ['.pdf', '.cbz', '.zip', '.cbr', '.epub', '.txt', '.md', '.docx'].includes(path.extname(book.path).toLowerCase())
+                ? book.path
+                : firstChapter && firstChapter.path;
+
+            if (!sourcePath) return false;
+
+            const coverPath = await generateAutoCoverForFile(sourcePath, book.title);
+            if (!coverPath) return false;
+
+            book.cover = coverPath;
+            bookCoverSrcCache.delete(book);
+            bookCoverThumbCache.delete(book);
+            return true;
+        }
+
 
         function rememberObjectUrl(url) {
             activeObjectUrls.push(url);
@@ -1122,7 +1387,7 @@ function renderLibrarySorted() {
                 genre: selectedGenres, 
                 synopsis: inputSynopsis.value,
                 publishDate: (inputType.value === 'Artikel' || inputType.value === 'Journal') ? inputDate.value : null,
-                cover: inputCover.value || null
+                cover: inputCover.value || (existingDraft ? existingDraft.cover : null)
             };
 
             const newBook = existingDraft ? Object.assign(existingDraft, bookData) : bookData;
@@ -1164,6 +1429,7 @@ function renderLibrarySorted() {
                     };
 
                     libraryData.unshift(newBook);
+                    await ensureAutoCoverForBook(newBook);
                     const saved = await saveData();
                     if (!saved) {
                         libraryData = libraryData.filter(b => b.id !== newBook.id);
@@ -1175,7 +1441,7 @@ function renderLibrarySorted() {
                     pendingBookId = newBook.id;
                     inputTitle.value = path.basename(filePath, path.extname(filePath));
                     inputAuthor.value = '';
-                    inputCover.value = '';
+                    inputCover.value = newBook.cover || '';
                     inputSynopsis.value = '';
                     inputType.value = defaultType;
                     inputDate.value = '';
@@ -1315,9 +1581,9 @@ function renderLibrarySorted() {
                 const ignoredPathsSet = new Set(userSettings.ignoredPaths || []);
                 const normalizeLibraryPath = (targetPath) => String(targetPath || '').replace(/[\\/]+/g, '/').toLowerCase();
 
-                scannedBooks.forEach(newBook => {
+                for (const newBook of scannedBooks) {
                     const normNewBookPath = normalizeLibraryPath(newBook.path);
-                    if (ignoredPathsSet.has(normNewBookPath)) return; // Abaikan jika ada di ignore list
+                    if (ignoredPathsSet.has(normNewBookPath)) continue; // Abaikan jika ada di ignore list
 
                     const exists = libraryData.find(b => {
                         const normExistPath = normalizeLibraryPath(b.path);
@@ -1373,7 +1639,13 @@ function renderLibrarySorted() {
                         // dengan data yang sudah disimpan oleh user sebelumnya.
                         Object.assign(exists, userPreservedData);
                     }
-                });
+                }
+
+                for (const book of libraryData) {
+                    if (!book.cover) {
+                        await ensureAutoCoverForBook(book);
+                    }
+                }
 
                 const scannedPaths = new Set(scannedBooks.map(b => normalizeLibraryPath(b.path)));
                 libraryData = libraryData.filter(book => {
