@@ -23,7 +23,8 @@
     "build:win:portable:arm64": "electron-builder --win portable --arm64 --publish never",
     "build:linux": "electron-builder --linux --publish never",
     "build:linux:portable": "electron-builder --linux tar.gz --publish never",
-    "build:linux:tarxz": "electron-builder --linux tar.xz --publish never",
+    "build:linux:portable:zip": "electron-builder --linux zip --publish never",
+    "build:linux:portable:tarxz": "electron-builder --linux tar.xz --publish never",
     "build:mac": "electron-builder --mac --publish never",
     "build:all": "electron-builder --win --linux --mac --publish never"
   },
