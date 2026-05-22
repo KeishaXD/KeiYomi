@@ -104,6 +104,7 @@
     },
     "nsis": {
       "include": "Script/installer.nsh",
+      "license": "../LICENSE.md",
       "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,

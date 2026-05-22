@@ -49,6 +49,7 @@ echo    7. Linux Portable tar.gz          - Bisa compile dari Windows
 echo    8. macOS Build                    - Idealnya compile di macOS/CI
 echo    9. All Platforms                  - Tidak disarankan dari Windows lokal
 echo    C. Check only                     - Validasi syntax, bukan compile
+echo    T. Test Windows Installer x64     - Buka wizard installer tanpa rebuild
 echo    0. Exit
 echo.
 set /p choice="Pilih opsi: "
@@ -63,6 +64,7 @@ if "%choice%"=="7" goto linux_portable
 if "%choice%"=="8" goto mac
 if "%choice%"=="9" goto all_platforms
 if /I "%choice%"=="C" goto check_only
+if /I "%choice%"=="T" goto test_win_installer
 if "%choice%"=="0" goto done
 
 echo.
@@ -164,6 +166,29 @@ goto success
 call :check
 if errorlevel 1 goto fail
 goto success
+
+:test_win_installer
+echo.
+echo [INFO] Mencari installer Windows x64 terbaru di folder dist...
+set "INSTALLER="
+for /f "delims=" %%F in ('dir /b /a-d /o-d "dist\KeiYomi-Setup-*-x64.exe" 2^>nul') do (
+    set "INSTALLER=dist\%%F"
+    goto installer_found
+)
+
+:installer_found
+if not defined INSTALLER (
+    echo [ERROR] Installer Windows x64 belum ditemukan.
+    echo [INFO] Jalankan opsi 1 dulu untuk build Windows Installer x64.
+    pause
+    goto menu
+)
+
+echo [INFO] Membuka "%INSTALLER%"
+echo [INFO] Untuk test UI saja, klik Cancel sebelum tombol Install.
+start "" "%INSTALLER%"
+pause
+goto menu
 
 :success
 echo.
