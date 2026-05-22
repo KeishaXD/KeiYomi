@@ -19,6 +19,8 @@ const scrollIdleTimers = new WeakMap();
 const GRID_BATCH_SIZE = 24;
 const BLANK_COVER_SRC = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 const MAX_COVER_THUMBNAIL_JOBS = 2;
+const BOOK_COVER_ICON = `<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M16 10h28a6 6 0 0 1 6 6v40H22a6 6 0 0 1-6-6V10z"/><path d="M22 10v40a6 6 0 0 0 6 6"/><path d="M24 20h16M24 28h14"/></svg>`;
+const INLINE_CALENDAR_ICON = `<svg class="inline-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v3h6V2h2v3h3a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3V2zm13 9H4v9h16v-9zM4 9h16V7H4v2z"/></svg>`;
 
 function switchTab(tabName) {
     if (tabName === 'settings') {
@@ -684,7 +686,9 @@ function renderLibrarySorted() {
 
             const coverInfo = getBookCoverInfo(book);
             
-            const coverHtml = coverInfo.src ? `<img class="book-cover" width="160" height="220" loading="lazy" decoding="async" fetchpriority="low" alt="">` : `<div class="book-cover">📖</div>`;
+            const coverHtml = coverInfo.src
+                ? `<img class="book-cover" width="160" height="220" loading="lazy" decoding="async" fetchpriority="low" alt="">`
+                : `<div class="book-cover book-cover-placeholder">${BOOK_COVER_ICON}</div>`;
 
             div.innerHTML = `
                 ${coverHtml}
@@ -774,9 +778,9 @@ function renderLibrarySorted() {
                 if (!coverSrc.startsWith('file://')) coverSrc = `file://${coverSrc}`;
                 coverSrc = escapeHtml(coverSrc);
             }
-            const coverStyle = coverSrc 
-                ? `background-image: url('${coverSrc}'); background-size: cover; color: transparent;` 
-                : `display:flex;align-items:center;justify-content:center;font-size:4rem;color:#fff;background:#64748b;`;
+            const detailCoverHtml = coverSrc
+                ? `<div class="detail-cover" style="background-image: url('${coverSrc}'); background-size: cover;"></div>`
+                : `<div class="detail-cover detail-cover-placeholder">${BOOK_COVER_ICON}</div>`;
 
             let chapterListHtml = '';
             let chapterCount = 0;
@@ -904,7 +908,7 @@ function renderLibrarySorted() {
             const container = document.getElementById('detail-content');
             container.innerHTML = `
                 <div class="comic-header">
-                    <div class="detail-cover" style="${coverStyle}">📖</div>
+                    ${detailCoverHtml}
                     <div class="detail-content">
                         <div class="detail-meta-top">
                             <span class="detail-type">${safeBookType}</span>
@@ -913,7 +917,7 @@ function renderLibrarySorted() {
                         <div class="detail-author">
                             <span>${escapeHtml(t('detail_author'))}:</span> ${safeBookAuthor}
                         </div>
-                        ${book.publishDate ? `<div class="detail-date">📅 ${escapeHtml(t('detail_date'))}: ${escapeHtml(book.publishDate)}</div>` : ''}
+                        ${book.publishDate ? `<div class="detail-date">${INLINE_CALENDAR_ICON} ${escapeHtml(t('detail_date'))}: ${escapeHtml(book.publishDate)}</div>` : ''}
                         
                         <div class="detail-tags-container">
                             ${tagsHtml}

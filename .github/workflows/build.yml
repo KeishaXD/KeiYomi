@@ -18,14 +18,6 @@ on:
           - linux
           - linux-portable
           - mac
-      compression:
-        description: "Compression for Linux portable"
-        required: true
-        default: "zip"
-        type: choice
-        options:
-          - zip
-          - tar.xz
   push:
     tags:
       - "v*"
@@ -45,17 +37,9 @@ jobs:
         shell: bash
         env:
           TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'all' }}
-          COMPRESSION: ${{ github.event_name == 'workflow_dispatch' && inputs.compression || 'zip' }}
         run: |
           node <<'NODE'
           const fs = require('fs');
-          const compression = process.env.COMPRESSION === 'tar.xz' ? 'tar.xz' : 'zip';
-          const linuxPortableScript = compression === 'tar.xz'
-            ? 'build:linux:portable:tarxz'
-            : 'build:linux:portable:zip';
-          const linuxPortableArtifact = compression === 'tar.xz'
-            ? 'Project File/dist/*.tar.xz'
-            : 'Project File/dist/*.zip';
 
           const targets = {
             'windows-x64': {
@@ -110,9 +94,9 @@ jobs:
             'linux-portable': {
               platform: 'linux-portable',
               os: 'ubuntu-24.04',
-              script: linuxPortableScript,
+              script: 'build:linux:portable',
               artifact: [
-                linuxPortableArtifact,
+                'Project File/dist/*.tar.gz',
                 'Project File/dist/*.blockmap',
                 'Project File/dist/*.yml'
               ].join('\n')

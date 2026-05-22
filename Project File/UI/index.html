@@ -199,9 +199,9 @@
                 <div class="form-group" style="margin-top: 16px;">
                     <label data-i18n="settings_night_mode_intensity">Intensitas Cahaya Malam (Cold - Warm)</label>
                     <div class="night-intensity-control" style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
-                        <span style="font-size: 16px;">❄️</span>
+                        <span class="temperature-icon cold" aria-hidden="true"></span>
                         <input type="range" id="setting-night-intensity" min="0" max="100" value="50" style="flex-grow: 1;">
-                        <span style="font-size: 16px;">🔥</span>
+                        <span class="temperature-icon warm" aria-hidden="true"></span>
                     </div>
                 </div>
 
@@ -413,7 +413,10 @@
 
     <!-- Context Menu -->
     <div id="context-menu" class="context-menu">
-        <div class="context-item" id="ctx-delete" data-i18n="ctx_delete">🗑 Hapus Buku</div>
+        <div class="context-item" id="ctx-delete" data-i18n="ctx_delete">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM8 9h8v10H8V9zm7.5-5l-1-1h-5l-1 1H5v2h14V4h-3.5z"/></svg>
+            <span>Hapus Buku</span>
+        </div>
     </div>
 
     <!-- Add Book Modal -->

@@ -258,6 +258,16 @@ body { display: flex; flex-direction: column; height: 100vh; background-color: v
 .view-section.is-scrolling .book-card { transition: none; box-shadow: none; pointer-events: none; }
 .view-section.is-scrolling .book-card:hover { transform: none; box-shadow: none; }
 .book-cover { width: 100%; height: 220px; background-color: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 3rem; object-fit: cover; }
+.book-cover-placeholder svg {
+    width: 56px;
+    height: 56px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.78;
+}
 img.book-cover { display: block; }
 .book-info { padding: 12px; }
 .book-title { font-weight: 600; font-size: 0.95rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
@@ -314,6 +324,28 @@ img.book-cover { display: block; }
     object-fit: cover; 
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1); 
     flex-shrink: 0; 
+}
+.detail-cover-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+}
+.detail-cover-placeholder svg {
+    width: 96px;
+    height: 96px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.82;
+}
+.inline-icon {
+    width: 1em;
+    height: 1em;
+    fill: currentColor;
+    vertical-align: -0.14em;
 }
 .detail-content { flex: 1; display: flex; flex-direction: column; }
 .detail-meta-top { margin-bottom: 16px; }
@@ -841,6 +873,23 @@ input[type="range"] { accent-color: var(--accent); }
 .night-intensity-control {
     width: 100%;
 }
+.temperature-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.temperature-icon.cold {
+    background:
+        linear-gradient(#60a5fa, #60a5fa) center / 2px 100% no-repeat,
+        linear-gradient(90deg, #60a5fa, #60a5fa) center / 100% 2px no-repeat;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.18);
+}
+.temperature-icon.warm {
+    background: radial-gradient(circle at 50% 58%, #fef3c7 0 22%, #f97316 23% 62%, #ef4444 63% 100%);
+    box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.16);
+}
 
 #setting-night-intensity {
     flex: 1 1 auto;
@@ -889,6 +938,7 @@ input[type="range"] { accent-color: var(--accent); }
 /* Context Menu */
 .context-menu { display: none; position: absolute; background: var(--bg-secondary); border: 1px solid var(--border-primary); box-shadow: 0 4px 12px var(--shadow-color); border-radius: 8px; z-index: 2000; min-width: 160px; overflow: hidden; }
 .context-item { padding: 12px 16px; cursor: pointer; font-size: 0.9rem; color: #ef4444; transition: background 0.2s; display: flex; align-items: center; gap: 8px; }
+.context-item svg { width: 18px; height: 18px; fill: currentColor; flex: 0 0 auto; }
 .context-item:hover { background-color: #fef2f2; }
 
 /* Modal Styles */

@@ -14,63 +14,48 @@ Var PdfQualityControl
 Var UsernameControl
 
 !macro customPageAfterChangeDir
-  Page custom KeiYomiPreferencesCreate KeiYomiPreferencesLeave
+  Page custom KeiYomiProfilePreferencesCreate KeiYomiProfilePreferencesLeave
+  Page custom KeiYomiReadingPreferencesCreate KeiYomiReadingPreferencesLeave
 !macroend
 
-Function KeiYomiPreferencesCreate
+Function KeiYomiProfilePreferencesCreate
   nsDialogs::Create 1018
   Pop $0
   ${If} $0 == error
     Abort
   ${EndIf}
 
-  ${NSD_CreateLabel} 0 0 100% 18u "Preferensi awal KeiYomi"
+  ${NSD_CreateLabel} 0 0 100% 18u "Preferensi profil dan tampilan"
   Pop $0
 
-  ${NSD_CreateLabel} 0 26u 100% 12u "Pilih pengaturan bawaan. Data pustaka dan riwayat lama tidak akan dihapus."
+  ${NSD_CreateLabel} 0 22u 100% 12u "Atur identitas dan tampilan awal KeiYomi."
   Pop $0
 
-  ${NSD_CreateLabel} 0 42u 32% 12u "Nama pengguna"
+  ${NSD_CreateLabel} 0 36u 32% 12u "Nama pengguna"
   Pop $0
-  ${NSD_CreateText} 36% 40u 60% 12u ""
+  ${NSD_CreateText} 36% 34u 60% 12u ""
   Pop $UsernameControl
 
-  ${NSD_CreateLabel} 0 66u 32% 12u "Bahasa"
+  ${NSD_CreateLabel} 0 56u 32% 12u "Bahasa"
   Pop $0
-  ${NSD_CreateDropList} 36% 64u 60% 64u "Indonesia"
+  ${NSD_CreateDropList} 36% 54u 60% 64u "Indonesia"
   Pop $LanguageControl
   ${NSD_CB_AddString} $LanguageControl "Indonesia"
   ${NSD_CB_AddString} $LanguageControl "English"
   ${NSD_CB_SelectString} $LanguageControl "Indonesia"
 
-  ${NSD_CreateLabel} 0 90u 32% 12u "Tema"
+  ${NSD_CreateLabel} 0 76u 32% 12u "Tema"
   Pop $0
-  ${NSD_CreateDropList} 36% 88u 60% 64u "Gelap (Dark)"
+  ${NSD_CreateDropList} 36% 74u 60% 64u "Gelap (Dark)"
   Pop $ThemeControl
   ${NSD_CB_AddString} $ThemeControl "Gelap (Dark)"
   ${NSD_CB_AddString} $ThemeControl "Terang (Light)"
   ${NSD_CB_SelectString} $ThemeControl "Gelap (Dark)"
 
-  ${NSD_CreateLabel} 0 114u 32% 12u "Mode baca"
-  Pop $0
-  ${NSD_CreateDropList} 36% 112u 60% 64u "Webtoon (Scroll)"
-  Pop $ReaderModeControl
-  ${NSD_CB_AddString} $ReaderModeControl "Webtoon (Scroll)"
-  ${NSD_CB_AddString} $ReaderModeControl "Normal (Per Halaman)"
-  ${NSD_CB_SelectString} $ReaderModeControl "Webtoon (Scroll)"
-
-  ${NSD_CreateLabel} 0 138u 32% 12u "Kualitas PDF"
-  Pop $0
-  ${NSD_CreateDropList} 36% 136u 60% 64u "Mode Ringan"
-  Pop $PdfQualityControl
-  ${NSD_CB_AddString} $PdfQualityControl "Mode Ringan"
-  ${NSD_CB_AddString} $PdfQualityControl "Mode Asli"
-  ${NSD_CB_SelectString} $PdfQualityControl "Mode Ringan"
-
   nsDialogs::Show
 FunctionEnd
 
-Function KeiYomiPreferencesLeave
+Function KeiYomiProfilePreferencesLeave
   ${NSD_GetText} $UsernameControl $PrefUsername
 
   ${NSD_GetText} $LanguageControl $0
@@ -86,7 +71,41 @@ Function KeiYomiPreferencesLeave
   ${Else}
     StrCpy $PrefTheme "dark"
   ${EndIf}
+FunctionEnd
 
+Function KeiYomiReadingPreferencesCreate
+  nsDialogs::Create 1018
+  Pop $0
+  ${If} $0 == error
+    Abort
+  ${EndIf}
+
+  ${NSD_CreateLabel} 0 0 100% 18u "Preferensi baca"
+  Pop $0
+
+  ${NSD_CreateLabel} 0 22u 100% 12u "Pilih mode baca dan kualitas PDF bawaan."
+  Pop $0
+
+  ${NSD_CreateLabel} 0 42u 32% 12u "Mode baca"
+  Pop $0
+  ${NSD_CreateDropList} 36% 40u 60% 64u "Webtoon (Scroll)"
+  Pop $ReaderModeControl
+  ${NSD_CB_AddString} $ReaderModeControl "Webtoon (Scroll)"
+  ${NSD_CB_AddString} $ReaderModeControl "Normal (Per Halaman)"
+  ${NSD_CB_SelectString} $ReaderModeControl "Webtoon (Scroll)"
+
+  ${NSD_CreateLabel} 0 66u 32% 12u "Kualitas PDF"
+  Pop $0
+  ${NSD_CreateDropList} 36% 64u 60% 64u "Mode Ringan"
+  Pop $PdfQualityControl
+  ${NSD_CB_AddString} $PdfQualityControl "Mode Ringan"
+  ${NSD_CB_AddString} $PdfQualityControl "Mode Asli"
+  ${NSD_CB_SelectString} $PdfQualityControl "Mode Ringan"
+
+  nsDialogs::Show
+FunctionEnd
+
+Function KeiYomiReadingPreferencesLeave
   ${NSD_GetText} $ReaderModeControl $0
   ${If} $0 == "Normal (Per Halaman)"
     StrCpy $PrefReaderMode "normal"
