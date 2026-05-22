@@ -231,7 +231,7 @@ function showToast(message, duration = 4000) {
 let libraryData = [];
 let riwayatBacaan = [];
 let isWebtoonMode = true;
-let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light', autoCoverEnabled: false, showPageSlider: true, showReadingProgress: true };
+let userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light', autoCoverEnabled: false, showPageSlider: false, showReadingProgress: false };
 
 function isManualImportedBook(book) {
     return book && (book.importSource === 'manual' || book.isManualImport === true || !book.structureType);
@@ -263,8 +263,8 @@ async function loadData() {
         userSettings.nightModeIntensity = data.nightModeIntensity !== undefined ? data.nightModeIntensity : 50;
         userSettings.pdfQualityMode = data.pdfQualityMode === 'original' ? 'original' : 'light';
         userSettings.autoCoverEnabled = data.autoCoverEnabled === true;
-        userSettings.showPageSlider = data.showPageSlider !== false;
-        userSettings.showReadingProgress = data.showReadingProgress !== false;
+        userSettings.showPageSlider = data.showPageSlider === true;
+        userSettings.showReadingProgress = data.showReadingProgress === true;
     } else {
         libraryData = [];
         riwayatBacaan = [];

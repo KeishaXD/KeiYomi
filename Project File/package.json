@@ -40,6 +40,10 @@
     "productName": "KeiYomi",
     "compression": "maximum",
     "asar": true,
+    "electronLanguages": [
+      "en-US",
+      "id"
+    ],
     "directories": {
       "output": "dist"
     },
@@ -49,6 +53,8 @@
       "Lang/**/*",
       "assets/**/*",
       "vendor/**/*",
+      "!vendor/**/*.map",
+      "!vendor/**/*.d.ts",
       "package.json",
       "!node_modules/.cache",
       "!dist",

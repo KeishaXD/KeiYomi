@@ -3163,7 +3163,7 @@ function renderLibrarySorted() {
             // 2. Kosongkan memori sementara agar data lama tidak ter-save ulang
             libraryData = [];
             riwayatBacaan = [];
-            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light', autoCoverEnabled: false, showPageSlider: true, showReadingProgress: true };
+            userSettings = { username: '', theme: 'light', language: 'id', customFolders: [], ignoredPaths: [], nightModeEnabled: false, nightModeIntensity: 50, pdfQualityMode: 'light', autoCoverEnabled: false, showPageSlider: false, showReadingProgress: false };
 
             const success = await ipcRenderer.invoke('data:clear');
             if (success) {
