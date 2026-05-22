@@ -29,18 +29,17 @@ call :banner
 echo    ========================================
 echo    KeiYomi Tools
 echo    ========================================
-echo    Build                               Test / Quality
-echo    -----                               --------------
+echo    Build                               Test
+echo    -----                               ----
 echo    1. Windows Installer x64            A. Check syntax only
 echo    2. Windows Installer ARM64          B. Run app from source
 echo    3. Windows Portable x64             C. Run unpacked Windows app
 echo    4. Windows Portable ARM64           D. Test Windows installer x64
 echo    5. Windows Installer x64 + ARM64    E. Show build outputs
 echo    6. Linux Build
-echo    7. Linux Portable tar.gz
-echo    8. macOS Build
-echo    9. All Platforms
-echo                                        F. ESLint
+echo    7. Linux Portable tar.gz            Quality
+echo    8. macOS Build                      -------
+echo    9. All Platforms                    F. ESLint
 echo                                        G. Prettier check
 echo                                        H. Prettier write
 echo                                        I. npm audit
@@ -76,6 +75,9 @@ echo Pilihan tidak dikenal.
 pause
 goto main_menu
 
+rem ---------------------------------------------------------------------------
+rem UI
+rem ---------------------------------------------------------------------------
 :banner
 echo.
 echo.
@@ -90,12 +92,23 @@ echo    \__^|  \__^|\_______^|\__^|    \__^|   \______/ \__^| \__^| \__^|\__^|
 echo.
 exit /b 0
 
+rem ---------------------------------------------------------------------------
+rem Shared helpers
+rem ---------------------------------------------------------------------------
 :check
 echo.
 echo [INFO] Menjalankan validasi syntax...
 call npm.cmd run check
 if errorlevel 1 exit /b 1
 exit /b 0
+
+:run_checked_script
+call :check
+if errorlevel 1 exit /b 1
+echo.
+echo [INFO] %~1...
+call npm.cmd run %~2
+exit /b %errorlevel%
 
 :require_eslint
 if exist "node_modules\.bin\eslint.cmd" exit /b 0
@@ -111,66 +124,41 @@ echo [ERROR] Prettier belum terpasang di project ini.
 echo [INFO] Install dulu dengan: npm install --save-dev prettier
 exit /b 1
 
+rem ---------------------------------------------------------------------------
+rem Build commands
+rem ---------------------------------------------------------------------------
 :win_x64
-call :check
-if errorlevel 1 goto fail
-echo.
-echo [INFO] Build Windows Installer x64...
-call npm.cmd run build:win:x64
-if errorlevel 1 goto fail
-goto success_build
-
-:win_all
-call :check
-if errorlevel 1 goto fail
-echo.
-echo [INFO] Build Windows Installer x64 + ARM64...
-call npm.cmd run build:win
+call :run_checked_script "Build Windows Installer x64" "build:win:x64"
 if errorlevel 1 goto fail
 goto success_build
 
 :win_arm64
-call :check
-if errorlevel 1 goto fail
-echo.
-echo [INFO] Build Windows Installer ARM64...
-call npm.cmd run build:win:arm64
+call :run_checked_script "Build Windows Installer ARM64" "build:win:arm64"
 if errorlevel 1 goto fail
 goto success_build
 
 :win_portable
-call :check
-if errorlevel 1 goto fail
-echo.
-echo [INFO] Build Windows Portable x64...
-call npm.cmd run build:win:portable:x64
+call :run_checked_script "Build Windows Portable x64" "build:win:portable:x64"
 if errorlevel 1 goto fail
 goto success_build
 
 :win_portable_arm64
-call :check
+call :run_checked_script "Build Windows Portable ARM64" "build:win:portable:arm64"
 if errorlevel 1 goto fail
-echo.
-echo [INFO] Build Windows Portable ARM64...
-call npm.cmd run build:win:portable:arm64
+goto success_build
+
+:win_all
+call :run_checked_script "Build Windows Installer x64 + ARM64" "build:win"
 if errorlevel 1 goto fail
 goto success_build
 
 :linux
-call :check
-if errorlevel 1 goto fail
-echo.
-echo [INFO] Build Linux AppImage + deb...
-call npm.cmd run build:linux
+call :run_checked_script "Build Linux AppImage + deb" "build:linux"
 if errorlevel 1 goto fail
 goto success_build
 
 :linux_portable
-call :check
-if errorlevel 1 goto fail
-echo.
-echo [INFO] Build Linux Portable tar.gz...
-call npm.cmd run build:linux:portable
+call :run_checked_script "Build Linux Portable tar.gz" "build:linux:portable"
 if errorlevel 1 goto fail
 goto success_build
 
@@ -194,52 +182,13 @@ call npm.cmd run build:all
 if errorlevel 1 goto fail
 goto success_build
 
+rem ---------------------------------------------------------------------------
+rem Test commands
+rem ---------------------------------------------------------------------------
 :check_only
 call :check
 if errorlevel 1 goto fail
 goto success_test
-
-:quality_eslint
-call :require_eslint
-if errorlevel 1 goto quality_tool_missing
-echo.
-echo [INFO] Menjalankan ESLint...
-call ".\node_modules\.bin\eslint.cmd" "Script/**/*.js" "UI/**/*.js"
-if errorlevel 1 goto fail
-goto success_quality
-
-:quality_prettier_check
-call :require_prettier
-if errorlevel 1 goto quality_tool_missing
-echo.
-echo [INFO] Mengecek format dengan Prettier...
-call ".\node_modules\.bin\prettier.cmd" --check "Script/**/*.js" "UI/**/*.js" "UI/**/*.css" "UI/**/*.html" "Lang/**/*.json" "package.json"
-if errorlevel 1 goto fail
-goto success_quality
-
-:quality_prettier_write
-call :require_prettier
-if errorlevel 1 goto quality_tool_missing
-echo.
-echo [INFO] Merapikan format dengan Prettier...
-call ".\node_modules\.bin\prettier.cmd" --write "Script/**/*.js" "UI/**/*.js" "UI/**/*.css" "UI/**/*.html" "Lang/**/*.json" "package.json"
-if errorlevel 1 goto fail
-goto success_quality
-
-:quality_audit
-echo.
-echo [INFO] Menjalankan npm audit...
-call npm.cmd audit
-if errorlevel 1 goto fail
-goto success_quality
-
-:quality_audit_fix
-echo.
-echo [INFO] Menjalankan npm audit fix...
-echo [WARN] Perintah ini dapat mengubah package-lock.json dan dependency.
-call npm.cmd audit fix
-if errorlevel 1 goto fail
-goto success_quality
 
 :test_source_app
 call :check
@@ -300,6 +249,54 @@ echo.
 pause
 goto main_menu
 
+rem ---------------------------------------------------------------------------
+rem Quality commands
+rem ---------------------------------------------------------------------------
+:quality_eslint
+call :require_eslint
+if errorlevel 1 goto quality_tool_missing
+echo.
+echo [INFO] Menjalankan ESLint...
+call ".\node_modules\.bin\eslint.cmd" "Script/**/*.js" "UI/**/*.js"
+if errorlevel 1 goto fail
+goto success_quality
+
+:quality_prettier_check
+call :require_prettier
+if errorlevel 1 goto quality_tool_missing
+echo.
+echo [INFO] Mengecek format dengan Prettier...
+call ".\node_modules\.bin\prettier.cmd" --check "Script/**/*.js" "UI/**/*.js" "UI/**/*.css" "UI/**/*.html" "Lang/**/*.json" "package.json"
+if errorlevel 1 goto fail
+goto success_quality
+
+:quality_prettier_write
+call :require_prettier
+if errorlevel 1 goto quality_tool_missing
+echo.
+echo [INFO] Merapikan format dengan Prettier...
+call ".\node_modules\.bin\prettier.cmd" --write "Script/**/*.js" "UI/**/*.js" "UI/**/*.css" "UI/**/*.html" "Lang/**/*.json" "package.json"
+if errorlevel 1 goto fail
+goto success_quality
+
+:quality_audit
+echo.
+echo [INFO] Menjalankan npm audit...
+call npm.cmd audit
+if errorlevel 1 goto fail
+goto success_quality
+
+:quality_audit_fix
+echo.
+echo [INFO] Menjalankan npm audit fix...
+echo [WARN] Perintah ini dapat mengubah package-lock.json dan dependency.
+call npm.cmd audit fix
+if errorlevel 1 goto fail
+goto success_quality
+
+rem ---------------------------------------------------------------------------
+rem Result handlers
+rem ---------------------------------------------------------------------------
 :success_build
 echo.
 echo [OK] Build selesai. Cek output di folder dist.
