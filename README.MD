@@ -9,9 +9,15 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
 
 > **Windows SmartScreen Notice:** KeiYomi releases may show a blue "Windows protected your PC" warning because the installer is not code-signed yet. Only download KeiYomi from the official GitHub Releases page, and verify the file name/version before installing.
 
-## For Users
+## System Requirements
 
-### Preview
+- **Operating System:** Windows 10 or Windows 11, 64-bit.
+- **Processor:** Intel/AMD x64 processor or Windows ARM64 device.
+- **Memory:** 4 GB RAM minimum, 8 GB recommended for large PDF/comic files.
+- **Storage:** 300 MB free space for the app, plus additional space for your library.
+- **Display:** 1366 x 768 minimum resolution.
+
+## Preview
 
 KeiYomi interface preview:
 
@@ -24,6 +30,8 @@ KeiYomi interface preview:
 | History | Settings |
 | --- | --- |
 | ![History view](screenshot/History.png) | ![Settings view](screenshot/Setting-1.png) |
+
+## For Users
 
 ### Key Features
 

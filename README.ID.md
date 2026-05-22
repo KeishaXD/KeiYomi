@@ -9,9 +9,15 @@ KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, 
 
 > **Peringatan Windows SmartScreen:** Release KeiYomi mungkin menampilkan pop-up biru "Windows protected your PC" karena installer belum memakai code signing certificate. Unduh KeiYomi hanya dari halaman GitHub Releases resmi, lalu cek nama file dan versinya sebelum install.
 
-## Untuk Pengguna
+## System Requirements
 
-### Preview
+- **Sistem Operasi:** Windows 10 atau Windows 11, 64-bit.
+- **Processor:** Processor Intel/AMD x64 atau perangkat Windows ARM64.
+- **Memori:** Minimal RAM 4 GB, disarankan 8 GB untuk file PDF/komik besar.
+- **Penyimpanan:** Ruang kosong 300 MB untuk aplikasi, ditambah ruang tambahan untuk library.
+- **Layar:** Resolusi minimum 1366 x 768.
+
+## Preview
 
 Preview antarmuka KeiYomi:
 
@@ -24,6 +30,8 @@ Preview antarmuka KeiYomi:
 | Riwayat | Pengaturan |
 | --- | --- |
 | ![Tampilan riwayat](screenshot/History.png) | ![Tampilan pengaturan](screenshot/Setting-1.png) |
+
+## Untuk Pengguna
 
 ### Fitur Utama
 
