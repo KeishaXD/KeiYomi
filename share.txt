@@ -1,23 +1,35 @@
-Halo semuanya! 👋
+Halo semuanya!
 
-Perkenalkan, namaku **Jovallin Keisha Rafael Dewantara** dari kelas **2025i**, Prodi **PPKn**, **Fakultas Ilmu Sosial dan Politik**.
+Perkenalkan, namaku Jovallin Keisha Rafael Dewantara dari kelas 2025i, Prodi PPKn, Fakultas Ilmu Sosial dan Politik.
 
-Aku mau izin share project aplikasi yang aku buat, namanya **KeiYomi**. 📚✨
+Aku mau izin share project aplikasi yang aku buat: KeiYomi.
 
-**Apa itu KeiYomi?**
-KeiYomi adalah aplikasi desktop (PC) buat baca Novel, Komik, dan Dokumen Kuliah (PDF) yang nyaman banget. 🖥️🚀
+Apa itu KeiYomi?
+KeiYomi adalah aplikasi desktop/PC untuk membaca novel, komik digital, dan dokumen kuliah secara offline dengan tampilan modern, ringan, dan nyaman dipakai.
 
-Buat kalian yang suka baca Manhwa/Webtoon di HP tapi pengen layar gede di Laptop, atau butuh PDF reader yang gak ribet buat materi kuliah, wajib cobain ini!
+Cocok buat:
+- Baca PDF materi kuliah tanpa ribet
+- Baca Manhwa/Webtoon di layar laptop
+- Kelola koleksi komik, novel, dan dokumen lokal
+- Baca malam hari dengan Dark Mode
 
-🔥 **Fitur Unggulan:**
-✅ **Webtoon Mode:** Scroll vertikal tanpa putus, enak banget buat baca Manga!
-✅ **Support Banyak Format:** PDF, CBZ, ZIP, sampai TXT.
-✅ **Manajemen Pustaka:** Scan otomatis folder komik/buku kalian, ada Riwayat Baca & Favorit juga.
-✅ **Tampilan Kece:** Modern, Responsif, dan pastinya ada **Dark Mode** biar mata gak pedes pas begadang! 🌙
-✅ **Ringan:** Dibangun pakai teknologi web (Electron) yang dioptimalkan.
+Fitur unggulan:
+- Webtoon Mode: scroll vertikal tanpa putus
+- Normal Mode: baca per halaman untuk PDF/dokumen
+- Support banyak format: PDF, EPUB, CBZ, CBR, ZIP, TXT, MD, DOCX
+- Manajemen pustaka: scan otomatis, riwayat baca, favorit, pencarian, dan sortir
+- Dark Mode dan Light Mode
+- Backup dan restore data lokal
+- 100% gratis dan open source dengan lisensi MIT
 
-Project ini terinspirasi dari *Tachiyomi* tapi khusus buat PC dan dibangun dari nol. 100% Gratis & Open Source (MIT License).
+Catatan:
+Project ini terinspirasi dari Tachiyomi, tetapi dibuat khusus untuk PC dan dibangun dari nol. KeiYomi tidak memakai source code Tachiyomi.
 
-Yuk cobain biar pengalaman baca di PC makin asik! 📖☕
+Download:
+https://github.com/KeishaXD/KeiYomi/releases/tag/v3.2.0
 
-#KeiYomi #MahasiswaProduktif #MangaReader #PDFReader #FISIPOL #PPKn #Unesa
+Kalau Windows SmartScreen muncul, itu karena installer belum memakai code signing certificate. Pastikan download hanya dari link GitHub Releases resmi di atas.
+
+Yuk cobain, semoga bisa bantu teman-teman yang sering baca materi, novel, komik, atau dokumen di laptop.
+
+#KeiYomi #MahasiswaProduktif #MangaReader #PDFReader #OpenSource #PPKn

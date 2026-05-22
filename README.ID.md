@@ -20,6 +20,14 @@ assets-repo/reader-preview.gif
 
 Capture yang disarankan: tampilan reader dengan dokumen terbuka, sidebar/pustaka terlihat, dan menu kontrol baca sedang terbuka.
 
+## Share Singkat
+
+Versi pendek untuk dibagikan ke grup WhatsApp tersedia di [share.txt](share.txt). Teks itu berisi ringkasan fitur, catatan open source, peringatan SmartScreen, dan link release resmi:
+
+```text
+https://github.com/KeishaXD/KeiYomi/releases/tag/v3.2.0
+```
+
 ## Fitur Utama
 
 - **Dukungan Format:** Membaca file **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, **MD**, dan **DOCX**.
@@ -55,7 +63,7 @@ Capture yang disarankan: tampilan reader dengan dokumen terbuka, sidebar/pustaka
 
 ## Install di Windows
 
-1. Unduh `KeiYomi-Setup-<version>-x64.exe` terbaru dari halaman GitHub Releases resmi.
+1. Unduh `KeiYomi-Setup-3.2.0-x64.exe` atau installer terbaru dari halaman GitHub Releases resmi.
 2. Jalankan installer dan ikuti setup wizard.
 3. Jika Windows SmartScreen muncul, pastikan nama file dan versinya sesuai release resmi sebelum melanjutkan.
 4. Buka KeiYomi dari Start Menu atau shortcut desktop.

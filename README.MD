@@ -20,6 +20,14 @@ assets-repo/reader-preview.gif
 
 Recommended capture: the reader view with a document open, the library/sidebar visible, and the reading controls menu expanded.
 
+## Short Share Text
+
+A short Indonesian WhatsApp-friendly share post is available in [share.txt](share.txt). It summarizes the main features, open-source note, SmartScreen warning, and official release link:
+
+```text
+https://github.com/KeishaXD/KeiYomi/releases/tag/v3.2.0
+```
+
 ## Key Features
 
 - **Format Support:** Read **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, **MD**, and **DOCX** files.
@@ -55,7 +63,7 @@ Recommended capture: the reader view with a document open, the library/sidebar v
 
 ## Install on Windows
 
-1. Download the latest `KeiYomi-Setup-<version>-x64.exe` from the official GitHub Releases page.
+1. Download `KeiYomi-Setup-3.2.0-x64.exe` or the latest installer from the official GitHub Releases page.
 2. Run the installer and follow the setup wizard.
 3. If Windows SmartScreen appears, confirm that the file name and version match the official release before continuing.
 4. Open KeiYomi from the Start Menu or desktop shortcut.
