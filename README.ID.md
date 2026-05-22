@@ -9,6 +9,17 @@ KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, 
 
 > **Peringatan Windows SmartScreen:** Release KeiYomi mungkin menampilkan pop-up biru "Windows protected your PC" karena installer belum memakai code signing certificate. Unduh KeiYomi hanya dari halaman GitHub Releases resmi, lalu cek nama file dan versinya sebelum install.
 
+## Preview
+
+Tambahkan screenshot reader atau GIF singkat di salah satu path berikut agar UI aplikasi tampil di README ini:
+
+```text
+assets-repo/reader-preview.png
+assets-repo/reader-preview.gif
+```
+
+Capture yang disarankan: tampilan reader dengan dokumen terbuka, sidebar/pustaka terlihat, dan menu kontrol baca sedang terbuka.
+
 ## Fitur Utama
 
 - **Dukungan Format:** Membaca file **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, **MD**, dan **DOCX**.
@@ -42,6 +53,13 @@ KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, 
 - Marked untuk render Markdown
 - Mammoth untuk render DOCX
 
+## Install di Windows
+
+1. Unduh `KeiYomi-Setup-<version>-x64.exe` terbaru dari halaman GitHub Releases resmi.
+2. Jalankan installer dan ikuti setup wizard.
+3. Jika Windows SmartScreen muncul, pastikan nama file dan versinya sesuai release resmi sebelum melanjutkan.
+4. Buka KeiYomi dari Start Menu atau shortcut desktop.
+
 ## Cara Menjalankan (Development)
 
 1. Pastikan Node.js sudah terinstall. Node.js 22 atau lebih baru direkomendasikan untuk tooling Electron saat ini.
@@ -57,6 +75,14 @@ KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, 
    ```bash
    npm start
    ```
+
+Quick start developer:
+
+```bash
+cd "Project File"
+npm ci
+npm start
+```
 
 Mode development dan release terinstall memakai identitas app yang sama, yaitu `KeiYomi`, sehingga data aplikasi berada di folder profil OS yang sama:
 
@@ -197,6 +223,13 @@ KeiYomi/
     +-- Catatan.docx
     +-- ...
 ```
+
+## Kontribusi & Bug Report
+
+- Buka issue untuk bug, crash, format file yang bermasalah, atau perilaku reader yang membingungkan.
+- Sertakan versi aplikasi, versi OS, tipe file, langkah reproduksi, serta screenshot atau log jika memungkinkan.
+- Untuk kontribusi kode, buat perubahan yang fokus, jalankan `npm run check`, dan jelaskan dampak ke pengguna di pull request.
+- Jaga README bahasa Inggris dan Indonesia tetap konsisten saat mengubah instruksi setup, build, atau release.
 
 ## Lisensi
 

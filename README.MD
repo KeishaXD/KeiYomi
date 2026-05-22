@@ -9,6 +9,17 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
 
 > **Windows SmartScreen Notice:** KeiYomi releases may show a blue "Windows protected your PC" warning because the installer is not code-signed yet. Only download KeiYomi from the official GitHub Releases page, and verify the file name/version before installing.
 
+## Preview
+
+Add a reader screenshot or short GIF at one of these paths to show the app UI in this README:
+
+```text
+assets-repo/reader-preview.png
+assets-repo/reader-preview.gif
+```
+
+Recommended capture: the reader view with a document open, the library/sidebar visible, and the reading controls menu expanded.
+
 ## Key Features
 
 - **Format Support:** Read **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, **MD**, and **DOCX** files.
@@ -42,6 +53,13 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
 - Marked for Markdown rendering
 - Mammoth for DOCX rendering
 
+## Install on Windows
+
+1. Download the latest `KeiYomi-Setup-<version>-x64.exe` from the official GitHub Releases page.
+2. Run the installer and follow the setup wizard.
+3. If Windows SmartScreen appears, confirm that the file name and version match the official release before continuing.
+4. Open KeiYomi from the Start Menu or desktop shortcut.
+
 ## How to Run (Development)
 
 1. Ensure Node.js is installed. Node.js 22 or newer is recommended for the current Electron build tooling.
@@ -57,6 +75,14 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
    ```bash
    npm start
    ```
+
+Quick developer start:
+
+```bash
+cd "Project File"
+npm ci
+npm start
+```
 
 Development and installed releases use the same app identity, `KeiYomi`, so app data is stored in the same OS profile folder:
 
@@ -197,6 +223,13 @@ KeiYomi/
     +-- Notes.docx
     +-- ...
 ```
+
+## Contributing & Bug Reports
+
+- Open an issue for bugs, crashes, broken file formats, or confusing reader behavior.
+- Include the app version, OS version, file type, reproduction steps, and screenshots or logs when possible.
+- For code contributions, keep changes focused, run `npm run check`, and describe the user-facing impact in the pull request.
+- Keep the English and Indonesian README files consistent when changing setup, build, or release instructions.
 
 ## License
 
