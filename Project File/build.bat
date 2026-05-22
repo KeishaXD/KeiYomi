@@ -29,85 +29,42 @@ call :banner
 echo    ========================================
 echo    KeiYomi Tools
 echo    ========================================
-echo    1. Build
-echo    2. Test
+echo    Build                               Test
+echo    -----                               ----
+echo    1. Windows Installer x64            A. Check syntax only
+echo    2. Windows Installer ARM64          B. Run app from source
+echo    3. Windows Portable x64             C. Run unpacked Windows app
+echo    4. Windows Portable ARM64           D. Test Windows installer x64
+echo    5. Windows Installer x64 + ARM64    E. Show build outputs
+echo    6. Linux Build
+echo    7. Linux Portable tar.gz
+echo    8. macOS Build
+echo    9. All Platforms
 echo    0. Exit
 echo.
 set "choice="
 set /p choice="Pilih opsi: "
 
-if "%choice%"=="1" goto build_menu
-if "%choice%"=="2" goto test_menu
+if /i "%choice%"=="1" goto win_x64
+if /i "%choice%"=="2" goto win_arm64
+if /i "%choice%"=="3" goto win_portable
+if /i "%choice%"=="4" goto win_portable_arm64
+if /i "%choice%"=="5" goto win_all
+if /i "%choice%"=="6" goto linux
+if /i "%choice%"=="7" goto linux_portable
+if /i "%choice%"=="8" goto mac
+if /i "%choice%"=="9" goto all_platforms
+if /i "%choice%"=="A" goto check_only
+if /i "%choice%"=="B" goto test_source_app
+if /i "%choice%"=="C" goto test_unpacked_app
+if /i "%choice%"=="D" goto test_win_installer
+if /i "%choice%"=="E" goto show_outputs
 if "%choice%"=="0" goto done
 
 echo.
 echo Pilihan tidak dikenal.
 pause
 goto main_menu
-
-:build_menu
-cls
-call :banner
-echo    ========================================
-echo    Build Menu
-echo    ========================================
-echo    1. Windows Installer x64          - Aman compile di Windows Intel/AMD
-echo    2. Windows Installer ARM64        - Target perangkat Windows ARM
-echo    3. Windows Portable x64           - Hasil .exe portable
-echo    4. Windows Portable ARM64         - Target portable Windows ARM
-echo    5. Windows Installer x64 + ARM64  - Lebih lama
-echo    6. Linux Build                    - Lebih aman di Linux/CI
-echo    7. Linux Portable tar.gz          - Bisa compile dari Windows
-echo    8. macOS Build                    - Idealnya compile di macOS/CI
-echo    9. All Platforms                  - Tidak disarankan dari Windows lokal
-echo    0. Back
-echo.
-set "choice="
-set /p choice="Pilih build: "
-
-if "%choice%"=="1" goto win_x64
-if "%choice%"=="2" goto win_arm64
-if "%choice%"=="3" goto win_portable
-if "%choice%"=="4" goto win_portable_arm64
-if "%choice%"=="5" goto win_all
-if "%choice%"=="6" goto linux
-if "%choice%"=="7" goto linux_portable
-if "%choice%"=="8" goto mac
-if "%choice%"=="9" goto all_platforms
-if "%choice%"=="0" goto main_menu
-
-echo.
-echo Pilihan tidak dikenal.
-pause
-goto build_menu
-
-:test_menu
-cls
-call :banner
-echo    ========================================
-echo    Test Menu
-echo    ========================================
-echo    1. Check syntax only              - Validasi JavaScript tanpa build
-echo    2. Run app from source            - Menjalankan npm start
-echo    3. Run unpacked Windows app       - Buka dist\win-unpacked\KeiYomi.exe
-echo    4. Test Windows installer x64     - Buka wizard installer tanpa rebuild
-echo    5. Show build outputs             - Lihat file rilis di dist
-echo    0. Back
-echo.
-set "choice="
-set /p choice="Pilih test: "
-
-if "%choice%"=="1" goto check_only
-if "%choice%"=="2" goto test_source_app
-if "%choice%"=="3" goto test_unpacked_app
-if "%choice%"=="4" goto test_win_installer
-if "%choice%"=="5" goto show_outputs
-if "%choice%"=="0" goto main_menu
-
-echo.
-echo Pilihan tidak dikenal.
-pause
-goto test_menu
 
 :banner
 echo.
@@ -233,12 +190,12 @@ if not exist "dist\win-unpacked\KeiYomi.exe" (
     echo [ERROR] dist\win-unpacked\KeiYomi.exe belum ditemukan.
     echo [INFO] Jalankan Build ^> Windows Installer x64 atau Windows Portable x64 dulu.
     pause
-    goto test_menu
+    goto main_menu
 )
 echo [INFO] Membuka dist\win-unpacked\KeiYomi.exe
 start "" "dist\win-unpacked\KeiYomi.exe"
 pause
-goto test_menu
+goto main_menu
 
 :test_win_installer
 echo.
@@ -254,40 +211,40 @@ if not defined INSTALLER (
     echo [ERROR] Installer Windows x64 belum ditemukan.
     echo [INFO] Jalankan Build ^> Windows Installer x64 dulu.
     pause
-    goto test_menu
+    goto main_menu
 )
 
 echo [INFO] Membuka "%INSTALLER%"
 echo [INFO] Untuk test UI saja, klik Cancel sebelum tombol Install.
 start "" "%INSTALLER%"
 pause
-goto test_menu
+goto main_menu
 
 :show_outputs
 echo.
 if not exist "dist" (
     echo [INFO] Folder dist belum ada.
     pause
-    goto test_menu
+    goto main_menu
 )
 echo [INFO] Output release di dist:
 echo.
 dir /b /a-d /o-d "dist\*.exe" "dist\*.tar.gz" "dist\*.AppImage" "dist\*.deb" "dist\*.dmg" "dist\*.zip" 2>nul
 echo.
 pause
-goto test_menu
+goto main_menu
 
 :success_build
 echo.
 echo [OK] Build selesai. Cek output di folder dist.
 pause
-goto build_menu
+goto main_menu
 
 :success_test
 echo.
 echo [OK] Test selesai.
 pause
-goto test_menu
+goto main_menu
 
 :fail
 echo.
