@@ -257,7 +257,7 @@ call :require_eslint
 if errorlevel 1 goto quality_tool_missing
 echo.
 echo [INFO] Menjalankan ESLint...
-call ".\node_modules\.bin\eslint.cmd" "Script/**/*.js" "UI/**/*.js"
+call npm.cmd run lint
 if errorlevel 1 goto fail
 goto success_quality
 
@@ -266,7 +266,7 @@ call :require_prettier
 if errorlevel 1 goto quality_tool_missing
 echo.
 echo [INFO] Mengecek format dengan Prettier...
-call ".\node_modules\.bin\prettier.cmd" --check "Script/**/*.js" "UI/**/*.js" "UI/**/*.css" "UI/**/*.html" "Lang/**/*.json" "package.json"
+call npm.cmd run format:check
 if errorlevel 1 goto fail
 goto success_quality
 
@@ -275,7 +275,7 @@ call :require_prettier
 if errorlevel 1 goto quality_tool_missing
 echo.
 echo [INFO] Merapikan format dengan Prettier...
-call ".\node_modules\.bin\prettier.cmd" --write "Script/**/*.js" "UI/**/*.js" "UI/**/*.css" "UI/**/*.html" "Lang/**/*.json" "package.json"
+call npm.cmd run format
 if errorlevel 1 goto fail
 goto success_quality
 
@@ -323,7 +323,7 @@ goto main_menu
 echo.
 echo [ERROR] Proses gagal. Lihat pesan error di atas.
 pause
-exit /b 1
+goto main_menu
 
 :done
 endlocal

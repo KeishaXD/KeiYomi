@@ -13,6 +13,9 @@
   "scripts": {
     "start": "electron .",
     "check": "node --check Script/main.js && node --check Script/preload.js && node --check UI/app-core.js && node --check UI/renderer.js && node --check UI/app-startup.js",
+    "lint": "eslint \"Script/**/*.js\" \"UI/**/*.js\"",
+    "format:check": "prettier --check \"Script/**/*.js\" \"UI/**/*.js\" \"UI/**/*.css\" \"UI/**/*.html\" \"Lang/**/*.json\" package.json",
+    "format": "prettier --write \"Script/**/*.js\" \"UI/**/*.js\" \"UI/**/*.css\" \"UI/**/*.html\" \"Lang/**/*.json\" package.json",
     "build": "npm run build:all",
     "build:local": "npm run build:win && npm run build:linux:portable",
     "build:win": "electron-builder --win --x64 --arm64 --publish never",
@@ -29,9 +32,11 @@
   "author": "KeishaXD",
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "electron": "^42.2.0",
     "electron-builder": "^26.8.1",
     "eslint": "^10.4.0",
+    "globals": "^17.6.0",
     "mammoth": "^1.12.0",
     "marked": "^18.0.4",
     "node-unrar-js": "^2.0.2",
