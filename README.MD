@@ -20,14 +20,6 @@ assets-repo/reader-preview.gif
 
 Recommended capture: the reader view with a document open, the library/sidebar visible, and the reading controls menu expanded.
 
-## Short Share Text
-
-A short Indonesian WhatsApp-friendly share post is available in [share.txt](share.txt). It summarizes the main features, open-source note, SmartScreen warning, and official release link:
-
-```text
-https://github.com/KeishaXD/KeiYomi/releases/tag/v3.2.0
-```
-
 ## Key Features
 
 - **Format Support:** Read **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, **MD**, and **DOCX** files.

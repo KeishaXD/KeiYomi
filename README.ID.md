@@ -20,14 +20,6 @@ assets-repo/reader-preview.gif
 
 Capture yang disarankan: tampilan reader dengan dokumen terbuka, sidebar/pustaka terlihat, dan menu kontrol baca sedang terbuka.
 
-## Share Singkat
-
-Versi pendek untuk dibagikan ke grup WhatsApp tersedia di [share.txt](share.txt). Teks itu berisi ringkasan fitur, catatan open source, peringatan SmartScreen, dan link release resmi:
-
-```text
-https://github.com/KeishaXD/KeiYomi/releases/tag/v3.2.0
-```
-
 ## Fitur Utama
 
 - **Dukungan Format:** Membaca file **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, **MD**, dan **DOCX**.
