@@ -2,17 +2,21 @@
 setlocal EnableExtensions
 
 cd /d "%~dp0"
+set "ROOT_DIR=%cd%"
+mode con: cols=88 lines=38 >nul 2>nul
 
 where node >nul 2>nul
 if errorlevel 1 (
-    echo [ERROR] Node.js tidak ditemukan. Install Node.js dulu, lalu jalankan ulang.
+    echo [ERROR] Node.js tidak ditemukan.
+    echo [INFO] Install Node.js, lalu jalankan ulang.
     pause
     exit /b 1
 )
 
 where npm.cmd >nul 2>nul
 if errorlevel 1 (
-    echo [ERROR] npm tidak ditemukan. Pastikan Node.js terinstall dengan benar.
+    echo [ERROR] npm tidak ditemukan.
+    echo [INFO] Pastikan Node.js terinstall dengan benar.
     pause
     exit /b 1
 )
@@ -26,25 +30,29 @@ if not exist "node_modules" (
 :main_menu
 cls
 call :banner
-echo    ========================================
-echo    KeiYomi Tools
-echo    ========================================
-echo    Build                               Test
-echo    -----                               ----
-echo    1. Windows Installer x64            A. Check syntax only
-echo    2. Windows Installer ARM64          B. Run app from source
-echo    3. Windows Portable x64             C. Run unpacked Windows app
-echo    4. Windows Portable ARM64           D. Test Windows installer x64
-echo    5. Windows Installer x64 + ARM64    E. Show build outputs
-echo    6. Linux Build
-echo    7. Linux Portable tar.gz            Quality
-echo    8. macOS Build                      -------
-echo    9. All Platforms                    F. ESLint
-echo                                        G. Prettier check
-echo                                        H. Prettier write
-echo                                        I. npm audit
-echo                                        J. npm audit fix
-echo    0. Exit
+echo .   
+echo    ============================================================
+echo                            KeiYomi Tools
+echo    ============================================================
+echo.    
+echo    Build                         Test / Output
+echo    -----                         -------------
+echo    1. Win installer x64          A. Syntax check
+echo    2. Win installer ARM64        B. Run from source
+echo    3. Win portable x64           C. Run unpacked app
+echo    4. Win portable ARM64         D. Test installer x64
+echo    5. Win installer x64+ARM64    E. Show outputs
+echo    6. Linux build                R. Reset build output
+echo    7. Linux portable
+echo    8. macOS build                Quality
+echo    9. All platforms              -------
+echo                                  F. ESLint
+echo    Kontrol                       G. Prettier check
+echo    -----                         H. Prettier write
+echo    0. Exit                       I. npm audit
+echo    X. Refresh menu               J. npm audit fix
+echo    Y. Buka ulang script
+echo.
 echo.
 set "choice="
 set /p choice="Pilih opsi: "
@@ -63,12 +71,15 @@ if /i "%choice%"=="B" goto test_source_app
 if /i "%choice%"=="C" goto test_unpacked_app
 if /i "%choice%"=="D" goto test_win_installer
 if /i "%choice%"=="E" goto show_outputs
+if /i "%choice%"=="R" goto reset_build_output
 if /i "%choice%"=="F" goto quality_eslint
 if /i "%choice%"=="G" goto quality_prettier_check
 if /i "%choice%"=="H" goto quality_prettier_write
 if /i "%choice%"=="I" goto quality_audit
 if /i "%choice%"=="J" goto quality_audit_fix
 if "%choice%"=="0" goto done
+if /i "%choice%"=="X" goto main_menu
+if /i "%choice%"=="Y" goto relaunch_script
 
 echo.
 echo Pilihan tidak dikenal.
@@ -79,7 +90,6 @@ rem ---------------------------------------------------------------------------
 rem UI
 rem ---------------------------------------------------------------------------
 :banner
-echo.
 echo.
 echo    $$\   $$\          $$\ $$\     $$\                       $$\
 echo    $$ ^| $$  ^|         \__^|\$$\   $$  ^|                      \__^|
@@ -167,7 +177,7 @@ call :check
 if errorlevel 1 goto fail
 echo.
 echo [INFO] Build macOS dmg + zip...
-echo [WARN] Build macOS biasanya butuh macOS agar hasilnya valid untuk release.
+echo [WARN] Build macOS sebaiknya dibuat di macOS/CI.
 call npm.cmd run build:mac
 if errorlevel 1 goto fail
 goto success_build
@@ -177,7 +187,7 @@ call :check
 if errorlevel 1 goto fail
 echo.
 echo [INFO] Build semua platform...
-echo [WARN] Build macOS biasanya butuh macOS; Linux installer penuh lebih aman dibuat di Linux/GitHub Actions.
+echo [WARN] Build release lebih stabil lewat OS/CI sesuai target.
 call npm.cmd run build:all
 if errorlevel 1 goto fail
 goto success_build
@@ -194,7 +204,8 @@ goto success_test
 call :check
 if errorlevel 1 goto fail
 echo.
-echo [INFO] Menjalankan app dari source. Tutup window app untuk kembali ke menu.
+echo [INFO] Menjalankan app dari source.
+echo [INFO] Tutup window app untuk kembali ke menu.
 call npm.cmd start
 if errorlevel 1 goto fail
 goto success_test
@@ -203,7 +214,7 @@ goto success_test
 echo.
 if not exist "dist\win-unpacked\KeiYomi.exe" (
     echo [ERROR] dist\win-unpacked\KeiYomi.exe belum ditemukan.
-    echo [INFO] Jalankan Build ^> Windows Installer x64 atau Windows Portable x64 dulu.
+    echo [INFO] Jalankan build Windows x64 dulu.
     pause
     goto main_menu
 )
@@ -249,6 +260,28 @@ echo.
 pause
 goto main_menu
 
+:reset_build_output
+echo.
+echo [WARN] Reset ini akan menghapus folder output build:
+echo        %cd%\dist
+echo.
+echo Data aplikasi, source code, dan node_modules tidak akan dihapus.
+echo.
+set "confirm="
+set /p confirm="Ketik RESET untuk lanjut: "
+if /i not "%confirm%"=="RESET" (
+    echo.
+    echo [INFO] Reset dibatalkan.
+    pause
+    goto main_menu
+)
+call :delete_dist
+if errorlevel 1 goto fail
+echo.
+echo [OK] Output build berhasil direset.
+pause
+goto main_menu
+
 rem ---------------------------------------------------------------------------
 rem Quality commands
 rem ---------------------------------------------------------------------------
@@ -289,7 +322,7 @@ goto success_quality
 :quality_audit_fix
 echo.
 echo [INFO] Menjalankan npm audit fix...
-echo [WARN] Perintah ini dapat mengubah package-lock.json dan dependency.
+echo [WARN] Ini dapat mengubah dependency dan package-lock.json.
 call npm.cmd audit fix
 if errorlevel 1 goto fail
 goto success_quality
@@ -318,6 +351,24 @@ goto main_menu
 :quality_tool_missing
 pause
 goto main_menu
+
+:delete_dist
+set "DIST_DIR=%ROOT_DIR%\dist"
+if /i "%DIST_DIR%"=="%ROOT_DIR%\dist" (
+    if exist "%DIST_DIR%" (
+        rmdir /s /q "%DIST_DIR%"
+        if errorlevel 1 exit /b 1
+    )
+    exit /b 0
+)
+echo [ERROR] Path dist tidak valid.
+exit /b 1
+
+:relaunch_script
+echo.
+echo [INFO] Membuka ulang script...
+start "" "%~f0"
+goto done
 
 :fail
 echo.
