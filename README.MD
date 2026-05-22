@@ -11,14 +11,17 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
 
 ## Preview
 
-Add a reader screenshot or short GIF at one of these paths to show the app UI in this README:
+KeiYomi interface preview:
 
-```text
-assets-repo/reader-preview.png
-assets-repo/reader-preview.gif
-```
+![KeiYomi Homepage](screenshot/Homepage.png)
 
-Recommended capture: the reader view with a document open, the library/sidebar visible, and the reading controls menu expanded.
+| Reading | Book Detail |
+| --- | --- |
+| ![Reading view](screenshot/Reading.png) | ![Book detail view](screenshot/About%20Book.png) |
+
+| History | Settings |
+| --- | --- |
+| ![History view](screenshot/History.png) | ![Settings view](screenshot/Setting-1.png) |
 
 ## Key Features
 

@@ -1195,6 +1195,10 @@ function updateEditGenreOptions() {
     genres = genreLists.journal;
     groupEditDate.style.display = "block";
     genreGroup.style.display = "none";
+  } else if (isAcademicType(type)) {
+    genres = genreLists.academic;
+    groupEditDate.style.display = "block";
+    genreGroup.style.display = "block";
   } else {
     groupEditDate.style.display = "none";
     genreGroup.style.display = "block";
@@ -1297,6 +1301,14 @@ btnSaveEdit.addEventListener("click", async () => {
     if (book.type === "Artikel" || book.type === "Journal") {
       book.publishDate = inputEditDate.value;
       book.genre = "";
+    } else if (isAcademicType(book.type)) {
+      book.publishDate = inputEditDate.value;
+      const selectedGenres = Array.from(
+        genreEditContainer.querySelectorAll("input:checked"),
+      )
+        .map((cb) => cb.value)
+        .join(", ");
+      book.genre = selectedGenres;
     } else {
       book.publishDate = null;
       const selectedGenres = Array.from(
@@ -1525,6 +1537,13 @@ ctxDelete.addEventListener("click", () => {
 let pendingBookPath = null;
 let pendingBookId = null;
 const genreLists = {
+  academic: [
+    "Makalah",
+    "Materi Kuliah",
+    "Rangkuman",
+    "Catatan Kuliah",
+    "Referensi",
+  ],
   commonComic: [
     "Action",
     "Romance",
@@ -1590,6 +1609,10 @@ const genreLists = {
   ],
 };
 
+function isAcademicType(type) {
+  return ["Makalah", "Materi Kuliah"].includes(type);
+}
+
 function inferManualBookType(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   if (ext === ".txt" || ext === ".md" || ext === ".docx" || ext === ".epub")
@@ -1614,6 +1637,10 @@ function updateGenreOptions() {
     genres = genreLists.journal;
     groupDate.style.display = "block";
     genreGroup.style.display = "none";
+  } else if (isAcademicType(type)) {
+    genres = genreLists.academic;
+    groupDate.style.display = "block";
+    genreGroup.style.display = "block";
   } else {
     groupDate.style.display = "none";
     genreGroup.style.display = "block";
@@ -1680,7 +1707,9 @@ btnSaveAdd.addEventListener("click", async () => {
     genre: selectedGenres,
     synopsis: inputSynopsis.value,
     publishDate:
-      inputType.value === "Artikel" || inputType.value === "Journal"
+      inputType.value === "Artikel" ||
+      inputType.value === "Journal" ||
+      isAcademicType(inputType.value)
         ? inputDate.value
         : null,
     cover: inputCover.value || (existingDraft ? existingDraft.cover : null),
@@ -1808,6 +1837,10 @@ function updateCfGenreOptions() {
     genres = genreLists.journal;
     groupCfDate.style.display = "block";
     genreGroup.style.display = "none";
+  } else if (isAcademicType(type)) {
+    genres = genreLists.academic;
+    groupCfDate.style.display = "block";
+    genreGroup.style.display = "block";
   } else {
     groupCfDate.style.display = "none";
     genreGroup.style.display = "block";
@@ -1869,7 +1902,9 @@ btnSaveCf.addEventListener("click", async () => {
     cover: inputCfCover.value,
     type: inputCfType.value,
     date:
-      inputCfType.value === "Artikel" || inputCfType.value === "Journal"
+      inputCfType.value === "Artikel" ||
+      inputCfType.value === "Journal" ||
+      isAcademicType(inputCfType.value)
         ? inputCfDate.value
         : null,
     genre: selectedGenres,

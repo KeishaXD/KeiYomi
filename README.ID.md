@@ -11,14 +11,17 @@ KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, 
 
 ## Preview
 
-Tambahkan screenshot reader atau GIF singkat di salah satu path berikut agar UI aplikasi tampil di README ini:
+Preview antarmuka KeiYomi:
 
-```text
-assets-repo/reader-preview.png
-assets-repo/reader-preview.gif
-```
+![Beranda KeiYomi](screenshot/Homepage.png)
 
-Capture yang disarankan: tampilan reader dengan dokumen terbuka, sidebar/pustaka terlihat, dan menu kontrol baca sedang terbuka.
+| Tampilan Baca | Detail Buku |
+| --- | --- |
+| ![Tampilan baca](screenshot/Reading.png) | ![Tampilan detail buku](screenshot/About%20Book.png) |
+
+| Riwayat | Pengaturan |
+| --- | --- |
+| ![Tampilan riwayat](screenshot/History.png) | ![Tampilan pengaturan](screenshot/Setting-1.png) |
 
 ## Fitur Utama
 

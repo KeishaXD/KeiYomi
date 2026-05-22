@@ -5,12 +5,12 @@ Perkenalkan, namaku Jovallin Keisha Rafael Dewantara dari kelas 2025i, Prodi PPK
 Aku mau izin share project aplikasi yang aku buat: KeiYomi.
 
 Apa itu KeiYomi?
-KeiYomi adalah aplikasi desktop/PC untuk membaca novel, komik digital, dan dokumen kuliah secara offline dengan tampilan modern, ringan, dan nyaman dipakai.
+KeiYomi adalah aplikasi desktop/PC untuk membaca novel, komik digital, makalah, dan materi kuliah secara offline dengan tampilan modern, ringan, dan nyaman dipakai.
 
 Cocok buat:
-- Baca PDF materi kuliah tanpa ribet
+- Baca PDF materi kuliah dan makalah tanpa ribet
 - Baca Manhwa/Webtoon di layar laptop
-- Kelola koleksi komik, novel, dan dokumen lokal
+- Kelola koleksi komik, novel, makalah, materi kuliah, dan dokumen lokal
 - Baca malam hari dengan Dark Mode
 
 Fitur unggulan:
