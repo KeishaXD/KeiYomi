@@ -9,7 +9,9 @@ KeiYomi is a desktop application (PC) based on **Electron** for reading novels, 
 
 > **Windows SmartScreen Notice:** KeiYomi releases may show a blue "Windows protected your PC" warning because the installer is not code-signed yet. Only download KeiYomi from the official GitHub Releases page, and verify the file name/version before installing.
 
-## Preview
+## For Users
+
+### Preview
 
 KeiYomi interface preview:
 
@@ -23,7 +25,7 @@ KeiYomi interface preview:
 | --- | --- |
 | ![History view](screenshot/History.png) | ![Settings view](screenshot/Setting-1.png) |
 
-## Key Features
+### Key Features
 
 - **Format Support:** Read **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, **MD**, and **DOCX** files.
 - **Flexible Reading Modes:**
@@ -45,7 +47,43 @@ KeiYomi interface preview:
 - **Offline Vendor Runtime:** PDF, EPUB/CBZ/ZIP, CBR/RAR, Markdown, and DOCX support use bundled local vendor files.
 - **High Performance:** Uses lazy loading to load images/pages only when needed.
 
-## Technologies
+### Install on Windows
+
+1. Download `KeiYomi-Setup-3.2.0-x64.exe` or the latest installer from the official GitHub Releases page.
+2. Run the installer and follow the setup wizard.
+3. If Windows SmartScreen appears, confirm that the file name and version match the official release before continuing.
+4. Open KeiYomi from the Start Menu or desktop shortcut.
+
+### Keyboard Shortcuts
+
+- **Up/Down Arrow:** Scroll page or navigate menu.
+- **Left/Right Arrow:** Change page or chapter depending on the current reader mode.
+- **ESC:** Back, close modal, or exit app.
+
+### Folder Structure (Auto-Scan)
+
+The application will create a `KeiYomi` folder inside your Documents folder. You can organize comic folders as follows to be detected as a series:
+
+```text
+KeiYomi/
++-- Manga Title/
+    +-- info.json       (Book metadata)
+    +-- cover.jpg       (Cover image)
+    +-- Chapter 1.pdf
+    +-- Chapter 2.cbz
+    +-- Chapter 3.cbr
+    +-- Notes.docx
+    +-- ...
+```
+
+### Bug Reports
+
+- Open an issue for bugs, crashes, broken file formats, or confusing reader behavior.
+- Include the app version, OS version, file type, reproduction steps, and screenshots or logs when possible.
+
+## For Developers
+
+### Technologies
 
 - Electron
 - Node.js
@@ -56,14 +94,7 @@ KeiYomi interface preview:
 - Marked for Markdown rendering
 - Mammoth for DOCX rendering
 
-## Install on Windows
-
-1. Download `KeiYomi-Setup-3.2.0-x64.exe` or the latest installer from the official GitHub Releases page.
-2. Run the installer and follow the setup wizard.
-3. If Windows SmartScreen appears, confirm that the file name and version match the official release before continuing.
-4. Open KeiYomi from the Start Menu or desktop shortcut.
-
-## How to Run (Development)
+### How to Run (Development)
 
 1. Ensure Node.js is installed. Node.js 22 or newer is recommended for the current Electron build tooling.
 2. Enter the app folder:
@@ -95,11 +126,11 @@ Windows: %APPDATA%\KeiYomi
 
 Do not run the installed release and `npm start` at the same time. The app uses a single-instance lock to prevent config/cache collisions.
 
-## Build & Release
+### Build & Release
 
 Run all commands from the `Project File` directory.
 
-### Developer Build Menu
+#### Developer Build Menu
 
 Windows developers can use the batch menu:
 
@@ -109,7 +140,7 @@ build.bat
 
 The menu includes Windows x64, Windows ARM64, Windows portable x64, Windows portable ARM64, Linux builds, Linux portable, macOS builds, all-platform builds, and a check-only option.
 
-### Validation
+#### Validation
 
 ```bash
 npm run check
@@ -117,7 +148,7 @@ npm run check
 
 This checks JavaScript syntax for the main process, preload, and UI scripts.
 
-### Local Builds
+#### Local Builds
 
 Windows x64 and ARM64 installers together:
 
@@ -170,7 +201,7 @@ npm run build:win:x64
 
 Use `npm run build:win` only when you want to create both Windows installers at once.
 
-### Full Multi-Platform Builds
+#### Full Multi-Platform Builds
 
 ```bash
 npm run build
@@ -195,7 +226,7 @@ git tag v3.2.0
 git push origin v3.2.0
 ```
 
-### Version Updates
+#### Version Updates
 
 When preparing a new release, update the version in these files:
 
@@ -205,32 +236,8 @@ When preparing a new release, update the version in these files:
 
 For normal feature releases, increment the minor version, for example `3.1.0` to `3.2.0`. For small hotfixes only, increment the patch version, for example `3.2.0` to `3.2.1`.
 
-## Keyboard Shortcuts
+### Contributing
 
-- **Up/Down Arrow:** Scroll page or navigate menu.
-- **Left/Right Arrow:** Change page or chapter depending on the current reader mode.
-- **ESC:** Back, close modal, or exit app.
-
-## Folder Structure (Auto-Scan)
-
-The application will create a `KeiYomi` folder inside your Documents folder. You can organize comic folders as follows to be detected as a series:
-
-```text
-KeiYomi/
-+-- Manga Title/
-    +-- info.json       (Book metadata)
-    +-- cover.jpg       (Cover image)
-    +-- Chapter 1.pdf
-    +-- Chapter 2.cbz
-    +-- Chapter 3.cbr
-    +-- Notes.docx
-    +-- ...
-```
-
-## Contributing & Bug Reports
-
-- Open an issue for bugs, crashes, broken file formats, or confusing reader behavior.
-- Include the app version, OS version, file type, reproduction steps, and screenshots or logs when possible.
 - For code contributions, keep changes focused, run `npm run check`, and describe the user-facing impact in the pull request.
 - Keep the English and Indonesian README files consistent when changing setup, build, or release instructions.
 

@@ -9,7 +9,9 @@ KeiYomi adalah aplikasi desktop (PC) berbasis **Electron** untuk membaca novel, 
 
 > **Peringatan Windows SmartScreen:** Release KeiYomi mungkin menampilkan pop-up biru "Windows protected your PC" karena installer belum memakai code signing certificate. Unduh KeiYomi hanya dari halaman GitHub Releases resmi, lalu cek nama file dan versinya sebelum install.
 
-## Preview
+## Untuk Pengguna
+
+### Preview
 
 Preview antarmuka KeiYomi:
 
@@ -23,7 +25,7 @@ Preview antarmuka KeiYomi:
 | --- | --- |
 | ![Tampilan riwayat](screenshot/History.png) | ![Tampilan pengaturan](screenshot/Setting-1.png) |
 
-## Fitur Utama
+### Fitur Utama
 
 - **Dukungan Format:** Membaca file **PDF**, **EPUB**, **CBZ**, **CBR**, **ZIP**, **TXT**, **MD**, dan **DOCX**.
 - **Mode Baca Fleksibel:**
@@ -45,7 +47,43 @@ Preview antarmuka KeiYomi:
 - **Vendor Offline Lokal:** Dukungan PDF, EPUB/CBZ/ZIP, CBR/RAR, Markdown, dan DOCX memakai file vendor lokal yang ikut dibundle.
 - **Performa Tinggi:** Menggunakan lazy loading untuk memuat gambar/halaman hanya saat dibutuhkan.
 
-## Teknologi
+### Install di Windows
+
+1. Unduh `KeiYomi-Setup-3.2.0-x64.exe` atau installer terbaru dari halaman GitHub Releases resmi.
+2. Jalankan installer dan ikuti setup wizard.
+3. Jika Windows SmartScreen muncul, pastikan nama file dan versinya sesuai release resmi sebelum melanjutkan.
+4. Buka KeiYomi dari Start Menu atau shortcut desktop.
+
+### Pintasan Keyboard
+
+- **Panah Atas/Bawah:** Scroll halaman atau navigasi menu.
+- **Panah Kiri/Kanan:** Pindah halaman atau chapter sesuai mode baca.
+- **ESC:** Kembali, tutup modal, atau keluar aplikasi.
+
+### Struktur Folder (Auto-Scan)
+
+Aplikasi akan membuat folder `KeiYomi` di dalam folder Documents. Susun folder komik seperti berikut agar terdeteksi sebagai satu seri:
+
+```text
+KeiYomi/
++-- Judul Manga/
+    +-- info.json       (Metadata buku)
+    +-- cover.jpg       (Gambar sampul)
+    +-- Chapter 1.pdf
+    +-- Chapter 2.cbz
+    +-- Chapter 3.cbr
+    +-- Catatan.docx
+    +-- ...
+```
+
+### Bug Report
+
+- Buka issue untuk bug, crash, format file yang bermasalah, atau perilaku reader yang membingungkan.
+- Sertakan versi aplikasi, versi OS, tipe file, langkah reproduksi, serta screenshot atau log jika memungkinkan.
+
+## Untuk Developer
+
+### Teknologi
 
 - Electron
 - Node.js
@@ -56,14 +94,7 @@ Preview antarmuka KeiYomi:
 - Marked untuk render Markdown
 - Mammoth untuk render DOCX
 
-## Install di Windows
-
-1. Unduh `KeiYomi-Setup-3.2.0-x64.exe` atau installer terbaru dari halaman GitHub Releases resmi.
-2. Jalankan installer dan ikuti setup wizard.
-3. Jika Windows SmartScreen muncul, pastikan nama file dan versinya sesuai release resmi sebelum melanjutkan.
-4. Buka KeiYomi dari Start Menu atau shortcut desktop.
-
-## Cara Menjalankan (Development)
+### Cara Menjalankan (Development)
 
 1. Pastikan Node.js sudah terinstall. Node.js 22 atau lebih baru direkomendasikan untuk tooling Electron saat ini.
 2. Masuk ke folder aplikasi:
@@ -95,11 +126,11 @@ Windows: %APPDATA%\KeiYomi
 
 Jangan jalankan release terinstall dan `npm start` secara bersamaan. Aplikasi memakai single-instance lock untuk mencegah config/cache saling bentrok.
 
-## Build & Release
+### Build & Release
 
 Jalankan semua command dari folder `Project File`.
 
-### Menu Build Developer
+#### Menu Build Developer
 
 Developer Windows bisa memakai menu batch:
 
@@ -109,7 +140,7 @@ build.bat
 
 Menu ini menyediakan build Windows x64, Windows ARM64, Windows portable x64, Windows portable ARM64, Linux, Linux portable, macOS, semua platform, dan opsi check-only.
 
-### Validasi
+#### Validasi
 
 ```bash
 npm run check
@@ -117,7 +148,7 @@ npm run check
 
 Command ini mengecek syntax JavaScript untuk main process, preload, dan script UI.
 
-### Build Lokal
+#### Build Lokal
 
 Installer Windows x64 dan ARM64 sekaligus:
 
@@ -170,7 +201,7 @@ npm run build:win:x64
 
 Gunakan `npm run build:win` hanya saat ingin membuat dua installer Windows sekaligus.
 
-### Build Multi-Platform Lengkap
+#### Build Multi-Platform Lengkap
 
 ```bash
 npm run build
@@ -195,7 +226,7 @@ git tag v3.2.0
 git push origin v3.2.0
 ```
 
-### Update Versi
+#### Update Versi
 
 Saat menyiapkan release baru, ubah versi di file berikut:
 
@@ -205,32 +236,8 @@ Saat menyiapkan release baru, ubah versi di file berikut:
 
 Untuk release fitur normal, naikkan minor version, misalnya `3.1.0` ke `3.2.0`. Untuk hotfix kecil saja, naikkan patch version, misalnya `3.2.0` ke `3.2.1`.
 
-## Pintasan Keyboard
+### Kontribusi
 
-- **Panah Atas/Bawah:** Scroll halaman atau navigasi menu.
-- **Panah Kiri/Kanan:** Pindah halaman atau chapter sesuai mode baca.
-- **ESC:** Kembali, tutup modal, atau keluar aplikasi.
-
-## Struktur Folder (Auto-Scan)
-
-Aplikasi akan membuat folder `KeiYomi` di dalam folder Documents. Susun folder komik seperti berikut agar terdeteksi sebagai satu seri:
-
-```text
-KeiYomi/
-+-- Judul Manga/
-    +-- info.json       (Metadata buku)
-    +-- cover.jpg       (Gambar sampul)
-    +-- Chapter 1.pdf
-    +-- Chapter 2.cbz
-    +-- Chapter 3.cbr
-    +-- Catatan.docx
-    +-- ...
-```
-
-## Kontribusi & Bug Report
-
-- Buka issue untuk bug, crash, format file yang bermasalah, atau perilaku reader yang membingungkan.
-- Sertakan versi aplikasi, versi OS, tipe file, langkah reproduksi, serta screenshot atau log jika memungkinkan.
 - Untuk kontribusi kode, buat perubahan yang fokus, jalankan `npm run check`, dan jelaskan dampak ke pengguna di pull request.
 - Jaga README bahasa Inggris dan Indonesia tetap konsisten saat mengubah instruksi setup, build, atau release.
 
