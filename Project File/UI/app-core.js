@@ -69,6 +69,7 @@ const togglePageSlider = document.getElementById("toggle-page-slider");
 const toggleReadingProgress = document.getElementById(
   "toggle-reading-progress",
 );
+const toggleSpreadMode = document.getElementById("toggle-spread-mode");
 
 // Modal Elements
 const modalAddBook = document.getElementById("add-book-modal");
@@ -140,6 +141,9 @@ let currentRenderId = 0;
 let isReaderLoading = false;
 let activeObjectUrls = [];
 let hasSeenFullscreenTip = false;
+let currentReaderSupportsSpread = false;
+let spreadWheelLocked = false;
+let spreadTurnAnimating = false;
 
 // --- CUSTOM MODAL DIALOGS ---
 function customAlert(message, title = "Pemberitahuan") {
@@ -283,6 +287,7 @@ let userSettings = {
   autoCoverEnabled: false,
   showPageSlider: false,
   showReadingProgress: false,
+  spreadModeEnabled: false,
 };
 
 function isManualImportedBook(book) {
@@ -324,6 +329,7 @@ async function loadData() {
     userSettings.autoCoverEnabled = data.autoCoverEnabled === true;
     userSettings.showPageSlider = data.showPageSlider === true;
     userSettings.showReadingProgress = data.showReadingProgress === true;
+    userSettings.spreadModeEnabled = data.spreadModeEnabled === true;
   } else {
     libraryData = [];
     riwayatBacaan = [];
@@ -355,6 +361,7 @@ async function saveData() {
     autoCoverEnabled: userSettings.autoCoverEnabled === true,
     showPageSlider: userSettings.showPageSlider,
     showReadingProgress: userSettings.showReadingProgress,
+    spreadModeEnabled: userSettings.spreadModeEnabled === true,
   };
   return await ipcRenderer.invoke("data:save", data);
 }

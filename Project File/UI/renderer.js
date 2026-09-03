@@ -2045,6 +2045,7 @@ async function scanLocalFolder(silent = false) {
 async function bacaFile(filePath, title) {
   const fileName = title || path.basename(filePath);
   const ext = path.extname(filePath).toLowerCase();
+  currentReaderSupportsSpread = [".pdf", ".cbz", ".zip", ".cbr"].includes(ext);
 
   currentRenderId++;
   const myRenderId = currentRenderId;
@@ -2089,7 +2090,7 @@ async function bacaFile(filePath, title) {
   setReaderControlsLoading(true);
   reader.style.overflowY = "hidden";
   resetReaderSearch();
-  updateReaderModeUI();
+  updateReaderModeUI(false);
 
   updateFullscreenButton(); // Set initial state for fullscreen button
   const chapterNavigationContext = getChapterNavigationContext(filePath);
@@ -2117,11 +2118,16 @@ async function bacaFile(filePath, title) {
     if (myRenderId !== currentRenderId) return;
 
     renderChapterNavigation(chapterNavigationContext, "bottom");
+    applyReaderSpreadLayout(false);
     updatePageJumpControl();
 
     if (historyItem.lastPage && historyItem.lastPage > 1) {
       await new Promise((resolve) => setTimeout(resolve, 200));
       if (myRenderId !== currentRenderId) return;
+      if (isSpreadModeActive()) {
+        goToPage(historyItem.lastPage);
+        return;
+      }
       const pageElement = document.querySelector(
         `.page-placeholder[data-page="${historyItem.lastPage}"]`,
       );
@@ -2602,13 +2608,229 @@ function setReaderControlsLoading(loading) {
   });
 }
 
-function updateReaderModeUI() {
+function isSpreadModeActive() {
+  return (
+    userSettings.spreadModeEnabled === true &&
+    currentReaderSupportsSpread &&
+    !isWebtoonMode
+  );
+}
+
+function getSpreadStartPage(pageNumber) {
+  const page = Math.max(parseInt(pageNumber, 10) || 1, 1);
+  return page % 2 === 0 ? page - 1 : page;
+}
+
+function unwrapPageSpreads() {
+  reader.querySelectorAll(".page-spread").forEach((spread) => {
+    while (spread.firstChild) {
+      spread.parentNode.insertBefore(spread.firstChild, spread);
+    }
+    spread.remove();
+  });
+}
+
+function getReaderSpreads() {
+  return Array.from(reader.querySelectorAll(".page-spread"));
+}
+
+function getActiveReaderSpread() {
+  return getReaderSpreads().find((spread) => spread.classList.contains("active"));
+}
+
+function cleanupBookTurnOverlay() {
+  reader
+    .querySelectorAll(".book-turn-overlay")
+    .forEach((overlay) => overlay.remove());
+  reader.classList.remove("book-turning", "book-turn-next", "book-turn-prev");
+}
+
+function createBookTurnBaseSpread(leftPage, rightPage) {
+  const spread = document.createElement("div");
+  spread.className = "page-spread book-turn-base active";
+
+  [leftPage, rightPage].forEach((page) => {
+    if (!page) return;
+    spread.appendChild(page.cloneNode(true));
+  });
+
+  spread.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+  return spread;
+}
+
+function runBookTurnAnimation(targetPage, direction) {
+  if (!isSpreadModeActive() || spreadTurnAnimating) return false;
+
+  const activeSpread = getActiveReaderSpread();
+  const spreads = getReaderSpreads();
+  const targetStart = getSpreadStartPage(targetPage);
+  const targetSpread = spreads.find(
+    (spread) =>
+      parseInt(spread.getAttribute("data-spread-start"), 10) === targetStart,
+  );
+  if (!activeSpread || !targetSpread || activeSpread === targetSpread) {
+    return false;
+  }
+
+  const activePages = Array.from(activeSpread.children).filter((child) =>
+    child.classList.contains("page-placeholder"),
+  );
+  const targetPages = Array.from(targetSpread.children).filter((child) =>
+    child.classList.contains("page-placeholder"),
+  );
+  const isNext = direction === "next";
+  const frontPage = isNext ? activePages[1] || activePages[0] : activePages[0];
+  const backPage = isNext
+    ? targetPages[0] || targetPages[1]
+    : targetPages[1] || targetPages[0];
+  const baseLeftPage = isNext ? activePages[0] : targetPages[0];
+  const baseRightPage = isNext
+    ? targetPages[1] || targetPages[0]
+    : activePages[1] || activePages[0];
+  if (!frontPage || !backPage) return false;
+
+  cleanupBookTurnOverlay();
+  spreadTurnAnimating = true;
+  spreadWheelLocked = true;
+
+  const overlay = document.createElement("div");
+  overlay.className = `book-turn-overlay ${isNext ? "turn-next" : "turn-prev"}`;
+
+  const underlay = createBookTurnBaseSpread(baseLeftPage, baseRightPage);
+  underlay.classList.add("book-turn-underlay");
+  overlay.appendChild(underlay);
+
+  const sheet = document.createElement("div");
+  sheet.className = "book-turn-sheet";
+  const front = document.createElement("div");
+  front.className = "book-turn-face book-turn-front";
+  const back = document.createElement("div");
+  back.className = "book-turn-face book-turn-back";
+  front.appendChild(frontPage.cloneNode(true));
+  back.appendChild(backPage.cloneNode(true));
+  sheet.append(front, back);
+  overlay.appendChild(sheet);
+  reader.appendChild(overlay);
+
+  reader.classList.add(
+    "book-turning",
+    isNext ? "book-turn-next" : "book-turn-prev",
+  );
+
+  let didFinish = false;
+  const finishTurn = () => {
+    if (didFinish) return;
+    didFinish = true;
+    overlay.removeEventListener("animationend", finishTurn);
+    reader.classList.add("spread-commit");
+    setActiveSpreadPage(targetPage);
+    requestAnimationFrame(() => {
+      cleanupBookTurnOverlay();
+      reader.classList.remove("spread-commit");
+      spreadTurnAnimating = false;
+      setTimeout(() => {
+        spreadWheelLocked = false;
+      }, 80);
+    });
+  };
+  sheet.addEventListener("animationend", finishTurn);
+  setTimeout(finishTurn, 760);
+  return true;
+}
+
+function setActiveSpreadPage(pageNumber, updateHistory = true) {
+  const pages = getReaderPages();
+  if (pages.length === 0) return;
+
+  const spreadStart = getSpreadStartPage(
+    Math.min(Math.max(parseInt(pageNumber, 10) || 1, 1), pages.length),
+  );
+  const spreads = getReaderSpreads();
+  const activeSpread =
+    spreads.find(
+      (spread) =>
+        parseInt(spread.getAttribute("data-spread-start"), 10) ===
+        spreadStart,
+    ) || spreads[0];
+
+  spreads.forEach((spread) => {
+    const isActive = spread === activeSpread;
+    spread.classList.toggle("active", isActive);
+    spread.setAttribute("aria-hidden", String(!isActive));
+  });
+
+  reader.scrollTop = 0;
+  updatePageJumpControl(spreadStart);
+  updateScrollProgress();
+
+  if (!updateHistory) return;
+  const historyItem = riwayatBacaan.find((r) => r.path === currentBookPath);
+  if (historyItem && historyItem.lastPage !== spreadStart) {
+    historyItem.lastPage = spreadStart;
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(saveData, 500);
+  }
+}
+
+function applyReaderSpreadLayout(preservePage = true) {
+  const targetPage = preservePage ? getCurrentReaderPage() : 1;
+
+  cleanupBookTurnOverlay();
+  spreadTurnAnimating = false;
+  spreadWheelLocked = false;
+  unwrapPageSpreads();
+  const spreadActive = isSpreadModeActive();
+  reader.classList.toggle("spread-mode", spreadActive);
+
+  if (!spreadActive) {
+    updatePageJumpControl();
+    updateReaderControlButtons();
+    return;
+  }
+
+  const pages = Array.from(reader.children)
+    .filter(
+      (child) =>
+        child.classList &&
+        child.classList.contains("page-placeholder") &&
+        Number.isFinite(parseInt(child.getAttribute("data-page"), 10)),
+    )
+    .sort(
+      (a, b) =>
+        parseInt(a.getAttribute("data-page"), 10) -
+        parseInt(b.getAttribute("data-page"), 10),
+    );
+
+  for (let index = 0; index < pages.length; index += 2) {
+    const spread = document.createElement("div");
+    spread.className = "page-spread";
+    spread.setAttribute(
+      "data-spread-start",
+      pages[index].getAttribute("data-page") || String(index + 1),
+    );
+    reader.insertBefore(spread, pages[index]);
+    spread.appendChild(pages[index]);
+    if (pages[index + 1]) spread.appendChild(pages[index + 1]);
+  }
+
+  setActiveSpreadPage(targetPage, false);
+  updateReaderControlButtons();
+}
+
+function updateReaderModeUI(applySpread = true) {
   if (isWebtoonMode) {
     reader.classList.add("webtoon-mode");
     radioWebtoon.checked = true;
   } else {
     reader.classList.remove("webtoon-mode");
     radioPages.checked = true;
+  }
+  if (applySpread) {
+    applyReaderSpreadLayout(true);
+  } else {
+    unwrapPageSpreads();
+    reader.classList.remove("spread-mode");
+    updateReaderControlButtons();
   }
 }
 
@@ -2663,6 +2885,144 @@ function updateFullscreenButton() {
 btnToggleFullscreen.addEventListener("click", toggleFullscreen);
 document.addEventListener("fullscreenchange", updateFullscreenButton);
 
+function createPdfPageElements(pageNum, viewport) {
+  const div = document.createElement("div");
+  div.className = "page-placeholder pdf-page-loading";
+  div.setAttribute("data-page", pageNum);
+  div.setAttribute("data-render-state", "loading");
+  div.style.height = "auto";
+  div.style.background = "transparent";
+  div.style.boxShadow = "none";
+  div.innerHTML = `<div class="pdf-page-loader">
+    <div class="reader-loading-spinner"></div>
+    <span>Memuat halaman ${pageNum}</span>
+  </div>`;
+
+  const surface = document.createElement("div");
+  surface.className = "pdf-page-surface";
+  surface.style.width = `${Math.floor(viewport.width)}px`;
+
+  const highlightLayer = document.createElement("div");
+  highlightLayer.className = "pdf-highlight-layer";
+  surface.appendChild(highlightLayer);
+
+  return { div, surface, highlightLayer };
+}
+
+function createPdfPageCanvas(viewport, outputScale) {
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d", {
+    alpha: false,
+    willReadFrequently: true,
+  });
+  canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
+  canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
+  canvas.style.width = `${Math.floor(viewport.width)}px`;
+  canvas.style.height = "auto";
+  canvas.style.maxWidth = "100%";
+  canvas.style.display = "block";
+  context.save();
+  context.fillStyle = "#fff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.restore();
+  return { canvas, context };
+}
+
+function isCanvasVisiblyBlank(canvas) {
+  if (!canvas || canvas.width <= 0 || canvas.height <= 0) return true;
+
+  const sampleSize = 64;
+  const sampleCanvas = document.createElement("canvas");
+  sampleCanvas.width = sampleSize;
+  sampleCanvas.height = sampleSize;
+  const sampleContext = sampleCanvas.getContext("2d", {
+    alpha: false,
+    willReadFrequently: true,
+  });
+  sampleContext.drawImage(canvas, 0, 0, sampleSize, sampleSize);
+
+  const pixels = sampleContext.getImageData(0, 0, sampleSize, sampleSize).data;
+  let visiblePixels = 0;
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i];
+    const g = pixels[i + 1];
+    const b = pixels[i + 2];
+    if (r < 248 || g < 248 || b < 248) visiblePixels++;
+    if (visiblePixels > 4) return false;
+  }
+  return true;
+}
+
+async function renderPdfPageWithRetry({
+  page,
+  pageNum,
+  viewport,
+  outputScale,
+  surface,
+  highlightLayer,
+  pageElement,
+  renderId,
+  hasText,
+}) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    if (renderId !== currentRenderId) return false;
+
+    const { canvas, context } = createPdfPageCanvas(viewport, outputScale);
+    surface.replaceChildren(canvas, highlightLayer);
+    pageElement.classList.add("pdf-page-loading");
+    pageElement.classList.remove("pdf-page-rendered", "pdf-page-error");
+    pageElement.setAttribute("data-render-state", "loading");
+    pageElement.setAttribute("data-render-attempt", String(attempt));
+
+    try {
+      const renderTask = page.render({
+        canvasContext: context,
+        viewport,
+        transform:
+          outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null,
+      });
+      await renderTask.promise;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const looksBlank = isCanvasVisiblyBlank(canvas);
+      if (looksBlank) {
+        lastError = new Error(`Halaman ${pageNum} ter-render kosong`);
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 80 * attempt));
+          continue;
+        }
+        if (hasText) throw lastError;
+      }
+
+      pageElement.innerHTML = "";
+      pageElement.appendChild(surface);
+      pageElement.classList.remove("pdf-page-loading", "pdf-page-error");
+      pageElement.classList.add("pdf-page-rendered");
+      pageElement.setAttribute(
+        "data-render-state",
+        looksBlank ? "rendered-blank" : "rendered",
+      );
+      return true;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
+      }
+    }
+  }
+
+  pageElement.classList.remove("pdf-page-loading");
+  pageElement.classList.add("pdf-page-error");
+  pageElement.setAttribute("data-render-state", "error");
+  pageElement.innerHTML = `<div class="pdf-page-loader pdf-page-error-message">
+    <span>Gagal memuat halaman ${pageNum}</span>
+    <small>${escapeHtml(lastError?.message || "Render PDF gagal")}</small>
+  </div>`;
+  return false;
+}
+
 async function renderPDF(filePath, renderId) {
   try {
     const data = await fs.readFile(filePath);
@@ -2689,44 +3049,25 @@ async function renderPDF(filePath, renderId) {
         )
         .catch(() => null);
 
-      const div = document.createElement("div");
-      div.className = "page-placeholder";
-      div.setAttribute("data-page", pageNum);
-      div.style.height = "auto";
-      div.style.background = "transparent";
-      div.style.boxShadow = "none";
-      div.innerText = "";
-
-      const surface = document.createElement("div");
-      surface.className = "pdf-page-surface";
-      surface.style.width = `${Math.floor(viewport.width)}px`;
-
-      const canvas = document.createElement("canvas");
-      const context = canvas.getContext("2d");
-      canvas.width = Math.floor(viewport.width * outputScale);
-      canvas.height = Math.floor(viewport.height * outputScale);
-      canvas.style.width = `${Math.floor(viewport.width)}px`;
-      canvas.style.height = "auto";
-      canvas.style.maxWidth = "100%";
-      canvas.style.display = "block";
-
-      const highlightLayer = document.createElement("div");
-      highlightLayer.className = "pdf-highlight-layer";
-
-      surface.appendChild(canvas);
-      surface.appendChild(highlightLayer);
-      div.appendChild(surface);
+      const { div, surface, highlightLayer } = createPdfPageElements(
+        pageNum,
+        viewport,
+      );
       reader.appendChild(div);
 
-      const renderContext = {
-        canvasContext: context,
-        viewport,
-        transform:
-          outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null,
-      };
-      await page.render(renderContext).promise;
-
       const pageIndex = await textContentPromise;
+      await renderPdfPageWithRetry({
+        page,
+        pageNum,
+        viewport,
+        outputScale,
+        surface,
+        highlightLayer,
+        pageElement: div,
+        renderId,
+        hasText: Boolean(pageIndex?.text),
+      });
+
       if (pageIndex && pageIndex.text) {
         textIndex.push(pageIndex);
       }
@@ -3294,11 +3635,22 @@ function renderSimulasiWebtoon(ext, renderId) {
 
 function getReaderPages() {
   return Array.from(reader.querySelectorAll(".page-placeholder")).filter(
-    (page) => Number.isFinite(parseInt(page.getAttribute("data-page"), 10)),
+    (page) =>
+      Number.isFinite(parseInt(page.getAttribute("data-page"), 10)) &&
+      !page.closest(".book-turn-overlay"),
   );
 }
 
 function getCurrentReaderPage() {
+  if (isSpreadModeActive()) {
+    const activePage = reader.querySelector(
+      ".page-spread.active .page-placeholder",
+    );
+    if (activePage) {
+      return parseInt(activePage.getAttribute("data-page"), 10) || 1;
+    }
+  }
+
   const pages = getReaderPages();
   if (pages.length === 0) return 1;
 
@@ -3366,7 +3718,11 @@ function updatePageJumpControl(forcedPage = null) {
   pageJumpSlider.disabled = totalPages <= 1;
   pageJumpInput.disabled = totalPages <= 1;
   if (pageJumpPrev) pageJumpPrev.disabled = currentPage <= 1;
-  if (pageJumpNext) pageJumpNext.disabled = currentPage >= totalPages;
+  if (pageJumpNext) {
+    pageJumpNext.disabled = isSpreadModeActive()
+      ? getSpreadStartPage(currentPage) + 2 > totalPages
+      : currentPage >= totalPages;
+  }
   pageJumpControl.classList.add("visible");
 }
 
@@ -3378,6 +3734,25 @@ function updateReadingProgressVisibility() {
 }
 
 function updateReaderControlButtons() {
+  if (toggleSpreadMode) {
+    const span = toggleSpreadMode.querySelector("span");
+    const spreadActive = isSpreadModeActive();
+    toggleSpreadMode.classList.toggle("active", spreadActive);
+    toggleSpreadMode.disabled = !currentReaderSupportsSpread || isWebtoonMode;
+    toggleSpreadMode.setAttribute("aria-pressed", String(spreadActive));
+    if (span) {
+      if (!currentReaderSupportsSpread) {
+        span.innerText = "Mode buku hanya untuk PDF/komik";
+      } else if (isWebtoonMode) {
+        span.innerText = "Mode buku perlu Mode Halaman";
+      } else {
+        span.innerText = userSettings.spreadModeEnabled
+          ? "Matikan mode buku"
+          : "Mode buku dua halaman";
+      }
+    }
+  }
+
   if (togglePageSlider) {
     const span = togglePageSlider.querySelector("span");
     togglePageSlider.classList.toggle("active", userSettings.showPageSlider);
@@ -3418,6 +3793,19 @@ function goToPage(pageNumber, behavior = "auto") {
     Math.max(parseInt(pageNumber, 10) || 1, 1),
     pages.length,
   );
+  if (isSpreadModeActive()) {
+    if (behavior === "smooth") {
+      const currentPage = getSpreadStartPage(getCurrentReaderPage());
+      const targetSpreadPage = getSpreadStartPage(targetPage);
+      if (targetSpreadPage !== currentPage) {
+        const direction = targetSpreadPage > currentPage ? "next" : "prev";
+        if (runBookTurnAnimation(targetSpreadPage, direction)) return;
+      }
+    }
+    setActiveSpreadPage(targetPage);
+    return;
+  }
+
   const pageElement =
     pages.find(
       (page) => parseInt(page.getAttribute("data-page"), 10) === targetPage,
@@ -3459,6 +3847,17 @@ function updateScrollProgress() {
   updateReadingProgressVisibility();
   if (!userSettings.showReadingProgress) return;
 
+  if (isSpreadModeActive()) {
+    const spreads = getReaderSpreads();
+    const activeIndex = Math.max(
+      spreads.findIndex((spread) => spread.classList.contains("active")),
+      0,
+    );
+    const maxIndex = Math.max(spreads.length - 1, 1);
+    scrollProgressIndicator.innerText = `${Math.round((activeIndex / maxIndex) * 100)}%`;
+    return;
+  }
+
   const { scrollTop, scrollHeight, clientHeight } = reader;
   if (scrollHeight > clientHeight) {
     const scrollPercent = Math.round(
@@ -3490,6 +3889,37 @@ reader.addEventListener("scroll", () => {
     }
   });
 });
+
+reader.addEventListener(
+  "wheel",
+  (event) => {
+    if (!isSpreadModeActive() || isReaderLoading) return;
+    if (
+      event.target.closest(
+        "#settings-popup, #reader-search-panel, #page-jump-control",
+      )
+    )
+      return;
+
+    const dominantDelta =
+      Math.abs(event.deltaY) >= Math.abs(event.deltaX)
+        ? event.deltaY
+        : event.deltaX;
+    if (Math.abs(dominantDelta) < 8) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    if (spreadWheelLocked) return;
+
+    spreadWheelLocked = true;
+    const currentPage = getSpreadStartPage(getCurrentReaderPage());
+    goToPage(currentPage + (dominantDelta > 0 ? 2 : -2), "smooth");
+    setTimeout(() => {
+      spreadWheelLocked = false;
+    }, 820);
+  },
+  { passive: false },
+);
 
 if (pageJumpSlider) {
   pageJumpSlider.addEventListener("input", () => {
@@ -3557,13 +3987,23 @@ if (pageJumpInput) {
 
 if (pageJumpPrev) {
   pageJumpPrev.addEventListener("click", () => {
-    goToPage(getCurrentReaderPage() - 1);
+    goToPage(getCurrentReaderPage() - (isSpreadModeActive() ? 2 : 1));
   });
 }
 
 if (pageJumpNext) {
   pageJumpNext.addEventListener("click", () => {
-    goToPage(getCurrentReaderPage() + 1);
+    goToPage(getCurrentReaderPage() + (isSpreadModeActive() ? 2 : 1));
+  });
+}
+
+if (toggleSpreadMode) {
+  toggleSpreadMode.addEventListener("click", () => {
+    if (!currentReaderSupportsSpread || isWebtoonMode) return;
+    userSettings.spreadModeEnabled = !userSettings.spreadModeEnabled;
+    applyReaderSpreadLayout(true);
+    updateReaderControlButtons();
+    saveData();
   });
 }
 
@@ -3786,6 +4226,7 @@ document
         autoCoverEnabled: false,
         showPageSlider: false,
         showReadingProgress: false,
+        spreadModeEnabled: false,
       };
 
       const success = await ipcRenderer.invoke("data:clear");
@@ -4118,6 +4559,11 @@ document.addEventListener("keydown", async (e) => {
 });
 
 function goToNextPage() {
+  if (isSpreadModeActive()) {
+    goToPage(getCurrentReaderPage() + 2, "smooth");
+    return;
+  }
+
   const pages = Array.from(document.querySelectorAll(".page-placeholder"));
   const readerRect = reader.getBoundingClientRect();
   const next = pages.find(
@@ -4134,6 +4580,11 @@ function goToNextPage() {
 }
 
 function goToPrevPage() {
+  if (isSpreadModeActive()) {
+    goToPage(getCurrentReaderPage() - 2, "smooth");
+    return;
+  }
+
   const pages = Array.from(document.querySelectorAll(".page-placeholder"));
   const readerRect = reader.getBoundingClientRect();
   const prevs = pages.filter(
