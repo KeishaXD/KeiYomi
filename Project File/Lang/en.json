@@ -113,6 +113,8 @@
   "reader_mode_webtoon": "Webtoon Mode (Scroll)",
   "reader_mode_pages": "Page Mode (Split)",
   "msg_empty_library": "No items found.",
+  "empty_library_title": "Your library is empty",
+  "empty_library_description": "Import a PDF, EPUB, comic, or document to start reading.",
   "msg_unknown_genre": "Unknown Genre",
   "msg_unknown_author": "Unknown Author",
   "msg_no_synopsis": "No synopsis available.",

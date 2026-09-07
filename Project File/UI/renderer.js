@@ -1,4 +1,4 @@
-// --- NAVIGATION LOGIC ---
+﻿// --- NAVIGATION LOGIC ---
 let currentView = "library";
 let previousViewBeforeSettings = "library";
 let returnToReaderFromSettings = false;
@@ -719,6 +719,12 @@ function renderGrid(data, elementId) {
 
   if (!gridHandlerState.has(grid)) {
     grid.addEventListener("click", (e) => {
+      const importButton = e.target.closest("[data-action='import-file']");
+      if (importButton && grid.contains(importButton)) {
+        btnPilihFile.click();
+        return;
+      }
+
       const card = e.target.closest(".book-card");
       if (!card || !grid.contains(card)) return;
       const book = grid.__books && grid.__books[Number(card.dataset.bookIndex)];
@@ -760,7 +766,30 @@ function renderGrid(data, elementId) {
   }
 
   if (data.length === 0) {
-    grid.innerHTML = `<p style="color:#94a3b8; grid-column: 1/-1; text-align:center; padding-top: 20px;">${t("msg_empty_library")}</p>`;
+    const isLibraryEmpty =
+      elementId === "library-grid" && libraryData.length === 0;
+    const emptyAction = isLibraryEmpty
+      ? `<button class="empty-state-import" type="button" data-action="import-file">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8zm0 12H4V8h16z" />
+          </svg>
+          ${t("btn_import")}
+        </button>`
+      : "";
+
+    grid.innerHTML = `
+      <section class="empty-state" aria-live="polite">
+        <div class="empty-state-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 4h11a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2zm13 4h1a2 2 0 0 1 2 2v10H8" />
+            <path d="M7 8h7M7 12h7" />
+          </svg>
+        </div>
+        <h2>${isLibraryEmpty ? t("empty_library_title") : t("msg_empty_library")}</h2>
+        ${isLibraryEmpty ? `<p>${t("empty_library_description")}</p>` : ""}
+        ${emptyAction}
+      </section>
+    `;
     return;
   }
 
@@ -1498,13 +1527,15 @@ function showContextMenu(x, y, book) {
   contextMenu.style.left = `${x}px`;
   contextMenu.style.top = `${y}px`;
 
-  if (currentView === "history") {
-    ctxDelete.innerText = t("ctx_delete_history");
-  } else if (currentView === "favorites") {
-    ctxDelete.innerText = t("ctx_remove_favorite");
-  } else {
-    ctxDelete.innerText = t("ctx_delete");
-  }
+  const contextLabel = ctxDelete.querySelector(".context-label");
+  const contextLabelKey =
+    currentView === "history"
+      ? "ctx_delete_history"
+      : currentView === "favorites"
+        ? "ctx_remove_favorite"
+        : "ctx_delete";
+
+  if (contextLabel) contextLabel.innerText = t(contextLabelKey);
   contextMenu.style.display = "block";
 }
 
