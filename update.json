@@ -1,6 +1,6 @@
 {
-  "versionCode": 4,
-  "version": "3.2.0",
+  "versionCode": 5,
+  "version": "3.3.0",
   "releaseUrl": "https://github.com/KeishaXD/KeiYomi/releases/tag/v3.2.0",
   "changelog": "Fix cache conflict antara debug dan release, tambah mode baca ringan/asli, perbaikan tambah chapter, EPUB, IPC, metadata, backup/restore, pengaturan, dan startup Electron."
 }
